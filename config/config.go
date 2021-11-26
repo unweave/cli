@@ -23,18 +23,18 @@ func New() *Config {
 
 	path := filepath.Join(home, ".unweave", "config.json")
 	cfgViper.SetConfigFile(path)
-	config := &Config{
+
+	// Init empty
+	rootCfg := entity.RootConfig{}
+	config := Config{
 		viper: cfgViper,
-		Root:  nil,
+		Root:  &rootCfg,
 		Path:  path,
 	}
 
 	// Create the empty config if it doesn't exist
-	if err := viper.ReadInConfig(); os.IsNotExist(err) {
-		err = MarshalAndWrite(config, entity.RootConfig{
-			User:     nil,
-			Projects: nil,
-		})
+	if err := ReadAndUnmarshal(&config, &rootCfg); os.IsNotExist(err) {
+		err = MarshalAndWrite(&config, &rootCfg)
 		if err != nil {
 			panic(err)
 		}
@@ -43,5 +43,5 @@ func New() *Config {
 		panic(err)
 	}
 
-	return config
+	return &config
 }

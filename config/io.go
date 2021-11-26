@@ -3,6 +3,7 @@ package config
 import (
 	"github.com/unweave/cli/entity"
 	"os"
+	"path/filepath"
 	"reflect"
 )
 
@@ -16,23 +17,24 @@ func createDir(path string) error {
 }
 
 // ReadAndUnmarshal reads the cfg file and unmarshals it into the RootConfig struct
-func ReadAndUnmarshal(config *Config, rc entity.RootConfig) error {
+func ReadAndUnmarshal(config *Config, rc *entity.RootConfig) error {
 	if err := config.viper.ReadInConfig(); err != nil {
 		return err
 	}
-	return config.viper.Unmarshal(&rc)
+	return config.viper.Unmarshal(rc)
 }
 
 // MarshalAndWrite write marshals a RootConfig structs and writes it to disk
-func MarshalAndWrite(config *Config, rc entity.RootConfig) error {
-	rt := reflect.TypeOf(rc)
-	fields := reflect.VisibleFields(reflect.TypeOf(rc))
+func MarshalAndWrite(config *Config, rc *entity.RootConfig) error {
+	fields := reflect.ValueOf(*rc)
+	for i := 0; i < fields.NumField(); i++ {
+		k := fields.Type().Field(i).Name
+		v := fields.Field(i).Interface()
 
-	for _, field := range fields {
-		config.viper.Set(field.Name, rt.FieldByIndex(field.Index))
+		config.viper.Set(k, v)
 	}
 
-	if err := createDir(config.Path); err != nil {
+	if err := createDir(filepath.Dir(config.Path)); err != nil {
 		return err
 	}
 	return config.viper.WriteConfig()
