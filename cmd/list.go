@@ -7,6 +7,9 @@ import (
 )
 
 func (h *Handler) List(ctx context.Context, cmd *entity.Command) error {
+	if (h.cfg.Root.Projects == nil) || (len(h.cfg.Root.Projects) == 0) {
+		return nil
+	}
 	return nil
 }
 

@@ -14,7 +14,7 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	// List
+	// Init
 	rootCmd.AddCommand(&cobra.Command{
 		Use:   "init",
 		Short: "Init new Unweave project",
@@ -47,5 +47,6 @@ func init() {
 }
 
 func main() {
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	rootCmd.Execute()
 }

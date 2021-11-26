@@ -5,11 +5,11 @@ import (
 )
 
 type Controller struct {
-	gtwy *api.Api
+	api *api.Api
 }
 
 func New() *Controller {
 	return &Controller{
-		gtwy: api.New(),
+		api: api.New(),
 	}
 }
