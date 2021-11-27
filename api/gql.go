@@ -6,11 +6,13 @@ import (
 	"reflect"
 )
 
+// NewGqlRequest creates a new request for the GraphQL API and attaches the given
+// variables to the query.
 func (a *Api) NewGqlRequest(query string, vars interface{}) (*graphql.Request, error) {
 	req := graphql.NewRequest(query)
 	fields := reflect.ValueOf(vars)
 	for i := 0; i < fields.NumField(); i++ {
-		k := fields.Type().Field(i).Name
+		k := fields.Type().Field(i).Tag.Get("json")
 		v := fields.Field(i).Interface()
 
 		req.Var(k, v)
@@ -20,6 +22,8 @@ func (a *Api) NewGqlRequest(query string, vars interface{}) (*graphql.Request, e
 
 }
 
+// NewAuthorizedGqlRequest extends NewGqlRequest by attaching authorization headers from
+// the user's config.
 func (a *Api) NewAuthorizedGqlRequest(query string, vars interface{}) (*graphql.Request, error) {
 	req, err := a.NewGqlRequest(query, vars)
 	if err != nil {
@@ -30,9 +34,10 @@ func (a *Api) NewAuthorizedGqlRequest(query string, vars interface{}) (*graphql.
 	return req, nil
 }
 
+// ExecuteGql executes a graphql request and populates the resp interface with the result.
+// The resp interface must be a pointer to a struct.
 func (a *Api) ExecuteGql(ctx context.Context, req *graphql.Request, resp interface{}) error {
-
-	if err := a.gql.Run(ctx, req, &resp); err != nil {
+	if err := a.gql.Run(ctx, req, resp); err != nil {
 		return err
 	}
 

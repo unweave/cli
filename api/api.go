@@ -14,11 +14,11 @@ type Api struct {
 type Execute func(ctx context.Context, resp interface{}) error
 
 func GetApiUrl() string {
-	return "http://localhost:8080"
+	return "http://localhost:4000"
 }
 
 func GetGqlUrl() string {
-	return GetApiUrl() + "/graphql"
+	return GetApiUrl() + "/"
 }
 
 func New() *Api {
