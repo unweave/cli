@@ -7,6 +7,10 @@ import (
 )
 
 func (h *Handler) Login(ctx context.Context, cmd *entity.Command) error {
+	// check if user token already exists
+	// if not, check for token flag
+	// if token, validate token with backend
+	// else, execute browser login flow
 	return nil
 }
 
