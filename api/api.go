@@ -17,6 +17,10 @@ func GetApiUrl() string {
 	return "http://localhost:4000"
 }
 
+func GetAppUrl() string {
+	return "http://localhost:3000"
+}
+
 func GetGqlUrl() string {
 	return GetApiUrl() + "/"
 }
