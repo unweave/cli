@@ -40,3 +40,17 @@ func (c *Controller) GetUser(ctx context.Context, id int64, email string) error 
 	fmt.Println("resp", *resp.User.Id, *resp.User.Email)
 	return nil
 }
+
+func (c *Controller) LoginWithToken(ctx context.Context, token string) error {
+	return nil
+}
+
+func (c *Controller) LoginWithBrowser(ctx context.Context) error {
+	code, err := c.api.GeneratePairingCode(ctx)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("code", code)
+	return nil
+}

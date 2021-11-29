@@ -10,7 +10,7 @@ var rootCmd = &cobra.Command{
 	Short:         "Zero setup ML infrastructure",
 	Long:          "Instant access to the environments and infra you need to do ML, all versioned with Git.",
 	SilenceUsage:  true,
-	SilenceErrors: true,
+	SilenceErrors: false,
 }
 
 func init() {
@@ -32,11 +32,11 @@ func init() {
 	// Login
 	login := &cobra.Command{
 		Use:   "login",
-		Short: "Login through the browser of with an access token (--headless)",
+		Short: "Login through the browser or with an access token (--token)",
 		RunE:  cmd.LoginCmd,
 	}
 	rootCmd.AddCommand(login)
-	login.Flags().Bool("headless", false, "--headless")
+	login.Flags().String("token", "", "--token <access_token>")
 
 	// Logout
 	rootCmd.AddCommand(&cobra.Command{
