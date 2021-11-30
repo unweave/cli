@@ -2,7 +2,9 @@ package api
 
 import (
 	"context"
+	goErr "errors"
 	"github.com/unweave/cli/entity"
+	"github.com/unweave/cli/pkg/graphql"
 )
 
 // GetUser returns a user by id
@@ -61,6 +63,15 @@ func (a *Api) GeneratePairingCode(ctx context.Context) (string, error) {
 	return resp.Data.Code, nil
 }
 
+type GQLError struct {
+	Message    string      `json:"message"`
+	Extensions interface{} `json:"extensions"`
+}
+
+func (e GQLError) Error() string {
+	return e.Message
+}
+
 // ExchangePairingCode exchanges a pairing code for an access token.
 func (a *Api) ExchangePairingCode(ctx context.Context, code string) (string, string, error) {
 	vars := struct {
@@ -71,7 +82,7 @@ func (a *Api) ExchangePairingCode(ctx context.Context, code string) (string, str
 	req, err := a.NewGqlRequest(`
 		mutation ExchangePairingCode ($code: String!) { 
 			exchangePairingCode(code: $code){
-				uid
+				userId
 				token
 			}
 		}`, vars)
@@ -80,10 +91,17 @@ func (a *Api) ExchangePairingCode(ctx context.Context, code string) (string, str
 	}
 
 	var resp struct {
-		Data entity.ExchangePairingCode `json:"exchangePairingCode"`
+		Data   entity.ExchangePairingCode `json:"exchangePairingCode"`
+		Errors []GQLError                 `json:"errors"`
 	}
-	if err = a.ExecuteGql(ctx, req, &resp); err != nil {
+
+	var errs graphql.Errors
+	err = a.ExecuteGql(ctx, req, &resp)
+	if goErr.As(err, &errs) {
+		return "", "", parseGqlError(&errs)
+	} else if err != nil {
 		return "", "", err
 	}
+
 	return resp.Data.Uid, resp.Data.Token, nil
 }

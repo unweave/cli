@@ -2,16 +2,14 @@ package controller
 
 import (
 	"context"
+	goErr "errors"
 	"fmt"
-	"github.com/AlecAivazis/survey/v2"
+	"github.com/skratchdot/open-golang/open"
 	"github.com/unweave/cli/api"
 	"github.com/unweave/cli/entity"
+	"github.com/unweave/cli/errors"
 	"time"
 )
-
-func openBrowser(url string) error {
-	return nil
-}
 
 func (c *Controller) LoginWithToken(ctx context.Context, token string) error {
 	return nil
@@ -37,7 +35,7 @@ func (c *Controller) LoginWithBrowser(ctx context.Context) error {
 
 	var openErr error
 	if shouldOpen {
-		openErr = openBrowser(authUrl)
+		openErr = open.Run(authUrl)
 	}
 
 	if !shouldOpen || openErr != nil {
@@ -55,10 +53,8 @@ func (c *Controller) LoginWithBrowser(ctx context.Context) error {
 		}
 
 		uid, token, err = c.api.ExchangePairingCode(ctx, code)
-		if err != nil {
-			return err
-		}
-		if uid == "" || token == "" {
+		if goErr.Is(err, errors.HttpUnAuthorized) {
+			// Hasn't yet been paired
 			time.Sleep(sleep * time.Second)
 			continue
 		}
