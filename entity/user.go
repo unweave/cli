@@ -18,7 +18,7 @@ type GeneratePairingCode struct {
 }
 
 const GeneratePairingCodeQuery = `
-	mutation {
+	mutation GeneratePairingCode{
 		generatePairingCode {
 			code
 		}
@@ -30,7 +30,7 @@ type ExchangePairingCode struct {
 }
 
 const ExchangePairingCodeQuery = `
-	query($token: String!) {
+	query ExchangePairingCode($token: String!) {
 		exchangePairingCode(token: $token) {
 			token
 		}

@@ -24,7 +24,8 @@ func ReadAndUnmarshal(config *Config, rc *entity.RootConfig) error {
 	return config.viper.Unmarshal(rc)
 }
 
-// MarshalAndWrite marshals a RootConfig struct and writes it to disk
+// MarshalAndWrite marshals a RootConfig struct and writes it to disk. It reloads the
+// config variable after writing.
 func MarshalAndWrite(config *Config, rc *entity.RootConfig) error {
 	fields := reflect.ValueOf(*rc)
 	for i := 0; i < fields.NumField(); i++ {
@@ -37,5 +38,8 @@ func MarshalAndWrite(config *Config, rc *entity.RootConfig) error {
 	if err := createDir(filepath.Dir(config.Path)); err != nil {
 		return err
 	}
-	return config.viper.WriteConfig()
+	if err := config.viper.WriteConfig(); err != nil {
+		return err
+	}
+	return config.Reload()
 }
