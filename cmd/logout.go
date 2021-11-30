@@ -7,7 +7,7 @@ import (
 )
 
 func (h *Handler) Logout(ctx context.Context, cmd *entity.Command) error {
-	return nil
+	return h.ctrl.Logout(ctx)
 }
 
 func LogoutCmd(cmd *cobra.Command, args []string) error {

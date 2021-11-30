@@ -16,6 +16,24 @@ type Config struct {
 	IsDebug bool
 }
 
+func (c *Config) Reload() error {
+	c.viper.SetConfigFile(c.Path)
+	if err := ReadAndUnmarshal(c, c.Root); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Config) IsLoggedIn() (bool, error) {
+	if err := c.Reload(); err != nil {
+		return false, err
+	}
+	if c.Root.User == nil || c.Root.User.Token == "" {
+		return false, nil
+	}
+	return true, nil
+}
+
 func New() *Config {
 	cfgViper := viper.New()
 	home, err := os.UserHomeDir()

@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/unweave/cli/config"
 	"github.com/unweave/cli/pkg/graphql"
+	"log"
 )
 
 type Api struct {
@@ -26,8 +27,13 @@ func GetGqlUrl() string {
 }
 
 func New() *Api {
+	cfg := config.New()
 	client := graphql.NewClient(GetGqlUrl())
+	if cfg.IsDebug {
+		client.Log = func(s string) { log.Println(s) }
+	}
 	return &Api{
 		gql: client,
+		cfg: config.New(),
 	}
 }

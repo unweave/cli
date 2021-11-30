@@ -3,22 +3,28 @@ package api
 import (
 	"context"
 	goErr "errors"
+	"fmt"
 	"github.com/unweave/cli/entity"
+	"github.com/unweave/cli/errors"
 	"github.com/unweave/cli/pkg/graphql"
 )
 
-// GetUser returns a user by id
-func (a *Api) GetUser(ctx context.Context, id int64, email string) (*entity.User, error) {
-	vars := struct {
-		Id    int64  `json:"id"`
-		Email string `json:"email"`
-	}{
-		Id:    id,
-		Email: email,
+// GetMe returns the current logged-in user
+func (a *Api) GetMe(ctx context.Context) (*entity.User, error) {
+	vars := struct{}{}
+
+	isLoggedIn, err := a.cfg.IsLoggedIn()
+	if err != nil {
+		panic(err)
 	}
-	req, err := a.NewGqlRequest(`
-		query GetUser ($id: BigInt, $email: String) {
-			user (email: $email, id: $id) {
+	if !isLoggedIn {
+		fmt.Println("You are not logged in")
+		return nil, errors.NotLoggedInError
+	}
+
+	req, err := a.NewAuthorizedGqlRequest(`
+		query GetMe {
+			me {
 				id
 				email
 			}
@@ -73,7 +79,7 @@ func (e GQLError) Error() string {
 }
 
 // ExchangePairingCode exchanges a pairing code for an access token.
-func (a *Api) ExchangePairingCode(ctx context.Context, code string) (string, string, error) {
+func (a *Api) ExchangePairingCode(ctx context.Context, code string) (string, error) {
 	vars := struct {
 		Code string `json:"code"`
 	}{
@@ -82,12 +88,11 @@ func (a *Api) ExchangePairingCode(ctx context.Context, code string) (string, str
 	req, err := a.NewGqlRequest(`
 		mutation ExchangePairingCode ($code: String!) { 
 			exchangePairingCode(code: $code){
-				id
 				token
 			}
 		}`, vars)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
 	var resp struct {
@@ -98,10 +103,10 @@ func (a *Api) ExchangePairingCode(ctx context.Context, code string) (string, str
 	var errs graphql.Errors
 	err = a.ExecuteGql(ctx, req, &resp)
 	if goErr.As(err, &errs) {
-		return "", "", parseGqlError(&errs)
+		return "", parseGqlError(&errs)
 	} else if err != nil {
-		return "", "", err
+		return "", err
 	}
 
-	return resp.Data.Uid, resp.Data.Token, nil
+	return resp.Data.Token, nil
 }

@@ -11,6 +11,5 @@ type ProjectConfig struct {
 }
 
 type UserConfig struct {
-	Id    string `json:"id"`
 	Token string `json:"token"`
 }

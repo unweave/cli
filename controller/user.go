@@ -43,7 +43,7 @@ func (c *Controller) LoginWithBrowser(ctx context.Context) error {
 		fmt.Println("Please open the following URL in your browser: ", authUrl)
 	}
 
-	var uid, token string
+	var token string
 	sleep := time.Duration(2)
 	timeout := 5 * time.Minute
 	retryUntil := time.Now().Add(timeout)
@@ -53,7 +53,7 @@ func (c *Controller) LoginWithBrowser(ctx context.Context) error {
 			return fmt.Errorf("login timed out after %f minutes", timeout.Minutes())
 		}
 
-		uid, token, err = c.api.ExchangePairingCode(ctx, code)
+		token, err = c.api.ExchangePairingCode(ctx, code)
 		if goErr.Is(err, errors.HttpUnAuthorized) {
 			// Hasn't yet been paired
 			time.Sleep(sleep * time.Second)
@@ -63,11 +63,22 @@ func (c *Controller) LoginWithBrowser(ctx context.Context) error {
 	}
 
 	err = c.cfg.UpdateUserConfig(entity.UserConfig{
-		Id:    uid,
 		Token: token,
 	})
 	if err != nil {
 		return err
 	}
+
+	user, err := c.api.GetMe(ctx)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Logged in as: ", user.Email)
 	return nil
+}
+
+// Logout deletes the user's token from the config
+func (c *Controller) Logout(ctx context.Context) error {
+	return c.cfg.UpdateUserConfig(entity.UserConfig{})
 }
