@@ -16,7 +16,7 @@ func createDir(path string) error {
 	return nil
 }
 
-// ReadAndUnmarshal reads the cfg file and unmarshals it into the RootConfig struct
+// ReadAndUnmarshal reads the config file and unmarshals it into the RootConfig struct
 func ReadAndUnmarshal(config *Config, rc *entity.RootConfig) error {
 	if err := config.viper.ReadInConfig(); err != nil {
 		return err
@@ -24,7 +24,7 @@ func ReadAndUnmarshal(config *Config, rc *entity.RootConfig) error {
 	return config.viper.Unmarshal(rc)
 }
 
-// MarshalAndWrite write marshals a RootConfig structs and writes it to disk
+// MarshalAndWrite marshals a RootConfig struct and writes it to disk
 func MarshalAndWrite(config *Config, rc *entity.RootConfig) error {
 	fields := reflect.ValueOf(*rc)
 	for i := 0; i < fields.NumField(); i++ {

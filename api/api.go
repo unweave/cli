@@ -2,8 +2,8 @@ package api
 
 import (
 	"context"
-	"github.com/machinebox/graphql"
 	"github.com/unweave/cli/config"
+	"github.com/unweave/cli/pkg/graphql"
 )
 
 type Api struct {

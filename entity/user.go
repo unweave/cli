@@ -10,6 +10,6 @@ type GeneratePairingCode struct {
 }
 
 type ExchangePairingCode struct {
-	Uid   string `json:"uid"`
+	Uid   string `json:"userId"`
 	Token string `json:"token"`
 }
