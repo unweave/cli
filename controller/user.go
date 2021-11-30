@@ -4,6 +4,7 @@ import (
 	"context"
 	goErr "errors"
 	"fmt"
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/skratchdot/open-golang/open"
 	"github.com/unweave/cli/api"
 	"github.com/unweave/cli/entity"
@@ -22,7 +23,7 @@ func (c *Controller) LoginWithBrowser(ctx context.Context) error {
 		return err
 	}
 
-	authUrl := api.GetAppUrl() + "/auth/pairing?code=" + code
+	authUrl := api.GetAppUrl() + "/auth/pair?code=" + code
 	prompt := &survey.Confirm{
 		Message: "Do you want to open the browser to login?",
 		Default: true,
@@ -68,11 +69,5 @@ func (c *Controller) LoginWithBrowser(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-
-	// present code to user
-	// copy code to clipboard
-	// open browser
-	// poll server for access token
-	// save access token to config
 	return nil
 }

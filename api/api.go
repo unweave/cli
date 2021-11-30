@@ -26,7 +26,8 @@ func GetGqlUrl() string {
 }
 
 func New() *Api {
+	client := graphql.NewClient(GetGqlUrl())
 	return &Api{
-		gql: graphql.NewClient(GetGqlUrl()),
+		gql: client,
 	}
 }

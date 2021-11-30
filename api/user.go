@@ -82,7 +82,7 @@ func (a *Api) ExchangePairingCode(ctx context.Context, code string) (string, str
 	req, err := a.NewGqlRequest(`
 		mutation ExchangePairingCode ($code: String!) { 
 			exchangePairingCode(code: $code){
-				userId
+				id
 				token
 			}
 		}`, vars)

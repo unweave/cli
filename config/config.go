@@ -9,9 +9,11 @@ import (
 )
 
 type Config struct {
-	viper *viper.Viper
-	Root  *entity.RootConfig
-	Path  string
+	viper   *viper.Viper
+	Root    *entity.RootConfig
+	Path    string
+	IsDev   bool
+	IsDebug bool
 }
 
 func New() *Config {
@@ -27,9 +29,11 @@ func New() *Config {
 	// Init empty
 	rootCfg := entity.RootConfig{}
 	config := Config{
-		viper: cfgViper,
-		Root:  &rootCfg,
-		Path:  path,
+		viper:   cfgViper,
+		Root:    &rootCfg,
+		Path:    path,
+		IsDev:   os.Getenv("UNWEAVE_ENV") == "dev",
+		IsDebug: os.Getenv("UNWEAVE_DEBUG") == "true",
 	}
 
 	// Create the empty config if it doesn't exist
