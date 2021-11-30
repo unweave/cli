@@ -22,14 +22,7 @@ func (a *Api) GetMe(ctx context.Context) (*entity.User, error) {
 		return nil, errors.NotLoggedInError
 	}
 
-	req, err := a.NewAuthorizedGqlRequest(`
-		query GetMe {
-			me {
-				id
-				email
-			}
-		}`, vars)
-
+	req, err := a.NewAuthorizedGqlRequest(entity.GetMeQuery, vars)
 	if err != nil {
 		return nil, err
 	}
@@ -49,12 +42,7 @@ func (a *Api) GetMe(ctx context.Context) (*entity.User, error) {
 // GeneratePairingCode generates a new auth code for a user to pair their CLI to their
 // account through the webapp.
 func (a *Api) GeneratePairingCode(ctx context.Context) (string, error) {
-	req, err := a.NewGqlRequest(`
-		mutation { 
-			generatePairingCode {
-				code
-			}
-		 }`, struct{}{})
+	req, err := a.NewGqlRequest(entity.GeneratePairingCodeQuery, struct{}{})
 	if err != nil {
 		return "", err
 	}
@@ -85,12 +73,7 @@ func (a *Api) ExchangePairingCode(ctx context.Context, code string) (string, err
 	}{
 		Code: code,
 	}
-	req, err := a.NewGqlRequest(`
-		mutation ExchangePairingCode ($code: String!) { 
-			exchangePairingCode(code: $code){
-				token
-			}
-		}`, vars)
+	req, err := a.NewGqlRequest(entity.ExchangePairingCodeQuery, vars)
 	if err != nil {
 		return "", err
 	}
