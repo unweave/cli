@@ -5,11 +5,14 @@ import (
 	"github.com/unweave/cli/config"
 	"github.com/unweave/cli/pkg/graphql"
 	"log"
+	"net/http"
+	"time"
 )
 
 type Api struct {
-	cfg *config.Config
-	gql *graphql.Client
+	cfg  *config.Config
+	gql  *graphql.Client
+	rest *http.Client
 }
 
 type Execute func(ctx context.Context, resp interface{}) error
@@ -26,14 +29,21 @@ func GetGqlUrl() string {
 	return GetApiUrl() + "/"
 }
 
+func GetRestUrl() string {
+	return GetAppUrl() + "/api"
+}
+
 func New() *Api {
 	cfg := config.New()
-	client := graphql.NewClient(GetGqlUrl())
+	gqlClient := graphql.NewClient(GetGqlUrl())
+	httpClient := &http.Client{Timeout: time.Second * 60}
+
 	if cfg.IsDebug {
-		client.Log = func(s string) { log.Println(s) }
+		gqlClient.Log = func(s string) { log.Println(s) }
 	}
 	return &Api{
-		gql: client,
-		cfg: config.New(),
+		cfg:  config.New(),
+		gql:  gqlClient,
+		rest: httpClient,
 	}
 }
