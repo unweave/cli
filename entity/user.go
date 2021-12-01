@@ -30,8 +30,8 @@ type ExchangePairingCode struct {
 }
 
 const ExchangePairingCodeQuery = `
-	query ExchangePairingCode($token: String!) {
-		exchangePairingCode(token: $token) {
+	mutation ExchangePairingCode($code: String!) {
+		exchangePairingCode(code: $code) {
 			token
 		}
 	}
