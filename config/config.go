@@ -34,6 +34,22 @@ func (c *Config) IsLoggedIn() (bool, error) {
 	return true, nil
 }
 
+func (c *Config) GetApiUrl() string {
+	return "http://localhost:4000"
+}
+
+func (c *Config) GetAppUrl() string {
+	return "http://localhost:3000"
+}
+
+func (c *Config) GetGqlUrl() string {
+	return c.GetApiUrl() + "/"
+}
+
+func (c *Config) GetRestUrl() string {
+	return "http://localhost:8000/api"
+}
+
 func New() *Config {
 	cfgViper := viper.New()
 	home, err := os.UserHomeDir()

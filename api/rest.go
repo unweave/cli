@@ -37,7 +37,7 @@ func (a *Api) NewRestRequest(rtype RestRequestType, endpoint string, params map[
 		query += fmt.Sprintf("%s=%v&", k, v)
 	}
 
-	base := GetRestUrl()
+	base := a.cfg.GetRestUrl()
 	url := fmt.Sprintf("%s/%s?%s", base, endpoint, query)
 	header := http.Header{}
 	header.Set("Content-Type", "application/json")

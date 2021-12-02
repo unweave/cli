@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/skratchdot/open-golang/open"
-	"github.com/unweave/cli/api"
 	"github.com/unweave/cli/entity"
 	"github.com/unweave/cli/errors"
 	"time"
@@ -23,7 +22,7 @@ func (c *Controller) LoginWithBrowser(ctx context.Context) error {
 		return err
 	}
 
-	authUrl := api.GetAppUrl() + "/auth/pair?code=" + code
+	authUrl := c.cfg.GetAppUrl() + "/auth/pair?code=" + code
 	prompt := &survey.Confirm{
 		Message: "Do you want to open the browser to login?",
 		Default: true,
