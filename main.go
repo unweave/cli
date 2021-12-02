@@ -44,6 +44,13 @@ func init() {
 		Short: "Logout from your Unweave account",
 		RunE:  cmd.LogoutCmd,
 	})
+
+	// Run
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "run",
+		Short: "Run the current project in remotely with Unweave",
+		RunE:  cmd.RunCmd,
+	})
 }
 
 func main() {

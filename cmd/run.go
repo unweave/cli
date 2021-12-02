@@ -7,8 +7,7 @@ import (
 )
 
 func (h *Handler) Run(ctx context.Context, cmd *entity.Command) error {
-
-	return nil
+	return h.ctrl.Run(ctx)
 }
 
 func RunCmd(cmd *cobra.Command, args []string) error {
