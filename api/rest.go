@@ -23,7 +23,7 @@ const (
 type RestRequest struct {
 	Url    string
 	Header http.Header
-	Body   io.Reader
+	Body   *bytes.Buffer
 	Type   RestRequestType
 }
 
@@ -47,7 +47,7 @@ func (a *Api) NewRestRequest(rtype RestRequestType, endpoint string, params map[
 	return &RestRequest{
 		Url:    url,
 		Header: header,
-		Body:   nil,
+		Body:   &bytes.Buffer{},
 		Type:   rtype,
 	}
 }

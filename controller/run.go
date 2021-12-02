@@ -1,6 +1,12 @@
 package controller
 
-import "context"
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"io"
+	"strings"
+)
 
 // Run runs the user's latest changes and environment with Unweave. It uploads the users
 // code to the server and runs it. Any files/patterns in the .gitignore file will are
@@ -10,5 +16,34 @@ func (c *Controller) Run(ctx context.Context) error {
 	// walk filesystem at root and zip every file that's not in .gitignore
 	// create a new run-session - by making a call to api.unweave.io/compute/run-session
 	// upload the zip file to the api.unweave.io/compute/run-session/upload/<rid> endpoint
-	return c.api.CreateRunSession(ctx)
+	rid, err := c.api.CreateRunSession(ctx)
+	if err != nil {
+		return err
+	}
+
+	buf, err := gatherContext("~/<todo>/<path>")
+	if err != nil {
+		return err
+	}
+
+	if err = c.api.UploadRunContext(ctx, rid, buf); err != nil {
+		return err
+	}
+
+	fmt.Println("Created run session:", rid)
+	return nil
+}
+
+// gatherContext zips up the user's code and environment and write it to a buffer to be
+// uploaded to the server.
+func gatherContext(rootDir string) (*bytes.Buffer, error) {
+	// TODO: walk the filesystem and zip up the user's code
+	buf := &bytes.Buffer{}
+	reader := strings.NewReader("is anyone out there")
+	_, err := io.Copy(buf, reader)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf, nil
 }
