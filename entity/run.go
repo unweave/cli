@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"io"
 	"time"
 )
 
@@ -10,3 +11,5 @@ type RunSession struct {
 	CreatedBy     int64     `json:"createdBy"`
 	CreatedAt     time.Time `json:"createdAt"`
 }
+
+type GatherContextFunc func(w io.Writer) error

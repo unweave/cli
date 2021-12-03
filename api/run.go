@@ -1,9 +1,11 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"io"
+	"github.com/unweave/cli/entity"
+	"mime/multipart"
 )
 
 func (a *Api) CreateRunSession(ctx context.Context) (string, error) {
@@ -18,10 +20,21 @@ func (a *Api) CreateRunSession(ctx context.Context) (string, error) {
 	return resp.Id, nil
 }
 
-func (a *Api) UploadRunContext(ctx context.Context, runId string, buf io.Reader, headerBoundary string) error {
+func (a *Api) UploadRunContext(ctx context.Context, runId string, gatherContext entity.GatherContextFunc) error {
 	req := a.NewAuthorizedRestRequest(Post, "run-session/"+runId+"/upload-context", nil)
+
+	buf := &bytes.Buffer{}
+	writer := multipart.NewWriter(buf)
+	part, err := writer.CreateFormFile("session_context", "context.zip")
+
+	// Create the context to be uploaded
+	if err = gatherContext(part); err != nil {
+		return err
+	}
+	writer.Close()
+
 	req.Body = buf
-	req.Header.Set("Content-Type", headerBoundary)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	var resp interface{}
 	if err := a.ExecuteRest(ctx, req, &resp); err != nil {

@@ -1,11 +1,10 @@
 package controller
 
 import (
-	"bytes"
 	"context"
 	"fmt"
+	"github.com/unweave/cli/entity"
 	"io"
-	"mime/multipart"
 	"strings"
 )
 
@@ -21,35 +20,28 @@ func (c *Controller) Run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	buf := &bytes.Buffer{}
-	writer := multipart.NewWriter(buf)
-	part, err := writer.CreateFormFile("session_context", "context.zip")
+	fmt.Println("Created run session:", rid)
 
 	// Walk the filesystem the repo root and zip up the files
-	if err = gatherContext("~/<todo>/<path>", part); err != nil {
-		return err
-	}
-	if err = writer.Close(); err != nil {
-		return err
-	}
-
-	if err = c.api.UploadRunContext(ctx, rid, buf, writer.FormDataContentType()); err != nil {
+	gatherFunc := gatherContext("~/<todo>/<path>")
+	if err = c.api.UploadRunContext(ctx, rid, gatherFunc); err != nil {
 		return err
 	}
 
-	fmt.Println("Created run session:", rid)
 	return nil
 }
 
 // gatherContext zips up the user's code and environment and write it to a buffer to be
 // uploaded to the server.
-func gatherContext(rootDir string, w io.Writer) error {
+func gatherContext(rootDir string) entity.GatherContextFunc {
 	// TODO: walk the filesystem and zip up the user's code
-	reader := strings.NewReader("is anyone out there")
-	_, err := io.Copy(w, reader)
-	if err != nil {
-		return err
+	return func(w io.Writer) error {
+		reader := strings.NewReader("is anyone out there")
+		_, err := io.Copy(w, reader)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 
-	return nil
 }
