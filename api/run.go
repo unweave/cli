@@ -9,7 +9,10 @@ import (
 )
 
 func (a *Api) CreateRunSession(ctx context.Context) (string, error) {
-	req := a.NewAuthorizedRestRequest(Post, "run-session", nil)
+	req, err := a.NewAuthorizedRestRequest(Post, "run-session", nil)
+	if err != nil {
+		return "", err
+	}
 
 	var resp struct {
 		Id string `json:"id"`
@@ -21,7 +24,10 @@ func (a *Api) CreateRunSession(ctx context.Context) (string, error) {
 }
 
 func (a *Api) UploadRunContext(ctx context.Context, runId string, gatherContext entity.GatherContextFunc) error {
-	req := a.NewAuthorizedRestRequest(Post, "run-session/"+runId+"/upload-context", nil)
+	req, err := a.NewAuthorizedRestRequest(Post, "run-session/"+runId+"/upload-context", nil)
+	if err != nil {
+		return err
+	}
 
 	buf := &bytes.Buffer{}
 	writer := multipart.NewWriter(buf)

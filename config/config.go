@@ -61,7 +61,10 @@ func New() *Config {
 	cfgViper.SetConfigFile(path)
 
 	// Init empty
-	rootCfg := entity.RootConfig{}
+	rootCfg := entity.RootConfig{
+		User:     &entity.UserConfig{},
+		Projects: make(map[string]entity.ProjectConfig),
+	}
 	config := Config{
 		viper:   cfgViper,
 		Root:    &rootCfg,

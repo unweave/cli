@@ -6,8 +6,7 @@ type RootConfig struct {
 }
 
 type ProjectConfig struct {
-	Id   string `json:"id"`
-	Path string `json:"path"`
+	Id string `json:"id"`
 }
 
 type UserConfig struct {

@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"github.com/unweave/cli/pkg/graphql"
 	"reflect"
 )
@@ -29,6 +30,11 @@ func (a *Api) NewAuthorizedGqlRequest(query string, vars interface{}) (*graphql.
 	if err != nil {
 		return nil, err
 	}
+	if a.cfg.Root.User == nil || a.cfg.Root.User.Token == "" {
+		fmt.Println("You are not logged in. Please run `unweave login` to login.")
+		return nil, fmt.Errorf("not logged in")
+	}
+
 	req.Header.Set("Authorization", "Bearer "+a.cfg.Root.User.Token)
 
 	return req, nil

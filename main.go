@@ -22,6 +22,14 @@ func init() {
 		RunE:  cmd.InitCmd,
 	})
 
+	// Link
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "link <project-id> [<path>]",
+		Short: "Link an Unweave project with ID <project-id> to local folder",
+		RunE:  cmd.LinkCmd,
+		Args:  cobra.RangeArgs(1, 2),
+	})
+
 	// List
 	rootCmd.AddCommand(&cobra.Command{
 		Use:   "list",

@@ -27,7 +27,7 @@ type RestRequest struct {
 	Type   RestRequestType
 }
 
-func (a *Api) NewRestRequest(rtype RestRequestType, endpoint string, params map[string]string) *RestRequest {
+func (a *Api) NewRestRequest(rtype RestRequestType, endpoint string, params map[string]string) (*RestRequest, error) {
 	query := ""
 	fields := reflect.ValueOf(params)
 	if params != nil {
@@ -49,13 +49,22 @@ func (a *Api) NewRestRequest(rtype RestRequestType, endpoint string, params map[
 		Header: header,
 		Body:   &bytes.Buffer{},
 		Type:   rtype,
-	}
+	}, nil
 }
 
-func (a *Api) NewAuthorizedRestRequest(rtype RestRequestType, endpoint string, params map[string]string) *RestRequest {
-	req := a.NewRestRequest(rtype, endpoint, params)
+func (a *Api) NewAuthorizedRestRequest(rtype RestRequestType, endpoint string, params map[string]string) (*RestRequest, error) {
+	req, err := a.NewRestRequest(rtype, endpoint, params)
+	if err != nil {
+		return nil, err
+	}
+
+	if a.cfg.Root.User == nil || a.cfg.Root.User.Token == "" {
+		fmt.Println("You are not logged in. Please run `unweave login` to login.")
+		return nil, fmt.Errorf("not logged in")
+	}
+
 	req.Header.Set("Authorization", "Bearer "+a.cfg.Root.User.Token)
-	return req
+	return req, nil
 }
 
 func (a *Api) ExecuteRest(ctx context.Context, req *RestRequest, resp interface{}) error {
