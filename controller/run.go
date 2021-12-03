@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"strings"
 )
 
@@ -20,13 +21,19 @@ func (c *Controller) Run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	buf := &bytes.Buffer{}
+	writer := multipart.NewWriter(buf)
+	part, err := writer.CreateFormFile("session_context", "context.zip")
 
-	buf, err := gatherContext("~/<todo>/<path>")
-	if err != nil {
+	// Walk the filesystem the repo root and zip up the files
+	if err = gatherContext("~/<todo>/<path>", part); err != nil {
+		return err
+	}
+	if err = writer.Close(); err != nil {
 		return err
 	}
 
-	if err = c.api.UploadRunContext(ctx, rid, buf); err != nil {
+	if err = c.api.UploadRunContext(ctx, rid, buf, writer.FormDataContentType()); err != nil {
 		return err
 	}
 
@@ -36,14 +43,13 @@ func (c *Controller) Run(ctx context.Context) error {
 
 // gatherContext zips up the user's code and environment and write it to a buffer to be
 // uploaded to the server.
-func gatherContext(rootDir string) (*bytes.Buffer, error) {
+func gatherContext(rootDir string, w io.Writer) error {
 	// TODO: walk the filesystem and zip up the user's code
-	buf := &bytes.Buffer{}
 	reader := strings.NewReader("is anyone out there")
-	_, err := io.Copy(buf, reader)
+	_, err := io.Copy(w, reader)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return buf, nil
+	return nil
 }

@@ -23,7 +23,7 @@ const (
 type RestRequest struct {
 	Url    string
 	Header http.Header
-	Body   *bytes.Buffer
+	Body   io.Reader
 	Type   RestRequestType
 }
 
