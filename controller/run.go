@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/unweave/cli/entity"
+	"gopkg.in/gookit/color.v1"
 	"io"
 	"strings"
 )
@@ -16,6 +17,16 @@ func (c *Controller) Run(ctx context.Context) error {
 	// walk filesystem at root and zip every file that's not in .gitignore
 	// create a new run-session - by making a call to api.unweave.io/compute/run-session
 	// upload the zip file to the api.unweave.io/compute/run-session/upload/<rid> endpoint
+
+	rootPath, err := c.cfg.GetActiveProjectDir()
+	if err != nil {
+		msg := "Ow snap! Looks like you don't have a currently active Unweave project. \n" +
+			"Either switch to a unweave project folder or create a new one by running: \n" +
+			color.Blue.Render("unweave init")
+		fmt.Println(msg)
+		return err
+	}
+
 	rid, err := c.api.CreateRunSession(ctx)
 	if err != nil {
 		return err
@@ -23,7 +34,7 @@ func (c *Controller) Run(ctx context.Context) error {
 	fmt.Println("Created run session:", rid)
 
 	// Walk the filesystem the repo root and zip up the files
-	gatherFunc := gatherContext("~/<todo>/<path>")
+	gatherFunc := gatherContext(rootPath)
 	if err = c.api.UploadRunContext(ctx, rid, gatherFunc); err != nil {
 		return err
 	}
