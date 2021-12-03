@@ -2,14 +2,12 @@ package config
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
 	"github.com/unweave/cli/entity"
 	"os"
 	"path/filepath"
 )
 
 type Config struct {
-	viper   *viper.Viper
 	Root    *entity.RootConfig
 	Path    string
 	IsDev   bool
@@ -17,7 +15,6 @@ type Config struct {
 }
 
 func (c *Config) Reload() error {
-	c.viper.SetConfigFile(c.Path)
 	if err := ReadAndUnmarshal(c, c.Root); err != nil {
 		return err
 	}
@@ -51,14 +48,11 @@ func (c *Config) GetRestUrl() string {
 }
 
 func New() *Config {
-	cfgViper := viper.New()
 	home, err := os.UserHomeDir()
 	if err != nil {
 		panic(err)
 	}
-
 	path := filepath.Join(home, ".unweave", "config.json")
-	cfgViper.SetConfigFile(path)
 
 	// Init empty
 	rootCfg := entity.RootConfig{
@@ -66,7 +60,6 @@ func New() *Config {
 		Projects: make(map[string]entity.ProjectConfig),
 	}
 	config := Config{
-		viper:   cfgViper,
 		Root:    &rootCfg,
 		Path:    path,
 		IsDev:   os.Getenv("UNWEAVE_ENV") == "dev",

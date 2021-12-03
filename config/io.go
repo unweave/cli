@@ -1,10 +1,11 @@
 package config
 
 import (
+	"encoding/json"
 	"github.com/unweave/cli/entity"
+	"io/ioutil"
 	"os"
 	"path/filepath"
-	"reflect"
 )
 
 func createDir(path string) error {
@@ -18,27 +19,25 @@ func createDir(path string) error {
 
 // ReadAndUnmarshal reads the config file and unmarshals it into the RootConfig struct
 func ReadAndUnmarshal(config *Config, rc *entity.RootConfig) error {
-	if err := config.viper.ReadInConfig(); err != nil {
+	buf, err := ioutil.ReadFile(config.Path)
+	if err != nil {
 		return err
 	}
-	return config.viper.Unmarshal(rc)
+	return json.Unmarshal(buf, rc)
 }
 
 // MarshalAndWrite marshals a RootConfig struct and writes it to disk. It reloads the
 // config variable after writing.
 func MarshalAndWrite(config *Config, rc *entity.RootConfig) error {
-	fields := reflect.ValueOf(*rc)
-	for i := 0; i < fields.NumField(); i++ {
-		k := fields.Type().Field(i).Name
-		v := fields.Field(i).Interface()
-
-		config.viper.Set(k, v)
-	}
-
 	if err := createDir(filepath.Dir(config.Path)); err != nil {
 		return err
 	}
-	if err := config.viper.WriteConfig(); err != nil {
+	buf, err := json.MarshalIndent(rc, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	if err = ioutil.WriteFile(config.Path, buf, os.ModePerm); err != nil {
 		return err
 	}
 	return config.Reload()
