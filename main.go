@@ -58,6 +58,7 @@ func init() {
 		Use:   "run",
 		Short: "Run the current project in remotely with Unweave",
 		RunE:  cmd.RunCmd,
+		Args:  cobra.MaximumNArgs(1),
 	})
 }
 
