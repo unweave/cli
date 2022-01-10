@@ -39,16 +39,14 @@ func (a *Api) NewSocketConnection(ctx context.Context, endpoint string) (chan st
 			case <-ticker.C:
 				err = c.WriteMessage(websocket.PongMessage, []byte{})
 				if err != nil {
-					log.Println("write:", err)
+					log.Println("websocket write error:", err)
 					return
 				}
-				log.Println("pong")
 
 			case <-interrupt:
-				fmt.Println("interrupt received, stopping run session")
+				fmt.Println(" interrupt received, stopping zepl")
 				closeMsg := websocket.FormatCloseMessage(websocket.CloseNormalClosure, "")
 				if err = c.WriteMessage(websocket.CloseMessage, closeMsg); err != nil {
-					log.Println("write close:", err)
 					return
 				}
 				select {

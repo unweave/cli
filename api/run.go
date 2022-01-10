@@ -5,11 +5,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/unweave/cli/entity"
-	"log"
 	"mime/multipart"
 )
 
-func (a *Api) CreateRunSession(ctx context.Context, projectId string) (string, error) {
+func (a *Api) CreateZepl(ctx context.Context, projectId string) (string, error) {
 	endpoint := fmt.Sprintf("api/project/%s/run-session", projectId)
 	req, err := a.NewAuthorizedRestRequest(Post, endpoint, nil)
 	if err != nil {
@@ -25,8 +24,8 @@ func (a *Api) CreateRunSession(ctx context.Context, projectId string) (string, e
 	return resp.Id, nil
 }
 
-func (a *Api) UploadRunContext(ctx context.Context, projectId, runId string, gatherContext entity.GatherContextFunc) error {
-	endpoint := fmt.Sprintf("api/project/%s/run-session/%s/upload-context", projectId, runId)
+func (a *Api) UploadZeplContext(ctx context.Context, projectId, zeplId string, gatherContext entity.GatherContextFunc) error {
+	endpoint := fmt.Sprintf("api/project/%s/run-session/%s/upload-context", projectId, zeplId)
 	req, err := a.NewAuthorizedRestRequest(Post, endpoint, nil)
 	if err != nil {
 		return err
@@ -52,12 +51,12 @@ func (a *Api) UploadRunContext(ctx context.Context, projectId, runId string, gat
 	return nil
 }
 
-func (a *Api) GetRunStatus(ctx context.Context, runId string) (string, error) {
+func (a *Api) GetRunStatus(ctx context.Context, zeplId string) (string, error) {
 	return "", nil
 }
 
-func (a *Api) ConnectToZepl(ctx context.Context, projectId, runId string) error {
-	endpoint := fmt.Sprintf("api/project/%s/run-session/%s/follow", projectId, runId)
+func (a *Api) ConnectToZepl(ctx context.Context, projectId, zeplId string) error {
+	endpoint := fmt.Sprintf("api/project/%s/run-session/%s/follow", projectId, zeplId)
 
 	done, conn, err := a.NewSocketConnection(ctx, endpoint)
 	if err != nil {
@@ -66,14 +65,13 @@ func (a *Api) ConnectToZepl(ctx context.Context, projectId, runId string) error 
 	defer conn.Close()
 	defer close(done)
 
-	fmt.Println("Connected to Zepl")
+	fmt.Printf("Connected to Zepl with ID %s\n", zeplId)
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
-			log.Println("read:", err)
 			break
 		}
-		log.Printf("recv: %s", message)
+		fmt.Printf("%s\n", message)
 	}
 
 	fmt.Println("Disconnected from Zepl")

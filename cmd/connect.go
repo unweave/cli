@@ -11,7 +11,7 @@ func (h *Handler) Connect(ctx context.Context, cmd *entity.Command) error {
 	projectID := cmd.Args[0]
 	zeplID := cmd.Args[1]
 
-	fmt.Printf("Connecting to zepl %s for project %s\n", projectID, zeplID)
+	fmt.Printf("Connecting to zepl %s for project %s\n", zeplID, projectID)
 	return h.ctrl.Connect(ctx, projectID, zeplID)
 }
 

@@ -17,7 +17,7 @@ func init() {
 	// Connect
 	rootCmd.AddCommand(&cobra.Command{
 		Use:   "connect <project-id> <run-id>",
-		Short: "Connect to logs from a active run session",
+		Short: "Connect to logs from a active session",
 		RunE:  cmd.ConnectCmd,
 		Args:  cobra.ExactArgs(2),
 	})

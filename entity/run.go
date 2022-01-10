@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type RunSession struct {
+type Zepl struct {
 	Id            string    `json:"id"`
 	CurrentStatus string    `json:"currentStatus"`
 	CreatedBy     int64     `json:"createdBy"`
