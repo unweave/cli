@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/unweave/cli/entity"
 	"os"
@@ -22,6 +23,10 @@ func (h *Handler) Link(ctx context.Context, cmd *entity.Command) error {
 	path, err := filepath.Abs(filepath.Join(pwd, relPath))
 	if err != nil {
 		panic(err)
+	}
+	if _, err = os.Stat(path); os.IsNotExist(err) {
+		fmt.Printf("Path %s does not exist\n", path)
+		return err
 	}
 
 	return h.ctrl.Link(ctx, projectId, path)

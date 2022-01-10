@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"github.com/unweave/cli/constants"
 	"github.com/unweave/cli/entity"
 	"os"
 	"path/filepath"
@@ -10,7 +11,6 @@ import (
 type Config struct {
 	Root    *entity.RootConfig
 	Path    string
-	IsDev   bool
 	IsDebug bool
 }
 
@@ -32,19 +32,27 @@ func (c *Config) IsLoggedIn() (bool, error) {
 }
 
 func (c *Config) GetApiUrl() string {
-	return "http://localhost:4000"
+	url := os.Getenv("UNWEAVE_API_URL")
+	if url == "" {
+		url = constants.UnweaveApiUrl
+	}
+	return url
 }
 
 func (c *Config) GetAppUrl() string {
-	return "http://localhost:3000"
+	url := os.Getenv("UNWEAVE_APP_URL")
+	if url == "" {
+		url = constants.UnweaveAppUrl
+	}
+	return url
+}
+
+func (c *Config) GetWorkbenchUrl() string {
+	return c.GetApiUrl() + "/workbench"
 }
 
 func (c *Config) GetGqlUrl() string {
-	return c.GetApiUrl() + "/"
-}
-
-func (c *Config) GetRestUrl() string {
-	return "http://localhost:8000/api"
+	return c.GetApiUrl() + "/graphql"
 }
 
 func New() *Config {
@@ -60,10 +68,8 @@ func New() *Config {
 		Projects: make(map[string]entity.ProjectConfig),
 	}
 	config := Config{
-		Root:    &rootCfg,
-		Path:    path,
-		IsDev:   os.Getenv("UNWEAVE_ENV") == "dev",
-		IsDebug: os.Getenv("UNWEAVE_DEBUG") == "true",
+		Root: &rootCfg,
+		Path: path,
 	}
 
 	// Create the empty config if it doesn't exist

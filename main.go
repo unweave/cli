@@ -9,11 +9,19 @@ var rootCmd = &cobra.Command{
 	Use:           "unweave [<command>]",
 	Short:         "Zero setup ML infrastructure",
 	Long:          "Instant access to the environments and infra you need to do ML, all versioned with Git.",
-	SilenceUsage:  true,
+	SilenceUsage:  false,
 	SilenceErrors: false,
 }
 
 func init() {
+	// Connect
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "connect <project-id> <run-id>",
+		Short: "Connect to logs from a active run session",
+		RunE:  cmd.ConnectCmd,
+		Args:  cobra.ExactArgs(2),
+	})
+
 	// Init
 	rootCmd.AddCommand(&cobra.Command{
 		Use:   "init",
@@ -55,7 +63,7 @@ func init() {
 
 	// Run
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "run",
+		Use:   "run [<path>]",
 		Short: "Run the current project in remotely with Unweave",
 		RunE:  cmd.RunCmd,
 		Args:  cobra.MaximumNArgs(1),

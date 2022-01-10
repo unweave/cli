@@ -39,7 +39,7 @@ func (a *Api) NewRestRequest(rtype RestRequestType, endpoint string, params map[
 		}
 	}
 
-	base := a.cfg.GetRestUrl()
+	base := a.cfg.GetWorkbenchUrl()
 	url := fmt.Sprintf("%s/%s?%s", base, endpoint, query)
 	header := http.Header{}
 	header.Set("Content-Type", "application/json")
@@ -88,8 +88,10 @@ func (a *Api) ExecuteRest(ctx context.Context, req *RestRequest, resp interface{
 	if 200 > res.StatusCode || res.StatusCode >= 400 {
 		return fmt.Errorf("status %s", res.Status)
 	}
-	if err = json.NewDecoder(&buf).Decode(&resp); err != nil {
-		return goErr.Wrap(err, "fail to decode response body")
+	if err = json.NewDecoder(&buf).Decode(&resp); err == io.EOF {
+		return nil
+	} else if err != nil {
+		return goErr.Wrap(err, "failed to decode response body")
 	}
 	return nil
 }

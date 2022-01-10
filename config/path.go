@@ -37,9 +37,10 @@ func (c *Config) GetActiveProjectDir() (string, error) {
 	return activeProjectDir, nil
 }
 
-func (c *Config) ValidateProjectDir(projectDir string) error {
-	if _, ok := c.Root.Projects[projectDir]; !ok {
-		return fmt.Errorf("no active project found")
+func (c *Config) GetProjectIdFromPath(projectDir string) (string, error) {
+	cfg, ok := c.Root.Projects[projectDir]
+	if !ok {
+		return "", fmt.Errorf("no active project found")
 	}
-	return nil
+	return cfg.Id, nil
 }

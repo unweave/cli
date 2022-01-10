@@ -25,6 +25,10 @@ func (h *Handler) Run(ctx context.Context, cmd *entity.Command) error {
 			panic(err)
 		}
 		path = filepath.Clean(p)
+		if _, err = os.Stat(path); os.IsNotExist(err) {
+			fmt.Printf("Path %s does not exist\n", path)
+			return err
+		}
 	} else {
 		path, err = h.cfg.GetActiveProjectDir()
 		if err != nil {
