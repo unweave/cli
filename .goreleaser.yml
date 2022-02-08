@@ -1,0 +1,32 @@
+project_name: unweave
+
+before:
+  hooks:
+    - go mod download
+    - go mod tidy
+
+builds:
+  - binary: unweave
+    goos:
+      - linux
+      - windows
+      - darwin
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      -w -s -X github.com/unweave/cli/version.Version={{.Version}}
+
+brews:
+  - tap:
+      owner: unweave
+      name: homebrew-unweave
+    commit_author:
+      name: goreleaserbot
+      email: goreleaser@unweave.io
+
+    homepage: "https://unweave.io"
+    description: "ML, without the FML"
+    test: |
+      system "#{bin}/unweave"
+    install: |
+      bin.install "unweave"
