@@ -9,7 +9,7 @@ import (
 )
 
 func (a *Api) CreateZepl(ctx context.Context, projectId string) (string, error) {
-	endpoint := fmt.Sprintf("api/project/%s/run-session", projectId)
+	endpoint := fmt.Sprintf("project/%s/run-session", projectId)
 	req, err := a.NewAuthorizedRestRequest(Post, endpoint, nil)
 	if err != nil {
 		return "", err
@@ -25,7 +25,7 @@ func (a *Api) CreateZepl(ctx context.Context, projectId string) (string, error) 
 }
 
 func (a *Api) UploadZeplContext(ctx context.Context, projectId, zeplId string, gatherContext entity.GatherContextFunc) error {
-	endpoint := fmt.Sprintf("api/project/%s/run-session/%s/upload-context", projectId, zeplId)
+	endpoint := fmt.Sprintf("project/%s/run-session/%s/upload-context", projectId, zeplId)
 	req, err := a.NewAuthorizedRestRequest(Post, endpoint, nil)
 	if err != nil {
 		return err
@@ -56,7 +56,7 @@ func (a *Api) GetRunStatus(ctx context.Context, zeplId string) (string, error) {
 }
 
 func (a *Api) ConnectToZepl(ctx context.Context, projectId, zeplId string) error {
-	endpoint := fmt.Sprintf("api/project/%s/run-session/%s/follow", projectId, zeplId)
+	endpoint := fmt.Sprintf("project/%s/run-session/%s/follow", projectId, zeplId)
 
 	done, conn, err := a.NewSocketConnection(ctx, endpoint)
 	if err != nil {
