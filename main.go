@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/spf13/cobra"
 	"github.com/unweave/cli/cmd"
+	"github.com/unweave/cli/version"
 )
 
 var rootCmd = &cobra.Command{
@@ -14,6 +15,9 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
+	rootCmd.Version = version.Version
+	rootCmd.Flags().BoolP("version", "v", false, "Get the version of current Unweave CLI")
+
 	// Connect
 	rootCmd.AddCommand(&cobra.Command{
 		Use:   "connect <project-id> <run-id>",

@@ -31,6 +31,14 @@ func (c *Config) IsLoggedIn() (bool, error) {
 	return true, nil
 }
 
+func (c *Config) GetUnweaveDomain() string {
+	url := os.Getenv("UNWEAVE_DOMAIN")
+	if url == "" {
+		url = constants.UnweaveDomain
+	}
+	return url
+}
+
 func (c *Config) GetApiUrl() string {
 	url := os.Getenv("UNWEAVE_API_URL")
 	if url == "" {
@@ -48,20 +56,34 @@ func (c *Config) GetAppUrl() string {
 }
 
 func (c *Config) GetWorkbenchUrl() string {
-	return c.GetApiUrl() + "/workbench"
+	return "https://workbench." + c.GetUnweaveDomain()
 }
 
 func (c *Config) GetGqlUrl() string {
 	return c.GetApiUrl() + "/graphql"
 }
 
-func New() *Config {
+func getUnweaveEnv() string {
+	env := os.Getenv("UNWEAVE_ENV")
+	if env == "" {
+		env = constants.UnweaveEnv
+	}
+	return env
+}
+
+func getConfigPath() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		panic(err)
 	}
-	path := filepath.Join(home, ".unweave", "config.json")
+	if env := getUnweaveEnv(); env == "production" {
+		return filepath.Join(home, ".unweave", "config.json")
+	}
+	return filepath.Join(home, ".unweave", getUnweaveEnv()+"-config.json")
 
+}
+
+func New() *Config {
 	// Init empty
 	rootCfg := entity.RootConfig{
 		User:     &entity.UserConfig{},
@@ -69,7 +91,7 @@ func New() *Config {
 	}
 	config := Config{
 		Root: &rootCfg,
-		Path: path,
+		Path: getConfigPath(),
 	}
 
 	// Create the empty config if it doesn't exist
