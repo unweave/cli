@@ -31,20 +31,20 @@ func (c *Controller) Run(ctx context.Context, path string) error {
 		return err
 	}
 
-	rid, err := c.api.CreateZepl(ctx, pid)
+	zepl, err := c.api.CreateZepl(ctx, pid)
 	if err != nil {
 		return err
 	}
-	fmt.Println("Created zepl:", rid)
+	fmt.Printf("Created zepl '%s' with ID '%s'\n", zepl.Name, zepl.Id)
 
 	// Walk the filesystem the repo root and zip up the files
 	gatherFunc := gatherContext(path)
-	if err = c.api.UploadZeplContext(ctx, pid, rid, gatherFunc); err != nil {
+	if err = c.api.UploadZeplContext(ctx, pid, zepl.Id, gatherFunc); err != nil {
 		return err
 	}
 
 	// Connect to get logs
-	if err = c.api.ConnectToZepl(ctx, pid, rid); err != nil {
+	if err = c.api.ConnectToZepl(ctx, pid, zepl.Id); err != nil {
 		return err
 	}
 	return nil

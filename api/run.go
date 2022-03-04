@@ -8,20 +8,26 @@ import (
 	"mime/multipart"
 )
 
-func (a *Api) CreateZepl(ctx context.Context, projectId string) (string, error) {
-	endpoint := fmt.Sprintf("project/%s/run-session", projectId)
-	req, err := a.NewAuthorizedRestRequest(Post, endpoint, nil)
+func (a *Api) CreateZepl(ctx context.Context, projectID string) (*entity.Zepl, error) {
+	req, err := a.NewAuthorizedGqlRequest(entity.InitZeplMutation, struct {
+		ProjectID string `json:"projectID"`
+		Command   string `json:"command"`
+	}{
+		ProjectID: projectID,
+		Command:   "",
+	})
+
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	var resp struct {
-		Id string `json:"id"`
+		Data entity.Zepl `json:"initZepl"`
 	}
-	if err := a.ExecuteRest(ctx, req, &resp); err != nil {
-		return "", err
+	if err := a.ExecuteGql(ctx, req, &resp); err != nil {
+		return nil, err
 	}
-	return resp.Id, nil
+	return &resp.Data, nil
 }
 
 func (a *Api) UploadZeplContext(ctx context.Context, projectId, zeplId string, gatherContext entity.GatherContextFunc) error {
