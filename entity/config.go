@@ -12,3 +12,7 @@ type ProjectConfig struct {
 type UserConfig struct {
 	Token string `json:"token"`
 }
+
+type ZeplConfig struct {
+	InstanceType string `json:"instanceType"`
+}

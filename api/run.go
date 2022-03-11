@@ -10,11 +10,13 @@ import (
 
 func (a *Api) CreateZepl(ctx context.Context, projectID string) (*entity.Zepl, error) {
 	req, err := a.NewAuthorizedGqlRequest(entity.InitZeplMutation, struct {
-		ProjectID string `json:"projectID"`
-		Command   string `json:"command"`
+		ProjectID    string `json:"projectID"`
+		Command      string `json:"command"`
+		InstanceType string `json:"instanceType"`
 	}{
-		ProjectID: projectID,
-		Command:   "",
+		ProjectID:    projectID,
+		Command:      "",
+		InstanceType: a.cfg.Zepl.InstanceType,
 	})
 
 	if err != nil {

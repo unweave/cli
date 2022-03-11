@@ -1,3 +1,3 @@
-package version
+package constants
 
 var Version = "Inserted through ldflags"

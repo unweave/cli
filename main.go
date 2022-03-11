@@ -3,7 +3,8 @@ package main
 import (
 	"github.com/spf13/cobra"
 	"github.com/unweave/cli/cmd"
-	"github.com/unweave/cli/version"
+	"github.com/unweave/cli/config"
+	"github.com/unweave/cli/constants"
 )
 
 var rootCmd = &cobra.Command{
@@ -15,8 +16,9 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.Version = version.Version
+	rootCmd.Version = constants.Version
 	rootCmd.Flags().BoolP("version", "v", false, "Get the version of current Unweave CLI")
+	rootCmd.Flags().BoolP("gpu", "g", true, "Use GPU")
 
 	// Connect
 	rootCmd.AddCommand(&cobra.Command{
@@ -66,12 +68,14 @@ func init() {
 	})
 
 	// Run
-	rootCmd.AddCommand(&cobra.Command{
+	run := &cobra.Command{
 		Use:   "run [<path>]",
 		Short: "Run the current project in remotely with Unweave",
 		RunE:  cmd.RunCmd,
 		Args:  cobra.MaximumNArgs(1),
-	})
+	}
+	run.Flags().BoolVarP(&config.UseGpu, "gpu", "g", true, "Use GPU")
+	rootCmd.AddCommand(run)
 }
 
 func main() {

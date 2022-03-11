@@ -12,6 +12,7 @@ type Config struct {
 	Root    *entity.RootConfig
 	Path    string
 	IsDebug bool
+	Zepl    *entity.ZeplConfig
 }
 
 func (c *Config) Reload() error {
@@ -84,14 +85,23 @@ func getConfigPath() string {
 }
 
 func New() *Config {
+	it := "cpu"
+	if UseGpu {
+		it = "gpu"
+	}
+
 	// Init empty
 	rootCfg := entity.RootConfig{
 		User:     &entity.UserConfig{},
 		Projects: make(map[string]entity.ProjectConfig),
 	}
+
 	config := Config{
 		Root: &rootCfg,
 		Path: getConfigPath(),
+		Zepl: &entity.ZeplConfig{
+			InstanceType: it,
+		},
 	}
 
 	// Create the empty config if it doesn't exist
