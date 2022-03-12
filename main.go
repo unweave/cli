@@ -11,6 +11,7 @@ var rootCmd = &cobra.Command{
 	Use:           "unweave [<command>]",
 	Short:         "Zero setup ML infrastructure",
 	Long:          "Instant access to the environments and infra you need to do ML, all versioned with Git.",
+	RunE:          cmd.RootCmd,
 	SilenceUsage:  false,
 	SilenceErrors: false,
 }
@@ -18,7 +19,7 @@ var rootCmd = &cobra.Command{
 func init() {
 	rootCmd.Version = constants.Version
 	rootCmd.Flags().BoolP("version", "v", false, "Get the version of current Unweave CLI")
-	rootCmd.Flags().BoolP("gpu", "g", true, "Use GPU")
+	rootCmd.Flags().BoolVarP(&config.ShowConfig, "config", "c", false, "Show the current config")
 
 	// Connect
 	rootCmd.AddCommand(&cobra.Command{

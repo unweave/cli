@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/unweave/cli/constants"
 	"github.com/unweave/cli/entity"
@@ -9,10 +10,18 @@ import (
 )
 
 type Config struct {
-	Root    *entity.RootConfig
-	Path    string
-	IsDebug bool
-	Zepl    *entity.ZeplConfig
+	Root    *entity.RootConfig `json:"root"`
+	Path    string             `json:"path"`
+	IsDebug bool               `json:"debug"`
+	Zepl    *entity.ZeplConfig `json:"zepl"`
+}
+
+func (c *Config) ToJson() ([]byte, error) {
+	buf, err := json.MarshalIndent(c, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+	return buf, nil
 }
 
 func (c *Config) Reload() error {
