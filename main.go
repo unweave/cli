@@ -67,6 +67,14 @@ func init() {
 		RunE:  cmd.LogoutCmd,
 	})
 
+	// Open
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "open <project-id>",
+		Short: "Open the dashboard in the browser. Optionally open to a specific project.",
+		RunE:  cmd.OpenCmd,
+		Args:  cobra.MaximumNArgs(1),
+	})
+
 	// Run
 	run := &cobra.Command{
 		Use:   "run [<path>]",
