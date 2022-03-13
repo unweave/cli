@@ -1,4 +1,5 @@
 package config
 
-var UseGpu bool
+var IsGpu bool
 var ShowConfig bool
+var ZeplProjectPath string

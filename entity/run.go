@@ -15,8 +15,8 @@ type Zepl struct {
 type GatherContextFunc func(w io.Writer) error
 
 const InitZeplMutation = `
-	mutation InitZepl ($projectID: UUID!, $command: String!, $instanceType: String) {
-		initZepl (projectID: $projectID, command: $command, instanceType: $instanceType) {
+	mutation InitZepl ($projectID: UUID!, $command: String!, $gpu: Boolean) {
+		initZepl (projectID: $projectID, command: $command, gpu: $gpu) {
 			id
 			name
 			command

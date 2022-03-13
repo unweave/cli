@@ -78,12 +78,16 @@ func init() {
 
 	// Run
 	run := &cobra.Command{
-		Use:   "run [<path>]",
+		Use:   "run [flags] [<command>]",
 		Short: "Run the current project in remotely with Unweave",
-		RunE:  cmd.RunCmd,
-		Args:  cobra.MaximumNArgs(1),
+		Example: "unweave run python train.py\n" +
+			"unweave run --gpu python train.py\n" +
+			"unweave run --gpu --path=../rr-project python train.py\n",
+		RunE: cmd.RunCmd,
+		Args: cobra.RangeArgs(1, 2),
 	}
-	run.Flags().BoolVarP(&config.UseGpu, "gpu", "g", true, "Use GPU")
+	run.Flags().BoolVarP(&config.IsGpu, "gpu", "g", false, "Use GPU")
+	run.Flags().StringVarP(&config.ZeplProjectPath, "path", "p", "", "Path to an Unweave project to run")
 	rootCmd.AddCommand(run)
 }
 

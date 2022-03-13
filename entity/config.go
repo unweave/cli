@@ -14,5 +14,5 @@ type UserConfig struct {
 }
 
 type ZeplConfig struct {
-	InstanceType string `json:"instanceType"`
+	IsGpu bool `json:"IsGpu"`
 }

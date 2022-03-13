@@ -8,15 +8,17 @@ import (
 	"mime/multipart"
 )
 
-func (a *Api) CreateZepl(ctx context.Context, projectID string) (*entity.Zepl, error) {
+func (a *Api) CreateZepl(ctx context.Context, projectID, command string) (
+	*entity.Zepl, error,
+) {
 	req, err := a.NewAuthorizedGqlRequest(entity.InitZeplMutation, struct {
-		ProjectID    string `json:"projectID"`
-		Command      string `json:"command"`
-		InstanceType string `json:"instanceType"`
+		ProjectID string `json:"projectID"`
+		Command   string `json:"command"`
+		Gpu       bool   `json:"gpu"`
 	}{
-		ProjectID:    projectID,
-		Command:      "",
-		InstanceType: a.cfg.Zepl.InstanceType,
+		ProjectID: projectID,
+		Command:   command,
+		Gpu:       a.cfg.Zepl.IsGpu,
 	})
 
 	if err != nil {

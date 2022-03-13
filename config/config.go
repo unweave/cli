@@ -94,11 +94,6 @@ func getConfigPath() string {
 }
 
 func New() *Config {
-	it := "cpu"
-	if UseGpu {
-		it = "gpu"
-	}
-
 	// Init empty
 	rootCfg := entity.RootConfig{
 		User:     &entity.UserConfig{},
@@ -109,7 +104,7 @@ func New() *Config {
 		Root: &rootCfg,
 		Path: getConfigPath(),
 		Zepl: &entity.ZeplConfig{
-			InstanceType: it,
+			IsGpu: IsGpu,
 		},
 	}
 
@@ -120,7 +115,7 @@ func New() *Config {
 			panic(err)
 		}
 	} else if err != nil {
-		fmt.Printf("Fialed to read config file: %s\n", err)
+		fmt.Printf("Failed to read config file: %s\n", err)
 		panic(err)
 	}
 

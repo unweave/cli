@@ -5,8 +5,8 @@ import (
 	"fmt"
 	ignore "github.com/sabhiram/go-gitignore"
 	"github.com/unweave/cli/entity"
+	"github.com/unweave/cli/info"
 	"github.com/unweave/cli/pkg/compress"
-	"gopkg.in/gookit/color.v1"
 	"io"
 	"os"
 	"path/filepath"
@@ -21,17 +21,21 @@ const defaultGitIgnore = `
 // Run runs the user's latest changes and environment with Unweave. It uploads the users
 // code to the server and runs it. Any files/patterns in the .gitignore file will are
 // from the upload.
-func (c *Controller) Run(ctx context.Context, path string) error {
-	pid, err := c.cfg.GetProjectIdFromPath(path)
+func (c *Controller) Run(ctx context.Context, command string) error {
+	path, err := c.cfg.GetProjectPath()
 	if err != nil {
-		msg := "Ow snap! Looks like you don't have a currently active Unweave project. \n" +
-			"Either switch to a unweave project folder or create a new one by running: \n" +
-			color.Blue.Render("unweave init")
-		fmt.Println(msg)
 		return err
 	}
 
-	zepl, err := c.api.CreateZepl(ctx, pid)
+	fmt.Println(path)
+
+	pid, err := c.cfg.GetProjectIdFromPath(path)
+	if err != nil {
+		fmt.Println(info.ProjectNotFoundMsg())
+		return err
+	}
+
+	zepl, err := c.api.CreateZepl(ctx, pid, command)
 	if err != nil {
 		return err
 	}
