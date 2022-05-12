@@ -8,7 +8,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:           "unweave [<command>]",
+	Use:           "unweave [command]",
 	Short:         "Zero setup ML infrastructure",
 	Long:          "Instant access to the environments and infra you need to do ML, all versioned with Git.",
 	RunE:          cmd.RootCmd,

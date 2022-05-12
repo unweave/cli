@@ -13,8 +13,10 @@ import (
 
 // NewSocketConnection creates a new websocket connection and keeps it open by responding
 // with a pong messages until the connection is closed through the returned `done` channel.
-func (a *Api) NewSocketConnection(ctx context.Context, endpoint string) (chan struct{}, *websocket.Conn, error) {
-	host := a.cfg.GetWorkbenchUrl()[8:]
+func (a *Api) NewSocketConnection(ctx context.Context, endpoint string) (
+	chan struct{}, *websocket.Conn, error,
+) {
+	host := a.cfg.Api.WorkbenchUrl[8:]
 	url := fmt.Sprintf("wss://%s/%s", host, endpoint)
 	header := http.Header{"Authorization": []string{"Bearer " + a.cfg.Root.User.Token}}
 

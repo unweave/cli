@@ -3,32 +3,16 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/unweave/cli/constants"
 	"github.com/unweave/cli/entity"
 	"os"
-	"path/filepath"
 )
 
 type Config struct {
-	Root    *entity.RootConfig `json:"root"`
 	Path    string             `json:"path"`
 	IsDebug bool               `json:"debug"`
+	Api     *entity.ApiConfig  `json:"api"`
+	Root    *entity.RootConfig `json:"root"`
 	Zepl    *entity.ZeplConfig `json:"zepl"`
-}
-
-func (c *Config) ToJson() ([]byte, error) {
-	buf, err := json.MarshalIndent(c, "", "  ")
-	if err != nil {
-		return nil, err
-	}
-	return buf, nil
-}
-
-func (c *Config) Reload() error {
-	if err := ReadAndUnmarshal(c, c.Root); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (c *Config) IsLoggedIn() (bool, error) {
@@ -41,56 +25,19 @@ func (c *Config) IsLoggedIn() (bool, error) {
 	return true, nil
 }
 
-func (c *Config) GetUnweaveDomain() string {
-	url := os.Getenv("UNWEAVE_DOMAIN")
-	if url == "" {
-		url = constants.UnweaveDomain
+func (c *Config) Reload() error {
+	if err := ReadAndUnmarshal(c, c.Root); err != nil {
+		return err
 	}
-	return url
+	return nil
 }
 
-func (c *Config) GetApiUrl() string {
-	url := os.Getenv("UNWEAVE_API_URL")
-	if url == "" {
-		url = constants.UnweaveApiUrl
-	}
-	return url
-}
-
-func (c *Config) GetAppUrl() string {
-	url := os.Getenv("UNWEAVE_APP_URL")
-	if url == "" {
-		url = constants.UnweaveAppUrl
-	}
-	return url
-}
-
-func (c *Config) GetWorkbenchUrl() string {
-	return "https://workbench." + c.GetUnweaveDomain()
-}
-
-func (c *Config) GetGqlUrl() string {
-	return c.GetApiUrl() + "/graphql"
-}
-
-func getUnweaveEnv() string {
-	env := os.Getenv("UNWEAVE_ENV")
-	if env == "" {
-		env = constants.UnweaveEnv
-	}
-	return env
-}
-
-func getConfigPath() string {
-	home, err := os.UserHomeDir()
+func (c *Config) ToJson() ([]byte, error) {
+	buf, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	if env := getUnweaveEnv(); env == "production" {
-		return filepath.Join(home, ".unweave", "config.json")
-	}
-	return filepath.Join(home, ".unweave", getUnweaveEnv()+"-config.json")
-
+	return buf, nil
 }
 
 func New() *Config {
@@ -101,8 +48,16 @@ func New() *Config {
 	}
 
 	config := Config{
+		Path:    getConfigPath(),
+		IsDebug: false,
+		Api: &entity.ApiConfig{
+			ApiUrl:        getApiUrl(),
+			AppUrl:        getAppUrl(),
+			UnweaveDomain: getUnweaveDomain(),
+			GqlUrl:        getGqlUrl(),
+			WorkbenchUrl:  getWorkbenchUrl(),
+		},
 		Root: &rootCfg,
-		Path: getConfigPath(),
 		Zepl: &entity.ZeplConfig{
 			IsGpu: IsGpu,
 		},

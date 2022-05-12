@@ -22,7 +22,7 @@ func (c *Controller) LoginWithBrowser(ctx context.Context) error {
 		return err
 	}
 
-	authUrl := c.cfg.GetAppUrl() + "/auth/pair?code=" + code
+	authUrl := c.cfg.Api.AppUrl + "/auth/pair?code=" + code
 	prompt := &survey.Confirm{
 		Message: "Do you want to open the browser to login?",
 		Default: true,

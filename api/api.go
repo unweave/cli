@@ -19,7 +19,7 @@ type Execute func(ctx context.Context, resp interface{}) error
 
 func New() *Api {
 	cfg := config.New()
-	gqlClient := graphql.NewClient(cfg.GetGqlUrl())
+	gqlClient := graphql.NewClient(cfg.Api.GqlUrl)
 	httpClient := &http.Client{Timeout: time.Second * 60}
 
 	if cfg.IsDebug {

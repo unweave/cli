@@ -10,9 +10,9 @@ import (
 func (h *Handler) Open(ctx context.Context, cmd *entity.Command) error {
 	// TODO: check if project exists
 	if len(cmd.Args) > 0 {
-		return open.Run(h.cfg.GetAppUrl() + "/project/" + cmd.Args[0])
+		return open.Run(h.cfg.Api.AppUrl + "/project/" + cmd.Args[0])
 	}
-	return open.Run(h.cfg.GetAppUrl())
+	return open.Run(h.cfg.Api.AppUrl)
 }
 
 func OpenCmd(cmd *cobra.Command, args []string) error {

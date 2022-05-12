@@ -27,7 +27,9 @@ type RestRequest struct {
 	Type   RestRequestType
 }
 
-func (a *Api) NewRestRequest(rtype RestRequestType, endpoint string, params map[string]string) (*RestRequest, error) {
+func (a *Api) NewRestRequest(rtype RestRequestType, endpoint string, params map[string]string) (
+	*RestRequest, error,
+) {
 	query := ""
 	fields := reflect.ValueOf(params)
 	if params != nil {
@@ -39,7 +41,7 @@ func (a *Api) NewRestRequest(rtype RestRequestType, endpoint string, params map[
 		}
 	}
 
-	base := a.cfg.GetWorkbenchUrl()
+	base := a.cfg.Api.WorkbenchUrl
 	url := fmt.Sprintf("%s/%s?%s", base, endpoint, query)
 	header := http.Header{}
 	header.Set("Content-Type", "application/json")
@@ -52,7 +54,9 @@ func (a *Api) NewRestRequest(rtype RestRequestType, endpoint string, params map[
 	}, nil
 }
 
-func (a *Api) NewAuthorizedRestRequest(rtype RestRequestType, endpoint string, params map[string]string) (*RestRequest, error) {
+func (a *Api) NewAuthorizedRestRequest(rtype RestRequestType, endpoint string, params map[string]string) (
+	*RestRequest, error,
+) {
 	req, err := a.NewRestRequest(rtype, endpoint, params)
 	if err != nil {
 		return nil, err
