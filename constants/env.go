@@ -1,5 +1,4 @@
 package constants
 
-const (
-	UnweaveEnv = "dev"
-)
+var UnweaveEnv = "dev"
+
