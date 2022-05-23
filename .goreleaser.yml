@@ -1,10 +1,5 @@
 project_name: unweave
 
-env:
-  - UNWEAVE_ENV={{ if index .Env "UNWEAVE_ENV"  }}{{.Env.UNWEAVE_ENV}} {{ else }}production{{ end }}
-  - UNWEAVE_DOMAIN={{ if index .Env "UNWEAVE_DOMAIN"  }}{{.Env.UNWEAVE_DOMAIN}}{{ else }}unweave.io{{ end }}
-  - UNWEAVE_API_URL={{ if index .Env "UNWEAVE_API_URL"  }}{{.Env.UNWEAVE_API_URL}}{{ else }}https://api.unweave.io{{ end }}
-  - UNWEAVE_APP_URL={{ if index .Env "UNWEAVE_APP_URL"  }}{{.Env.UNWEAVE_APP_URL}}{{ else }}https://app.unweave.io{{ end }}
 before:
   hooks:
     - go mod download
@@ -20,10 +15,6 @@ builds:
       - CGO_ENABLED=0
     ldflags:
       - -w -s -X github.com/unweave/cli/constants.Version={{.Version}}
-      - -X github.com/unweave/cli/constants.UnweaveEnv={{.Env.UNWEAVE_ENV}}
-      - -X github.com/unweave/cli/constants.UnweaveDomain={{.Env.UNWEAVE_DOMAIN}}
-      - -X github.com/unweave/cli/constants.UnweaveApiUrl={{.Env.UNWEAVE_API_URL}}
-      - -X github.com/unweave/cli/constants.UnweaveAppUrl={{.Env.UNWEAVE_APP_URL}}
 
 brews:
   - tap:
