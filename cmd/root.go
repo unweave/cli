@@ -24,6 +24,7 @@ func (h *Handler) Root(ctx context.Context, cmd *entity.Command) error {
 func RootCmd(cmd *cobra.Command, args []string) error {
 	h := New()
 	ctx := context.Background()
+	cmd.SilenceUsage = true
 	return h.Root(ctx, &entity.Command{
 		Cmd:  cmd,
 		Args: args,

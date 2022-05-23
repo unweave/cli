@@ -1,7 +1,7 @@
 package constants
 
-var (
-	UnweaveDomain = "alpha.unweave.io"
-	UnweaveApiUrl = "https://api.alpha.unweave.io"
-	UnweaveAppUrl = "https://app.alpha.unweave.io"
+const (
+	UnweaveDomain = "unweave.io"
+	UnweaveApiUrl = "https://api.unweave.io"
+	UnweaveAppUrl = "https://app.unweave.io"
 )

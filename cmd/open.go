@@ -18,6 +18,7 @@ func (h *Handler) Open(ctx context.Context, cmd *entity.Command) error {
 func OpenCmd(cmd *cobra.Command, args []string) error {
 	h := New()
 	ctx := context.Background()
+	cmd.SilenceUsage = true
 	return h.Open(ctx, &entity.Command{
 		Cmd:  cmd,
 		Args: args,

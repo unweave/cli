@@ -18,6 +18,7 @@ func (h *Handler) Connect(ctx context.Context, cmd *entity.Command) error {
 func ConnectCmd(cmd *cobra.Command, args []string) error {
 	h := New()
 	ctx := context.Background()
+	cmd.SilenceUsage = true
 	return h.Connect(ctx, &entity.Command{
 		Cmd:  cmd,
 		Args: args,

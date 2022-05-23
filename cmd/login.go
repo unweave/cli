@@ -29,6 +29,7 @@ func (h *Handler) Login(ctx context.Context, cmd *entity.Command) error {
 func LoginCmd(cmd *cobra.Command, args []string) error {
 	h := New()
 	ctx := context.Background()
+	cmd.SilenceUsage = true
 	return h.Login(ctx, &entity.Command{
 		Cmd:  cmd,
 		Args: args,

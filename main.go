@@ -51,6 +51,7 @@ func init() {
 		Use:   "list",
 		Short: "List all projects",
 		RunE:  cmd.ListCmd,
+		Args:  cobra.NoArgs,
 	})
 
 	// Login
@@ -95,7 +96,6 @@ func init() {
 func main() {
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	if err := rootCmd.Execute(); err != nil {
-		rootCmd.SilenceUsage = true
 		os.Exit(1)
 	}
 }

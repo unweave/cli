@@ -15,6 +15,7 @@ func (h *Handler) Run(ctx context.Context, cmd *entity.Command) error {
 func RunCmd(cmd *cobra.Command, args []string) error {
 	h := New()
 	ctx := context.Background()
+	cmd.SilenceUsage = true
 	return h.Run(ctx, &entity.Command{
 		Cmd:  cmd,
 		Args: args,

@@ -35,6 +35,7 @@ func (h *Handler) Link(ctx context.Context, cmd *entity.Command) error {
 func LinkCmd(cmd *cobra.Command, args []string) error {
 	h := New()
 	ctx := context.Background()
+	cmd.SilenceUsage = true
 	return h.Link(ctx, &entity.Command{
 		Cmd:  cmd,
 		Args: args,
