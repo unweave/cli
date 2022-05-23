@@ -5,6 +5,7 @@ import (
 	"github.com/unweave/cli/cmd"
 	"github.com/unweave/cli/config"
 	"github.com/unweave/cli/constants"
+	"os"
 )
 
 var rootCmd = &cobra.Command{
@@ -93,5 +94,8 @@ func init() {
 
 func main() {
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
-	rootCmd.Execute()
+	if err := rootCmd.Execute(); err != nil {
+		rootCmd.SilenceUsage = true
+		os.Exit(1)
+	}
 }
