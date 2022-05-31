@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/unweave/cli/constants"
 	"github.com/unweave/cli/entity"
 	"os"
 )
@@ -74,5 +75,9 @@ func New() *Config {
 		panic(err)
 	}
 
+	// Override auth token if set manually at runtime
+	if constants.AuthToken != "" {
+		config.Root.User.Token = constants.AuthToken
+	}
 	return &config
 }

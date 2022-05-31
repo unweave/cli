@@ -22,6 +22,9 @@ func init() {
 	rootCmd.Flags().BoolP("version", "v", false, "Get the version of current Unweave CLI")
 	rootCmd.Flags().BoolVarP(&config.ShowConfig, "config", "c", false, "Show the current config")
 
+	// Accept token to be passed manually - this overrides the token saved from interactive login
+	rootCmd.PersistentFlags().StringVarP(&constants.AuthToken, "token", "t", "", "Use a specific token to authenticate - overrides login token")
+
 	// Connect
 	rootCmd.AddCommand(&cobra.Command{
 		Use:   "connect <project-id> <run-id>",
