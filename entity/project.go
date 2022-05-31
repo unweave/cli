@@ -3,12 +3,12 @@ package entity
 import "fmt"
 
 type Project struct {
-	Id   string `json:"id"`
+	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
 func (p Project) String() string {
-	return fmt.Sprintf("ID: %s, Name: %s", p.Id, p.Name)
+	return fmt.Sprintf("ID: %s, Name: %s", p.ID, p.Name)
 }
 
 const GetProjectQuery = `

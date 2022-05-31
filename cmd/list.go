@@ -26,10 +26,10 @@ func (h *Handler) List(ctx context.Context, cmd *entity.Command) error {
 
 	fmt.Println("Projects:")
 	for _, p := range projects {
-		if path, ok := findLinkedPath(h.cfg.Root.Projects, p.Id); ok {
-			fmt.Printf("  %s \n\tID: %s \n\tPath: %s\n", p.Name, p.Id, path)
+		if path, ok := findLinkedPath(h.cfg.Root.Projects, p.ID); ok {
+			fmt.Printf("  %s \n\tID: %s \n\tPath: %s\n", p.Name, p.ID, path)
 		} else {
-			fmt.Printf("  %s \n\tID: %s \n\tPath: Not linked\n", p.Name, p.Id)
+			fmt.Printf("  %s \n\tID: %s \n\tPath: Not linked\n", p.Name, p.ID)
 		}
 	}
 
