@@ -94,6 +94,30 @@ func init() {
 	run.Flags().BoolVarP(&config.IsGpu, "gpu", "g", false, "Use GPU")
 	run.Flags().StringVarP(&config.ZeplProjectPath, "path", "p", "", "Path to an Unweave project to run")
 	rootCmd.AddCommand(run)
+
+	// Token
+	token := &cobra.Command{
+		Use:   "token",
+		Short: "Configure authentication tokens for the current user",
+		Args:  cobra.NoArgs,
+	}
+
+	getUserTokens := &cobra.Command{
+		Use:   "get-user-tokens",
+		Short: "Get all tokens for the current user",
+		RunE:  cmd.GetUserTokensCmd,
+	}
+	token.AddCommand(getUserTokens)
+
+	createUserToken := &cobra.Command{
+		Use:   "create-user-token",
+		Short: "Create a new token",
+		RunE:  cmd.CreateUserTokenCmd,
+	}
+	token.AddCommand(createUserToken)
+	rootCmd.AddCommand(token)
+
+	// TODO: add ability to fetch project tokens
 }
 
 func main() {
