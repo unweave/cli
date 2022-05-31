@@ -14,7 +14,7 @@ builds:
     env:
       - CGO_ENABLED=0
     ldflags:
-      - -w -s -X github.com/unweave/cli/constants.Version={{.Version}}
+      -w -s -X github.com/unweave/cli/constants.Version={{.Version}}
 
 brews:
   - tap:
