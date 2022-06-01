@@ -13,13 +13,13 @@ func (c *Controller) Link(ctx context.Context, projectId, path string) error {
 	}
 
 	config := entity.ProjectConfig{
-		Id: project.Id,
+		Id: project.ID,
 	}
 
 	err = c.cfg.AddProject(path, config)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Linked project %s with ID %s to path %s\n", project.Name, project.Id, path)
+	fmt.Printf("Linked project %s with ID %s to path %s\n", project.Name, project.ID, path)
 	return nil
 }
