@@ -22,12 +22,12 @@ func init() {
 	rootCmd.Flags().BoolP("version", "v", false, "Get the version of current Unweave CLI")
 	rootCmd.Flags().BoolVarP(&config.ShowConfig, "config", "c", false, "Show the current config")
 
-	// Accept token to be passed manually - this overrides the token saved from interactive login
-	rootCmd.PersistentFlags().StringVarP(&constants.AuthToken, "token", "t", "", "Use a specific token to authenticate - overrides login token")
+	// Accept token to be passed manually - this overrides the token saved from interactive loginCmd
+	rootCmd.PersistentFlags().StringVarP(&constants.AuthToken, "token", "t", "", "Use a specific token to authenticate - overrides loginCmd token")
 
 	// Connect
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "connect <project-id> <run-id>",
+		Use:   "connect <project-id> <runCmd-id>",
 		Short: "Connect to logs from a active session",
 		RunE:  cmd.ConnectCmd,
 		Args:  cobra.ExactArgs(2),
@@ -58,13 +58,13 @@ func init() {
 	})
 
 	// Login
-	login := &cobra.Command{
-		Use:   "login",
+	loginCmd := &cobra.Command{
+		Use:   "loginCmd",
 		Short: "Login through the browser or with an access token (--token)",
 		RunE:  cmd.LoginCmd,
 	}
-	rootCmd.AddCommand(login)
-	login.Flags().String("token", "", "--token <access_token>")
+	rootCmd.AddCommand(loginCmd)
+	loginCmd.Flags().String("token", "", "--token <access_token>")
 
 	// Logout
 	rootCmd.AddCommand(&cobra.Command{
@@ -82,7 +82,7 @@ func init() {
 	})
 
 	// Run
-	run := &cobra.Command{
+	runCmd := &cobra.Command{
 		Use:   "run [flags] [<command>]",
 		Short: "Run the current project in remotely with Unweave",
 		Example: "unweave run python train.py\n" +
@@ -91,31 +91,29 @@ func init() {
 		RunE: cmd.RunCmd,
 		Args: cobra.RangeArgs(1, 2),
 	}
-	run.Flags().BoolVarP(&config.IsGpu, "gpu", "g", false, "Use GPU")
-	run.Flags().StringVarP(&config.ZeplProjectPath, "path", "p", "", "Path to an Unweave project to run")
-	rootCmd.AddCommand(run)
+	runCmd.Flags().BoolVarP(&config.IsGpu, "gpu", "g", false, "Use GPU")
+	runCmd.Flags().StringVarP(&config.ZeplProjectPath, "path", "p", "", "Path to an Unweave project to run")
+	rootCmd.AddCommand(runCmd)
 
 	// Token
-	token := &cobra.Command{
+	tokenCmd := &cobra.Command{
 		Use:   "token",
 		Short: "Configure authentication tokens for the current user",
 		Args:  cobra.NoArgs,
 	}
 
-	getUserTokens := &cobra.Command{
+	tokenCmd.AddCommand(&cobra.Command{
 		Use:   "get-user-tokens",
 		Short: "Get all tokens for the current user",
 		RunE:  cmd.GetUserTokensCmd,
-	}
-	token.AddCommand(getUserTokens)
+	})
 
-	createUserToken := &cobra.Command{
+	tokenCmd.AddCommand(&cobra.Command{
 		Use:   "create-user-token",
 		Short: "Create a new token",
 		RunE:  cmd.CreateUserTokenCmd,
-	}
-	token.AddCommand(createUserToken)
-	rootCmd.AddCommand(token)
+	})
+	rootCmd.AddCommand(tokenCmd)
 
 	// TODO: add ability to fetch project tokens
 }

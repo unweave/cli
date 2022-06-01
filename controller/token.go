@@ -5,7 +5,7 @@ import (
 	"github.com/unweave/cli/entity"
 )
 
-func (c *Controller) GetUserTokens(ctx context.Context) ([]entity.UserToken, error) {
+func (c *Controller) GetUserTokens(ctx context.Context) ([]*entity.UserToken, error) {
 	return c.api.GetUserTokens(ctx)
 }
 
