@@ -51,11 +51,10 @@ func New() *Config {
 		Path:    getConfigPath(),
 		IsDebug: false,
 		Api: &entity.ApiConfig{
-			ApiUrl:        getApiUrl(),
-			AppUrl:        getAppUrl(),
-			UnweaveDomain: getUnweaveDomain(),
-			GqlUrl:        getGqlUrl(),
-			WorkbenchUrl:  getWorkbenchUrl(),
+			ApiUrl:       getApiUrl(),
+			AppUrl:       getAppUrl(),
+			GqlUrl:       getGqlUrl(),
+			WorkbenchUrl: getWorkbenchUrl(),
 		},
 		Root: &rootCfg,
 		Zepl: &entity.ZeplConfig{

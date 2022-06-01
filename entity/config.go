@@ -1,11 +1,10 @@
 package entity
 
 type ApiConfig struct {
-	ApiUrl        string `json:"unweaveApiUrl"`
-	AppUrl        string `json:"unweaveAppUrl"`
-	UnweaveDomain string `json:"unweaveDomain"`
-	GqlUrl        string `json:"unweaveGqlUrl"`
-	WorkbenchUrl  string `json:"unweaveWorkbenchUrl"`
+	ApiUrl       string `json:"unweaveApiUrl"`
+	AppUrl       string `json:"unweaveAppUrl"`
+	GqlUrl       string `json:"unweaveGqlUrl"`
+	WorkbenchUrl string `json:"unweaveWorkbenchUrl"`
 }
 
 type ProjectConfig struct {
