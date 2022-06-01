@@ -40,7 +40,12 @@ func (u *UserToken) UnmarshalJSON(b []byte) error {
 
 func (u *UserToken) String() string {
 	expiresStr := u.ExpiresAt.Format("2006-01-02 15:04:05")
-	return fmt.Sprintf("ID: %s, DisplayName: %s, ExpiresAt: %s", u.ID, u.DisplayName, expiresStr)
+
+	// Token is only available right after it is generated.
+	if u.Token == "" {
+		return fmt.Sprintf("ID: %s, DisplayName: %s, ExpiresAt: %s", u.ID, u.DisplayName, expiresStr)
+	}
+	return fmt.Sprintf("Token: %s, ID: %s, DisplayName: %s, ExpiresAt: %s", u.Token, u.ID, u.DisplayName, expiresStr)
 }
 
 const GetUserTokensQuery = `

@@ -59,7 +59,7 @@ func init() {
 
 	// Login
 	loginCmd := &cobra.Command{
-		Use:   "loginCmd",
+		Use:   "login",
 		Short: "Login through the browser or with an access token (--token)",
 		RunE:  cmd.LoginCmd,
 	}

@@ -1,4 +1,4 @@
 package constants
 
-var UnweaveEnv = "dev"
+var UnweaveEnv = "production"
 var AuthToken = ""
