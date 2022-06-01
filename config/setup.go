@@ -38,16 +38,12 @@ func getGqlUrl() string {
 	return getApiUrl() + "/graphql"
 }
 
-func getUnweaveDomain() string {
-	url := os.Getenv("UNWEAVE_DOMAIN")
+func getWorkbenchUrl() string {
+	url := os.Getenv("UNWEAVE_WORKBENCH_URL")
 	if url == "" {
-		url = constants.UnweaveDomain
+		url = constants.UnweaveWorkbenchUrl
 	}
 	return url
-}
-
-func getWorkbenchUrl() string {
-	return "https://workbench." + getUnweaveDomain()
 }
 
 func getUnweaveEnv() string {
