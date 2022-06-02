@@ -3,10 +3,22 @@ package api
 import (
 	"bytes"
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"github.com/unweave/cli/entity"
+	"io"
 	"mime/multipart"
 )
+
+func computeContentHash(r io.Reader) (string, error) {
+	hasher := sha1.New()
+	if _, err := io.Copy(hasher, r); err != nil {
+		return "", err
+	}
+	sha := hex.EncodeToString(hasher.Sum(nil))
+	return sha, nil
+}
 
 func (a *Api) CreateZepl(ctx context.Context, projectID, command string) (
 	*entity.Zepl, error,
@@ -34,15 +46,10 @@ func (a *Api) CreateZepl(ctx context.Context, projectID, command string) (
 	return &resp.Data, nil
 }
 
-func (a *Api) LaunchZepl(ctx context.Context, zeplId string, gatherContext entity.GatherContextFunc) error {
-	endpoint := fmt.Sprintf("zepl/%s/launch", zeplId)
-	req, err := a.NewAuthorizedRestRequest(Post, endpoint, nil)
-	if err != nil {
-		return err
-	}
-
+func (a *Api) UploadZeplContext(ctx context.Context, zeplID string, gatherContext entity.GatherContextFunc) error {
 	buf := &bytes.Buffer{}
 	writer := multipart.NewWriter(buf)
+
 	part, err := writer.CreateFormFile("session_context", "context.zip")
 
 	// Create the context to be uploaded
@@ -50,6 +57,12 @@ func (a *Api) LaunchZepl(ctx context.Context, zeplId string, gatherContext entit
 		return err
 	}
 	writer.Close()
+
+	endpoint := fmt.Sprintf("zepl/%s/upload", zeplID)
+	req, err := a.NewAuthorizedRestRequest(Post, endpoint, nil)
+	if err != nil {
+		return err
+	}
 
 	req.Body = buf
 	req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -61,8 +74,19 @@ func (a *Api) LaunchZepl(ctx context.Context, zeplId string, gatherContext entit
 	return nil
 }
 
-func (a *Api) GetRunStatus(ctx context.Context, zeplId string) (string, error) {
-	return "", nil
+func (a *Api) LaunchZepl(ctx context.Context, zeplId string) error {
+	endpoint := fmt.Sprintf("zepl/%s/launch", zeplId)
+
+	req, err := a.NewAuthorizedRestRequest(Post, endpoint, nil)
+	if err != nil {
+		return err
+	}
+
+	var resp interface{}
+	if err = a.ExecuteRest(ctx, req, &resp); err != nil {
+		return err
+	}
+	return nil
 }
 
 // TailZeplLogs prints logs for a zepl

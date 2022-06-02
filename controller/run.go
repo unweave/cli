@@ -41,7 +41,11 @@ func (c *Controller) Run(ctx context.Context, command string) error {
 
 	// Walk the filesystem the repo root and zip up the files
 	gatherFunc := gatherContext(path)
-	if err = c.api.LaunchZepl(ctx, zepl.Id, gatherFunc); err != nil {
+	if err = c.api.UploadZeplContext(ctx, zepl.Id, gatherFunc); err != nil {
+		return err
+	}
+
+	if err = c.api.LaunchZepl(ctx, zepl.Id); err != nil {
 		return err
 	}
 

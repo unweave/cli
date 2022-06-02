@@ -27,6 +27,10 @@ type RestRequest struct {
 	Type   RestRequestType
 }
 
+type ErrorMessage struct {
+	Message string `json:"message"`
+}
+
 func (a *Api) NewRestRequest(rtype RestRequestType, endpoint string, params map[string]string) (
 	*RestRequest, error,
 ) {
@@ -89,8 +93,10 @@ func (a *Api) ExecuteRest(ctx context.Context, req *RestRequest, resp interface{
 	if _, err = io.Copy(&buf, res.Body); err != nil {
 		return goErr.Wrap(err, fmt.Sprintf("status %s, fail to read response body", res.Status))
 	}
-	if 200 > res.StatusCode || res.StatusCode >= 400 {
-		return fmt.Errorf("status %s", res.Status)
+	if res.StatusCode < 200 || res.StatusCode >= 400 {
+		var msg ErrorMessage
+		json.NewDecoder(&buf).Decode(&msg)
+		return fmt.Errorf("status %s, %s", res.Status, msg.Message)
 	}
 	if err = json.NewDecoder(&buf).Decode(&resp); err == io.EOF {
 		return nil
