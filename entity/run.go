@@ -8,7 +8,7 @@ type Zepl struct {
 	Id            string `json:"id"`
 	Name          string `json:"name"`
 	Command       string `json:"command"`
-	InstanceType  string `json:"instance_type"`
+	ProcessorType string `json:"processorType"`
 	CurrentStatus string `json:"currentStatus"`
 }
 
@@ -20,7 +20,7 @@ const InitZeplMutation = `
 			id
 			name
 			command
-			instanceType
+			processorType
 			currentStatus
 		}
 	}

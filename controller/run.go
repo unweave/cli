@@ -27,8 +27,6 @@ func (c *Controller) Run(ctx context.Context, command string) error {
 		return err
 	}
 
-	fmt.Println(path)
-
 	pid, err := c.cfg.GetProjectIdFromPath(path)
 	if err != nil {
 		fmt.Println(info.ProjectNotFoundMsg())
@@ -43,12 +41,12 @@ func (c *Controller) Run(ctx context.Context, command string) error {
 
 	// Walk the filesystem the repo root and zip up the files
 	gatherFunc := gatherContext(path)
-	if err = c.api.UploadZeplContext(ctx, pid, zepl.Id, gatherFunc); err != nil {
+	if err = c.api.LaunchZepl(ctx, zepl.Id, gatherFunc); err != nil {
 		return err
 	}
 
-	// Connect to get logs
-	if err = c.api.ConnectToZepl(ctx, pid, zepl.Id); err != nil {
+	// Logs to get logs
+	if err = c.api.TailZeplLogs(ctx, zepl.Id); err != nil {
 		return err
 	}
 	return nil

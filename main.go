@@ -25,14 +25,6 @@ func init() {
 	// Accept token to be passed manually - this overrides the token saved from interactive loginCmd
 	rootCmd.PersistentFlags().StringVarP(&constants.AuthToken, "token", "t", "", "Use a specific token to authenticate - overrides loginCmd token")
 
-	// Connect
-	rootCmd.AddCommand(&cobra.Command{
-		Use:   "connect <project-id> <runCmd-id>",
-		Short: "Connect to logs from a active session",
-		RunE:  cmd.ConnectCmd,
-		Args:  cobra.ExactArgs(2),
-	})
-
 	// Init
 	rootCmd.AddCommand(&cobra.Command{
 		Use:   "init",
@@ -71,6 +63,14 @@ func init() {
 		Use:   "logout",
 		Short: "Logout from your Unweave account",
 		RunE:  cmd.LogoutCmd,
+	})
+
+	// Logs
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "logs <zepl-id>",
+		Short: "Tail logs from a zepl run",
+		RunE:  cmd.LogsCmd,
+		Args:  cobra.ExactArgs(1),
 	})
 
 	// Open
