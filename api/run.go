@@ -50,7 +50,7 @@ func (a *Api) UploadZeplContext(ctx context.Context, zeplID string, gatherContex
 	buf := &bytes.Buffer{}
 	writer := multipart.NewWriter(buf)
 
-	part, err := writer.CreateFormFile("session_context", "context.zip")
+	part, err := writer.CreateFormFile("context", "context.zip")
 
 	// Create the context to be uploaded
 	if err = gatherContext(part); err != nil {

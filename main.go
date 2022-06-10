@@ -9,7 +9,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:           "unweave [command]",
+	Use:           "unweave",
 	Short:         "Zero setup ML infrastructure",
 	Long:          "Instant access to the environments and infra you need to do ML, all versioned with Git.",
 	RunE:          cmd.RootCmd,
@@ -35,7 +35,7 @@ func init() {
 
 	// Link
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "link <project-id> [<path>]",
+		Use:   "link project-id [path]",
 		Short: "Link an Unweave project with ID <project-id> to local folder",
 		RunE:  cmd.LinkCmd,
 		Args:  cobra.RangeArgs(1, 2),
@@ -67,7 +67,7 @@ func init() {
 
 	// Logs
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "logs <zepl-id>",
+		Use:   "logs zepl-id",
 		Short: "Tail logs from a zepl run",
 		RunE:  cmd.LogsCmd,
 		Args:  cobra.ExactArgs(1),
@@ -75,7 +75,7 @@ func init() {
 
 	// Open
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "open <project-id>",
+		Use:   "open [project-id]",
 		Short: "Open the dashboard in the browser. Optionally open to a specific project.",
 		RunE:  cmd.OpenCmd,
 		Args:  cobra.MaximumNArgs(1),
@@ -83,7 +83,7 @@ func init() {
 
 	// Run
 	runCmd := &cobra.Command{
-		Use:   "run [flags] [<command>]",
+		Use:   "run [command]",
 		Short: "Run the current project in remotely with Unweave",
 		Example: "unweave run python train.py\n" +
 			"unweave run --gpu python train.py\n" +
