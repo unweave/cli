@@ -8,7 +8,7 @@ type ApiConfig struct {
 }
 
 type ProjectConfig struct {
-	Id string `json:"id"`
+	ID string `json:"id"`
 }
 
 type RootConfig struct {

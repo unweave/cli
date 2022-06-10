@@ -5,13 +5,13 @@ import (
 	"github.com/unweave/cli/entity"
 )
 
-func (a *Api) GetUserProject(ctx context.Context, projectId string) (
+func (a *Api) GetUserProject(ctx context.Context, projectID string) (
 	*entity.Project, error,
 ) {
 	req, err := a.NewAuthorizedGqlRequest(entity.GetProjectQuery, struct {
-		Id string `json:"id"`
+		ID string `json:"id"`
 	}{
-		Id: projectId,
+		ID: projectID,
 	})
 	if err != nil {
 		return nil, err

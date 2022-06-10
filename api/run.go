@@ -74,8 +74,8 @@ func (a *Api) UploadZeplContext(ctx context.Context, zeplID string, gatherContex
 	return nil
 }
 
-func (a *Api) LaunchZepl(ctx context.Context, zeplId string) error {
-	endpoint := fmt.Sprintf("zepl/%s/launch", zeplId)
+func (a *Api) LaunchZepl(ctx context.Context, zeplID string) error {
+	endpoint := fmt.Sprintf("zepl/%s/launch", zeplID)
 
 	req, err := a.NewAuthorizedRestRequest(Post, endpoint, nil)
 	if err != nil {
@@ -91,8 +91,8 @@ func (a *Api) LaunchZepl(ctx context.Context, zeplId string) error {
 
 // TailZeplLogs prints logs for a zepl
 // TODO: reimplement to return a channel that will receive logs from the Zepl
-func (a *Api) TailZeplLogs(ctx context.Context, zeplId string) error {
-	endpoint := fmt.Sprintf("zepl/%s/logs", zeplId)
+func (a *Api) TailZeplLogs(ctx context.Context, zeplID string) error {
+	endpoint := fmt.Sprintf("zepl/%s/logs", zeplID)
 
 	done, conn, err := a.NewSocketConnection(ctx, endpoint)
 	if err != nil {
@@ -101,7 +101,7 @@ func (a *Api) TailZeplLogs(ctx context.Context, zeplId string) error {
 	defer conn.Close()
 	defer close(done)
 
-	fmt.Printf("Connected to Zepl with ID %s\n", zeplId)
+	fmt.Printf("Connected to Zepl with ID %s\n", zeplID)
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {

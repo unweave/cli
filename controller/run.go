@@ -27,7 +27,7 @@ func (c *Controller) Run(ctx context.Context, command string) error {
 		return err
 	}
 
-	pid, err := c.cfg.GetProjectIdFromPath(path)
+	pid, err := c.cfg.GetProjectIDFromPath(path)
 	if err != nil {
 		fmt.Println(info.ProjectNotFoundMsg())
 		return err
@@ -37,20 +37,20 @@ func (c *Controller) Run(ctx context.Context, command string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Created zepl '%s' with ID '%s'\n", zepl.Name, zepl.Id)
+	fmt.Printf("Created zepl '%s' with ID '%s'\n", zepl.Name, zepl.ID)
 
 	// Walk the filesystem the repo root and zip up the files
 	gatherFunc := gatherContext(path)
-	if err = c.api.UploadZeplContext(ctx, zepl.Id, gatherFunc); err != nil {
+	if err = c.api.UploadZeplContext(ctx, zepl.ID, gatherFunc); err != nil {
 		return err
 	}
 
-	if err = c.api.LaunchZepl(ctx, zepl.Id); err != nil {
+	if err = c.api.LaunchZepl(ctx, zepl.ID); err != nil {
 		return err
 	}
 
 	// Logs to get logs
-	if err = c.api.TailZeplLogs(ctx, zepl.Id); err != nil {
+	if err = c.api.TailZeplLogs(ctx, zepl.ID); err != nil {
 		return err
 	}
 	return nil

@@ -5,7 +5,7 @@ import (
 )
 
 type Zepl struct {
-	Id            string `json:"id"`
+	ID            string `json:"id"`
 	Name          string `json:"name"`
 	Command       string `json:"command"`
 	ProcessorType string `json:"processorType"`

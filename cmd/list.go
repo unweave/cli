@@ -7,11 +7,11 @@ import (
 	"github.com/unweave/cli/entity"
 )
 
-func findLinkedPath(projects map[string]entity.ProjectConfig, projectId string) (
+func findLinkedPath(projects map[string]entity.ProjectConfig, projectID string) (
 	string, bool,
 ) {
 	for path, project := range projects {
-		if project.Id == projectId {
+		if project.ID == projectID {
 			return path, true
 		}
 	}
