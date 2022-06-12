@@ -16,7 +16,7 @@ func (h *Handler) Link(ctx context.Context, cmd *entity.Command) error {
 		panic(err)
 	}
 
-	projectId := cmd.Args[0]
+	projectID := cmd.Args[0]
 	if len(cmd.Args) > 1 {
 		relPath = cmd.Args[1]
 	}
@@ -29,7 +29,7 @@ func (h *Handler) Link(ctx context.Context, cmd *entity.Command) error {
 		return err
 	}
 
-	return h.ctrl.Link(ctx, projectId, path)
+	return h.ctrl.Link(ctx, projectID, path)
 }
 
 func LinkCmd(cmd *cobra.Command, args []string) error {

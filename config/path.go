@@ -55,12 +55,12 @@ func (c *Config) GetActiveProjectDir() (string, error) {
 	return activeProjectDir, nil
 }
 
-func (c *Config) GetProjectIdFromPath(projectDir string) (string, error) {
+func (c *Config) GetProjectIDFromPath(projectDir string) (string, error) {
 	cfg, ok := c.Root.Projects[projectDir]
 	if !ok {
 		return "", fmt.Errorf("no active project found")
 	}
-	return cfg.Id, nil
+	return cfg.ID, nil
 }
 
 // GetProjectPath parses the path to the project directory used as context for the

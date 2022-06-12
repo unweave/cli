@@ -3,10 +3,22 @@ package api
 import (
 	"bytes"
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"github.com/unweave/cli/entity"
+	"io"
 	"mime/multipart"
 )
+
+func computeContentHash(r io.Reader) (string, error) {
+	hasher := sha1.New()
+	if _, err := io.Copy(hasher, r); err != nil {
+		return "", err
+	}
+	sha := hex.EncodeToString(hasher.Sum(nil))
+	return sha, nil
+}
 
 func (a *Api) CreateZepl(ctx context.Context, projectID, command string) (
 	*entity.Zepl, error,
@@ -34,22 +46,23 @@ func (a *Api) CreateZepl(ctx context.Context, projectID, command string) (
 	return &resp.Data, nil
 }
 
-func (a *Api) UploadZeplContext(ctx context.Context, projectId, zeplId string, gatherContext entity.GatherContextFunc) error {
-	endpoint := fmt.Sprintf("project/%s/run-session/%s/upload-context", projectId, zeplId)
-	req, err := a.NewAuthorizedRestRequest(Post, endpoint, nil)
-	if err != nil {
-		return err
-	}
-
+func (a *Api) UploadZeplContext(ctx context.Context, zeplID string, gatherContext entity.GatherContextFunc) error {
 	buf := &bytes.Buffer{}
 	writer := multipart.NewWriter(buf)
-	part, err := writer.CreateFormFile("session_context", "context.zip")
+
+	part, err := writer.CreateFormFile("context", "context.zip")
 
 	// Create the context to be uploaded
 	if err = gatherContext(part); err != nil {
 		return err
 	}
 	writer.Close()
+
+	endpoint := fmt.Sprintf("zepl/%s/upload", zeplID)
+	req, err := a.NewAuthorizedRestRequest(Post, endpoint, nil)
+	if err != nil {
+		return err
+	}
 
 	req.Body = buf
 	req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -61,12 +74,25 @@ func (a *Api) UploadZeplContext(ctx context.Context, projectId, zeplId string, g
 	return nil
 }
 
-func (a *Api) GetRunStatus(ctx context.Context, zeplId string) (string, error) {
-	return "", nil
+func (a *Api) LaunchZepl(ctx context.Context, zeplID string) error {
+	endpoint := fmt.Sprintf("zepl/%s/launch", zeplID)
+
+	req, err := a.NewAuthorizedRestRequest(Post, endpoint, nil)
+	if err != nil {
+		return err
+	}
+
+	var resp interface{}
+	if err = a.ExecuteRest(ctx, req, &resp); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (a *Api) ConnectToZepl(ctx context.Context, projectId, zeplId string) error {
-	endpoint := fmt.Sprintf("project/%s/run-session/%s/follow", projectId, zeplId)
+// TailZeplLogs prints logs for a zepl
+// TODO: reimplement to return a channel that will receive logs from the Zepl
+func (a *Api) TailZeplLogs(ctx context.Context, zeplID string) error {
+	endpoint := fmt.Sprintf("zepl/%s/logs", zeplID)
 
 	done, conn, err := a.NewSocketConnection(ctx, endpoint)
 	if err != nil {
@@ -75,7 +101,7 @@ func (a *Api) ConnectToZepl(ctx context.Context, projectId, zeplId string) error
 	defer conn.Close()
 	defer close(done)
 
-	fmt.Printf("Connected to Zepl with ID %s\n", zeplId)
+	fmt.Printf("Connected to Zepl with ID %s\n", zeplID)
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {

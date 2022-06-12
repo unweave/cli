@@ -6,14 +6,14 @@ import (
 	"github.com/unweave/cli/entity"
 )
 
-func (c *Controller) Link(ctx context.Context, projectId, path string) error {
-	project, err := c.api.GetUserProject(ctx, projectId)
+func (c *Controller) Link(ctx context.Context, projectID, path string) error {
+	project, err := c.api.GetUserProject(ctx, projectID)
 	if err != nil {
 		return err
 	}
 
 	config := entity.ProjectConfig{
-		Id: project.ID,
+		ID: project.ID,
 	}
 
 	err = c.cfg.AddProject(path, config)
