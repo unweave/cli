@@ -10,7 +10,7 @@ import (
 func (h *Handler) Login(ctx context.Context, cmd *entity.Command) error {
 	// Check if user token already exists
 	if h.cfg.Root.User != nil && h.cfg.Root.User.Token != "" {
-		fmt.Println("You are already logged in.")
+		fmt.Println("You are already logged in. Run `unweave logout` first for a fresh login")
 		return nil
 	}
 

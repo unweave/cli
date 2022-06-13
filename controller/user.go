@@ -12,6 +12,19 @@ import (
 )
 
 func (c *Controller) LoginWithToken(ctx context.Context, token string) error {
+	err := c.cfg.UpdateUserConfig(entity.UserConfig{
+		Token: token,
+	})
+	if err != nil {
+		return err
+	}
+
+	user, err := c.api.GetMe(ctx)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Logged in as: ", user.Email)
 	return nil
 }
 
