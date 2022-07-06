@@ -1,9 +1,10 @@
 package config
 
 import (
-	"github.com/unweave/cli/constants"
 	"os"
 	"path/filepath"
+
+	"github.com/unweave/cli/constants"
 )
 
 func getApiUrl() string {

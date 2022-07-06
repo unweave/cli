@@ -3,14 +3,15 @@ package controller
 import (
 	"context"
 	"fmt"
-	ignore "github.com/sabhiram/go-gitignore"
-	"github.com/unweave/cli/entity"
-	"github.com/unweave/cli/info"
-	"github.com/unweave/cli/pkg/compress"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+
+	ignore "github.com/sabhiram/go-gitignore"
+	"github.com/unweave/cli/info"
+	"github.com/unweave/cli/model"
+	"github.com/unweave/cli/pkg/compress"
 )
 
 const defaultGitIgnore = `
@@ -58,7 +59,7 @@ func (c *Controller) Run(ctx context.Context, command string) error {
 
 // gatherContext zips up the user's code and environment and write it to a buffer to be
 // uploaded to the server.
-func gatherContext(rootDir string) entity.GatherContextFunc {
+func gatherContext(rootDir string) model.GatherContextFunc {
 	giPath := filepath.Join(rootDir, ".gitignore")
 	lines := strings.Split(defaultGitIgnore, "\n")
 

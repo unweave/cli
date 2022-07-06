@@ -1,4 +1,4 @@
-package entity
+package model
 
 type ApiConfig struct {
 	ApiUrl       string `json:"unweaveApiUrl"`

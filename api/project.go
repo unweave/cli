@@ -2,13 +2,14 @@ package api
 
 import (
 	"context"
-	"github.com/unweave/cli/entity"
+
+	"github.com/unweave/cli/model"
 )
 
 func (a *Api) GetUserProject(ctx context.Context, projectID string) (
-	*entity.Project, error,
+	*model.Project, error,
 ) {
-	req, err := a.NewAuthorizedGqlRequest(entity.GetProjectQuery, struct {
+	req, err := a.NewAuthorizedGqlRequest(model.GetProjectQuery, struct {
 		ID string `json:"id"`
 	}{
 		ID: projectID,
@@ -18,7 +19,7 @@ func (a *Api) GetUserProject(ctx context.Context, projectID string) (
 	}
 
 	var resp struct {
-		Data entity.Project `json:"project"`
+		Data model.Project `json:"project"`
 	}
 	if err = a.ExecuteGql(ctx, req, &resp); err != nil {
 		return nil, err
@@ -26,14 +27,14 @@ func (a *Api) GetUserProject(ctx context.Context, projectID string) (
 	return &resp.Data, nil
 }
 
-func (a *Api) GetUserProjects(ctx context.Context) ([]*entity.Project, error) {
-	req, err := a.NewAuthorizedGqlRequest(entity.GetProjectsQuery, struct{}{})
+func (a *Api) GetUserProjects(ctx context.Context) ([]*model.Project, error) {
+	req, err := a.NewAuthorizedGqlRequest(model.GetProjectsQuery, struct{}{})
 	if err != nil {
 		return nil, err
 	}
 
 	var resp struct {
-		Data []*entity.Project `json:"projects"`
+		Data []*model.Project `json:"projects"`
 	}
 	if err = a.ExecuteGql(ctx, req, &resp); err != nil {
 		return nil, err

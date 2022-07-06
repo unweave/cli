@@ -3,13 +3,14 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/spf13/cobra"
-	"github.com/unweave/cli/entity"
 	"os"
 	"path/filepath"
+
+	"github.com/spf13/cobra"
+	"github.com/unweave/cli/model"
 )
 
-func (h *Handler) Link(ctx context.Context, cmd *entity.Command) error {
+func (h *Handler) Link(ctx context.Context, cmd *model.Command) error {
 	relPath := "."
 	pwd, err := os.Getwd()
 	if err != nil {
@@ -36,7 +37,7 @@ func LinkCmd(cmd *cobra.Command, args []string) error {
 	h := New()
 	ctx := context.Background()
 	cmd.SilenceUsage = true
-	return h.Link(ctx, &entity.Command{
+	return h.Link(ctx, &model.Command{
 		Cmd:  cmd,
 		Args: args,
 	})

@@ -3,7 +3,8 @@ package controller
 import (
 	"context"
 	"fmt"
-	"github.com/unweave/cli/entity"
+
+	"github.com/unweave/cli/model"
 )
 
 func (c *Controller) Link(ctx context.Context, projectID, path string) error {
@@ -12,7 +13,7 @@ func (c *Controller) Link(ctx context.Context, projectID, path string) error {
 		return err
 	}
 
-	config := entity.ProjectConfig{
+	config := model.ProjectConfig{
 		ID: project.ID,
 	}
 

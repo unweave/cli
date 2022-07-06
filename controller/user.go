@@ -4,15 +4,16 @@ import (
 	"context"
 	goErr "errors"
 	"fmt"
+	"time"
+
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/skratchdot/open-golang/open"
-	"github.com/unweave/cli/entity"
 	"github.com/unweave/cli/errors"
-	"time"
+	"github.com/unweave/cli/model"
 )
 
 func (c *Controller) LoginWithToken(ctx context.Context, token string) error {
-	err := c.cfg.UpdateUserConfig(entity.UserConfig{
+	err := c.cfg.UpdateUserConfig(model.UserConfig{
 		Token: token,
 	})
 	if err != nil {
@@ -74,7 +75,7 @@ func (c *Controller) LoginWithBrowser(ctx context.Context) error {
 		break
 	}
 
-	err = c.cfg.UpdateUserConfig(entity.UserConfig{
+	err = c.cfg.UpdateUserConfig(model.UserConfig{
 		Token: token,
 	})
 	if err != nil {
@@ -92,5 +93,5 @@ func (c *Controller) LoginWithBrowser(ctx context.Context) error {
 
 // Logout deletes the user's token from the config
 func (c *Controller) Logout(ctx context.Context) error {
-	return c.cfg.UpdateUserConfig(entity.UserConfig{})
+	return c.cfg.UpdateUserConfig(model.UserConfig{})
 }

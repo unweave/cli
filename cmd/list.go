@@ -3,11 +3,12 @@ package cmd
 import (
 	"context"
 	"fmt"
+
 	"github.com/spf13/cobra"
-	"github.com/unweave/cli/entity"
+	"github.com/unweave/cli/model"
 )
 
-func findLinkedPath(projects map[string]entity.ProjectConfig, projectID string) (
+func findLinkedPath(projects map[string]model.ProjectConfig, projectID string) (
 	string, bool,
 ) {
 	for path, project := range projects {
@@ -18,7 +19,7 @@ func findLinkedPath(projects map[string]entity.ProjectConfig, projectID string) 
 	return "", false
 }
 
-func (h *Handler) List(ctx context.Context, cmd *entity.Command) error {
+func (h *Handler) List(ctx context.Context, cmd *model.Command) error {
 	projects, err := h.ctrl.GetProjects(ctx)
 	if err != nil {
 		return err
@@ -43,7 +44,7 @@ func ListCmd(cmd *cobra.Command, args []string) error {
 	h := New()
 	ctx := context.Background()
 	cmd.SilenceUsage = true
-	return h.List(ctx, &entity.Command{
+	return h.List(ctx, &model.Command{
 		Cmd:  cmd,
 		Args: args,
 	})

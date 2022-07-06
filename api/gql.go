@@ -3,8 +3,9 @@ package api
 import (
 	"context"
 	"fmt"
-	"github.com/unweave/cli/pkg/graphql"
 	"reflect"
+
+	"github.com/unweave/cli/pkg/graphql"
 )
 
 // NewGqlRequest creates a new request for the GraphQL API and attaches the given
@@ -25,7 +26,9 @@ func (a *Api) NewGqlRequest(query string, vars interface{}) (*graphql.Request, e
 
 // NewAuthorizedGqlRequest extends NewGqlRequest by attaching authorization headers from
 // the user's config.
-func (a *Api) NewAuthorizedGqlRequest(query string, vars interface{}) (*graphql.Request, error) {
+func (a *Api) NewAuthorizedGqlRequest(query string, vars interface{}) (
+	*graphql.Request, error,
+) {
 	req, err := a.NewGqlRequest(query, vars)
 	if err != nil {
 		return nil, err

@@ -4,13 +4,14 @@ import (
 	"context"
 	goErr "errors"
 	"fmt"
-	"github.com/unweave/cli/entity"
+
 	"github.com/unweave/cli/errors"
+	"github.com/unweave/cli/model"
 	"github.com/unweave/cli/pkg/graphql"
 )
 
 // GetMe returns the current logged-in user
-func (a *Api) GetMe(ctx context.Context) (*entity.User, error) {
+func (a *Api) GetMe(ctx context.Context) (*model.User, error) {
 	vars := struct{}{}
 
 	isLoggedIn, err := a.cfg.IsLoggedIn()
@@ -22,13 +23,13 @@ func (a *Api) GetMe(ctx context.Context) (*entity.User, error) {
 		return nil, errors.NotLoggedInError
 	}
 
-	req, err := a.NewAuthorizedGqlRequest(entity.GetMeQuery, vars)
+	req, err := a.NewAuthorizedGqlRequest(model.GetMeQuery, vars)
 	if err != nil {
 		return nil, err
 	}
 
 	var resp struct {
-		User entity.User `json:"me"`
+		User model.User `json:"me"`
 	}
 
 	err = a.ExecuteGql(ctx, req, &resp)
@@ -42,13 +43,13 @@ func (a *Api) GetMe(ctx context.Context) (*entity.User, error) {
 // GeneratePairingCode generates a new auth code for a user to pair their CLI to their
 // account through the webapp.
 func (a *Api) GeneratePairingCode(ctx context.Context) (string, error) {
-	req, err := a.NewGqlRequest(entity.GeneratePairingCodeQuery, struct{}{})
+	req, err := a.NewGqlRequest(model.GeneratePairingCodeQuery, struct{}{})
 	if err != nil {
 		return "", err
 	}
 
 	var resp struct {
-		Data entity.GeneratePairingCode `json:"generatePairingCode"`
+		Data model.GeneratePairingCode `json:"generatePairingCode"`
 	}
 	if err = a.ExecuteGql(ctx, req, &resp); err != nil {
 		return "", err
@@ -73,14 +74,14 @@ func (a *Api) ExchangePairingCode(ctx context.Context, code string) (string, err
 	}{
 		Code: code,
 	}
-	req, err := a.NewGqlRequest(entity.ExchangePairingCodeQuery, vars)
+	req, err := a.NewGqlRequest(model.ExchangePairingCodeQuery, vars)
 	if err != nil {
 		return "", err
 	}
 
 	var resp struct {
-		Data   entity.ExchangePairingCode `json:"exchangePairingCode"`
-		Errors []GQLError                 `json:"errors"`
+		Data   model.ExchangePairingCode `json:"exchangePairingCode"`
+		Errors []GQLError                `json:"errors"`
 	}
 
 	var errs graphql.Errors
