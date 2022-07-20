@@ -3,11 +3,12 @@ package cmd
 import (
 	"context"
 	"fmt"
+
 	"github.com/spf13/cobra"
-	"github.com/unweave/cli/entity"
+	"github.com/unweave/cli/model"
 )
 
-func (h *Handler) CreateUserToken(ctx context.Context, cmd *entity.Command) error {
+func (h *Handler) CreateUserToken(ctx context.Context, cmd *model.Command) error {
 	token, err := h.ctrl.CreateUserToken(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to create new user token, %s", err)
@@ -18,7 +19,7 @@ func (h *Handler) CreateUserToken(ctx context.Context, cmd *entity.Command) erro
 	return nil
 }
 
-func (h *Handler) GetUserTokens(ctx context.Context, cmd *entity.Command) error {
+func (h *Handler) GetUserTokens(ctx context.Context, cmd *model.Command) error {
 	tokens, err := h.ctrl.GetUserTokens(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to fetch user tokens, %s", err)
@@ -34,7 +35,7 @@ func CreateUserTokenCmd(cmd *cobra.Command, args []string) error {
 	h := New()
 	ctx := context.Background()
 	cmd.SilenceUsage = true
-	return h.CreateUserToken(ctx, &entity.Command{
+	return h.CreateUserToken(ctx, &model.Command{
 		Args: args,
 		Cmd:  cmd,
 	})
@@ -44,7 +45,7 @@ func GetUserTokensCmd(cmd *cobra.Command, args []string) error {
 	h := New()
 	ctx := context.Background()
 	cmd.SilenceUsage = true
-	return h.GetUserTokens(ctx, &entity.Command{
+	return h.GetUserTokens(ctx, &model.Command{
 		Args: args,
 		Cmd:  cmd,
 	})

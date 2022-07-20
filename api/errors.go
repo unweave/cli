@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+
 	"github.com/unweave/cli/errors"
 	"github.com/unweave/cli/pkg/graphql"
 )

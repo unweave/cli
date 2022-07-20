@@ -1,4 +1,4 @@
-package entity
+package model
 
 import (
 	"io"
@@ -9,7 +9,7 @@ type Zepl struct {
 	Name          string `json:"name"`
 	Command       string `json:"command"`
 	ProcessorType string `json:"processorType"`
-	CurrentStatus string `json:"currentStatus"`
+	Status        string `json:"status"`
 }
 
 type GatherContextFunc func(w io.Writer) error
@@ -21,7 +21,7 @@ const InitZeplMutation = `
 			name
 			command
 			processorType
-			currentStatus
+			status
 		}
 	}
 `

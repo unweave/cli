@@ -5,10 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	goErr "github.com/pkg/errors"
 	"io"
 	"net/http"
 	"reflect"
+
+	goErr "github.com/pkg/errors"
 )
 
 type RestRequestType string

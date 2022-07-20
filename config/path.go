@@ -2,9 +2,10 @@ package config
 
 import (
 	"fmt"
-	"github.com/unweave/cli/info"
 	"os"
 	"path/filepath"
+
+	"github.com/unweave/cli/info"
 )
 
 func getAbsPath(path string) string {

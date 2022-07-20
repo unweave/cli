@@ -2,10 +2,11 @@ package config
 
 import (
 	"encoding/json"
-	"github.com/unweave/cli/entity"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/unweave/cli/model"
 )
 
 func createDir(path string) error {
@@ -18,7 +19,7 @@ func createDir(path string) error {
 }
 
 // ReadAndUnmarshal reads the config file and unmarshals it into the RootConfig struct
-func ReadAndUnmarshal(config *Config, rc *entity.RootConfig) error {
+func ReadAndUnmarshal(config *Config, rc *model.RootConfig) error {
 	buf, err := ioutil.ReadFile(config.Path)
 	if err != nil {
 		return err
@@ -28,7 +29,7 @@ func ReadAndUnmarshal(config *Config, rc *entity.RootConfig) error {
 
 // MarshalAndWrite marshals a RootConfig struct and writes it to disk. It reloads the
 // config variable after writing.
-func MarshalAndWrite(config *Config, rc *entity.RootConfig) error {
+func MarshalAndWrite(config *Config, rc *model.RootConfig) error {
 	if err := createDir(filepath.Dir(config.Path)); err != nil {
 		return err
 	}

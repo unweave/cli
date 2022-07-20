@@ -4,11 +4,12 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
-	ignore "github.com/sabhiram/go-gitignore"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	ignore "github.com/sabhiram/go-gitignore"
 )
 
 func Gzip(rootDir string, w io.Writer, ignore *ignore.GitIgnore) error {

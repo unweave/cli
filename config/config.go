@@ -3,17 +3,18 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/unweave/cli/constants"
-	"github.com/unweave/cli/entity"
 	"os"
+
+	"github.com/unweave/cli/constants"
+	"github.com/unweave/cli/model"
 )
 
 type Config struct {
-	Path    string             `json:"path"`
-	IsDebug bool               `json:"debug"`
-	Api     *entity.ApiConfig  `json:"api"`
-	Root    *entity.RootConfig `json:"root"`
-	Zepl    *entity.ZeplConfig `json:"zepl"`
+	Path    string            `json:"path"`
+	IsDebug bool              `json:"debug"`
+	Api     *model.ApiConfig  `json:"api"`
+	Root    *model.RootConfig `json:"root"`
+	Zepl    *model.ZeplConfig `json:"zepl"`
 }
 
 func (c *Config) IsLoggedIn() (bool, error) {
@@ -43,22 +44,22 @@ func (c *Config) ToJson() ([]byte, error) {
 
 func New() *Config {
 	// Init empty
-	rootCfg := entity.RootConfig{
-		User:     &entity.UserConfig{},
-		Projects: make(map[string]entity.ProjectConfig),
+	rootCfg := model.RootConfig{
+		User:     &model.UserConfig{},
+		Projects: make(map[string]model.ProjectConfig),
 	}
 
 	config := Config{
 		Path:    getConfigPath(),
 		IsDebug: false,
-		Api: &entity.ApiConfig{
+		Api: &model.ApiConfig{
 			ApiUrl:       getApiUrl(),
 			AppUrl:       getAppUrl(),
 			GqlUrl:       getGqlUrl(),
 			WorkbenchUrl: getWorkbenchUrl(),
 		},
 		Root: &rootCfg,
-		Zepl: &entity.ZeplConfig{
+		Zepl: &model.ZeplConfig{
 			IsGpu: IsGpu,
 		},
 	}

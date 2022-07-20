@@ -6,9 +6,10 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
-	"github.com/unweave/cli/entity"
 	"io"
 	"mime/multipart"
+
+	"github.com/unweave/cli/model"
 )
 
 func computeContentHash(r io.Reader) (string, error) {
@@ -21,9 +22,9 @@ func computeContentHash(r io.Reader) (string, error) {
 }
 
 func (a *Api) CreateZepl(ctx context.Context, projectID, command string) (
-	*entity.Zepl, error,
+	*model.Zepl, error,
 ) {
-	req, err := a.NewAuthorizedGqlRequest(entity.InitZeplMutation, struct {
+	req, err := a.NewAuthorizedGqlRequest(model.InitZeplMutation, struct {
 		ProjectID string `json:"projectID"`
 		Command   string `json:"command"`
 		Gpu       bool   `json:"gpu"`
@@ -38,7 +39,7 @@ func (a *Api) CreateZepl(ctx context.Context, projectID, command string) (
 	}
 
 	var resp struct {
-		Data entity.Zepl `json:"initZepl"`
+		Data model.Zepl `json:"initZepl"`
 	}
 	if err := a.ExecuteGql(ctx, req, &resp); err != nil {
 		return nil, err
@@ -46,7 +47,7 @@ func (a *Api) CreateZepl(ctx context.Context, projectID, command string) (
 	return &resp.Data, nil
 }
 
-func (a *Api) UploadZeplContext(ctx context.Context, zeplID string, gatherContext entity.GatherContextFunc) error {
+func (a *Api) UploadZeplContext(ctx context.Context, zeplID string, gatherContext model.GatherContextFunc) error {
 	buf := &bytes.Buffer{}
 	writer := multipart.NewWriter(buf)
 

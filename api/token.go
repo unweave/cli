@@ -2,17 +2,18 @@ package api
 
 import (
 	"context"
-	"github.com/unweave/cli/entity"
+
+	"github.com/unweave/cli/model"
 )
 
-func (a *Api) CreateUserToken(ctx context.Context) (*entity.UserToken, error) {
-	req, err := a.NewAuthorizedGqlRequest(entity.CreateUserTokenMutation, struct{}{})
+func (a *Api) CreateUserToken(ctx context.Context) (*model.UserToken, error) {
+	req, err := a.NewAuthorizedGqlRequest(model.CreateUserTokenMutation, struct{}{})
 	if err != nil {
 		return nil, err
 	}
 
 	var resp struct {
-		Data entity.UserToken `json:"createUserToken"`
+		Data model.UserToken `json:"createUserToken"`
 	}
 	if err = a.ExecuteGql(ctx, req, &resp); err != nil {
 		return nil, err
@@ -21,14 +22,14 @@ func (a *Api) CreateUserToken(ctx context.Context) (*entity.UserToken, error) {
 	return &resp.Data, nil
 }
 
-func (a *Api) GetUserTokens(ctx context.Context) ([]*entity.UserToken, error) {
-	req, err := a.NewAuthorizedGqlRequest(entity.GetUserTokensQuery, struct{}{})
+func (a *Api) GetUserTokens(ctx context.Context) ([]*model.UserToken, error) {
+	req, err := a.NewAuthorizedGqlRequest(model.GetUserTokensQuery, struct{}{})
 	if err != nil {
 		return nil, err
 	}
 
 	var resp struct {
-		Data []*entity.UserToken `json:"userTokens"`
+		Data []*model.UserToken `json:"userTokens"`
 	}
 	if err = a.ExecuteGql(ctx, req, &resp); err != nil {
 		return nil, err
