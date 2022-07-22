@@ -17,8 +17,7 @@ func (c *Controller) Link(ctx context.Context, projectID, path string) error {
 		ID: project.ID,
 	}
 
-	err = c.cfg.AddProject(path, config)
-	if err != nil {
+	if err = c.cfg.AddProject(path, config); err != nil {
 		return err
 	}
 	fmt.Printf("Linked project %s with ID %s to path %s\n", project.Name, project.ID, path)

@@ -59,7 +59,7 @@ func (c *Config) GetActiveProjectDir() (string, error) {
 func (c *Config) GetProjectIDFromPath(projectDir string) (string, error) {
 	cfg, ok := c.Root.Projects[projectDir]
 	if !ok {
-		return "", fmt.Errorf("no active project found")
+		return "", fmt.Errorf("no active project found: %q", projectDir)
 	}
 	return cfg.ID, nil
 }
