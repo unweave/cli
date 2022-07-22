@@ -38,7 +38,7 @@ func (c *Controller) Run(ctx context.Context, command string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Created zepl '%s' with ID '%s'\n", zepl.Name, zepl.ID)
+	fmt.Printf("Created zepl %q with ID %q\n", zepl.Name, zepl.ID)
 
 	// Walk the filesystem the repo root and zip up the files
 	gatherFunc := gatherContext(path)
