@@ -16,11 +16,8 @@ var (
 	groupManagement = "management"
 
 	rootCmd = &cobra.Command{
-		Use:   "unweave <command>",
-		Short: "Create serverless sessions to train your ML models",
-		Example: "unweave session create\n" +
-			"unweave ssh --sync-fs <session-id>\n" +
-			"unweave exec python train.py",
+		Use:           "unweave <command>",
+		Short:         "Create serverless sessions to train your ML models",
 		Args:          cobra.MinimumNArgs(0),
 		SilenceUsage:  false,
 		SilenceErrors: false,
@@ -47,10 +44,9 @@ func init() {
 	})
 
 	linkCmd := &cobra.Command{
-		Use:     "link",
+		Use:     "link [project-id]",
 		Short:   "Link your local directory to an Unweave project",
 		GroupID: groupManagement,
-		Example: "unweave link project-id",
 		Args:    cobra.ExactArgs(1),
 		RunE:    cmd.Link,
 	}

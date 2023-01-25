@@ -2,7 +2,6 @@ package config
 
 import (
 	_ "embed"
-	"text/template"
 
 	"github.com/google/uuid"
 	"github.com/pelletier/go-toml/v2"
@@ -50,35 +49,6 @@ type (
 	config struct {
 		Unweave *unweave `toml:"unweave"`
 		Project *project `toml:"project"`
-	}
-)
-
-var (
-	//go:embed templates/config.toml
-	configEmbed       string
-	configTemplate, _ = template.New("config.toml").Parse(configEmbed)
-
-	//go:embed templates/env.toml
-	envEmbed       string
-	envTemplate, _ = template.New("env.toml").Parse(envEmbed)
-
-	//go:embed templates/gitignore
-	gitignoreEmbed string
-
-	unweaveConfigPath = ""
-	projectConfigPath = ".unweave/config.toml"
-	envConfigPath     = ".unweave/env.toml"
-
-	Config = &config{
-		Unweave: &unweave{
-			ApiURL: "https://api.unweave.io",
-			AppURL: "https://app.unweave.io",
-			User:   &user{},
-		},
-		Project: &project{
-			Env:       &secrets{},
-			Providers: map[string]provider{},
-		},
 	}
 )
 

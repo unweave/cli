@@ -1,13 +1,44 @@
 package config
 
 import (
+	_ "embed"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"text/template"
 
 	"github.com/unweave/cli/ui"
 	"github.com/unweave/unweave/tools/gonfig"
+)
+
+var (
+	//go:embed templates/config.toml
+	configEmbed       string
+	configTemplate, _ = template.New("config.toml").Parse(configEmbed)
+
+	//go:embed templates/env.toml
+	envEmbed       string
+	envTemplate, _ = template.New("env.toml").Parse(envEmbed)
+
+	//go:embed templates/gitignore
+	gitignoreEmbed string
+
+	unweaveConfigPath = ""
+	projectConfigPath = "unweave/config.toml"
+	envConfigPath     = "unweave/env.toml"
+
+	Config = &config{
+		Unweave: &unweave{
+			ApiURL: "https://api.unweave.io",
+			AppURL: "https://app.unweave.io",
+			User:   &user{},
+		},
+		Project: &project{
+			Env:       &secrets{},
+			Providers: map[string]provider{},
+		},
+	}
 )
 
 // getActiveProjectPath returns the active project directory by recursively going up the
@@ -21,7 +52,7 @@ func getActiveProjectPath() (string, error) {
 
 	var walk func(path string)
 	walk = func(path string) {
-		dotUnw := filepath.Join(path, ".unweave")
+		dotUnw := filepath.Join(path, "unweave")
 		if _, err = os.Stat(dotUnw); err == nil {
 			if _, err = os.Stat(filepath.Join(dotUnw, "config.toml")); err == nil {
 				activeProjectDir = path
