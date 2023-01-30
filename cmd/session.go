@@ -52,26 +52,36 @@ func SessionCreate(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
+	ctx := cmd.Context()
 	uwc := InitUnweaveClient()
 	sshKeyName := tools.Stringy("")
 	sshPublicKey := tools.Stringy("")
 
+	// Use key name in request is provided, otherwise try reading public key from file
 	if config.SSHKeyName != "" {
 		sshKeyName = &config.SSHKeyName
-	} else if config.SSHKeyPath != "" {
+	} else {
+		if config.SSHKeyPath == "" {
+			newKey := ui.Confirm("No SSH key path provided. Do you want to generate a new SSH key", "n")
+			if !newKey {
+				fmt.Println("No SSH key path provided")
+				return nil
+			}
+
+			name, path, err := sshKeyGenerate(ctx, nil)
+			if err != nil {
+				return err
+			}
+			sshKeyName = &name
+			config.SSHKeyPath = path
+		}
+
 		f, err := os.ReadFile(config.SSHKeyPath)
 		if err != nil {
 			return err
 		}
 		s := string(f)
 		sshPublicKey = &s
-	} else {
-		newKey := ui.Confirm("No SSH key path provided. Do you want to generate a new SSH key", "n")
-		if !newKey {
-			fmt.Println("No SSH key path provided")
-			return nil
-		}
-		// Leave the sshKey fields empty to generate a new key
 	}
 
 	var err error
@@ -88,7 +98,7 @@ func SessionCreate(cmd *cobra.Command, args []string) error {
 		}
 
 		projectID := config.Config.Project.ID
-		session, err = uwc.Session.Create(cmd.Context(), projectID, params)
+		session, err = uwc.Session.Create(ctx, projectID, params)
 		if err == nil {
 			results := []ui.ResultEntry{
 				{Key: "ID", Value: session.ID.String()},

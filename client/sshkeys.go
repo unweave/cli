@@ -24,6 +24,19 @@ func (s *SSHKeyService) Add(ctx context.Context, params types.SSHKeyAddParams) e
 	return nil
 }
 
+func (s *SSHKeyService) Generate(ctx context.Context, params types.SSHKeyGenerateParams) (*types.SSHKeyGenerateResponse, error) {
+	uri := fmt.Sprintf("ssh-keys/generate")
+	req, err := s.client.NewAuthorizedRestRequest(Post, uri, nil, params)
+	if err != nil {
+		return nil, err
+	}
+	res := &types.SSHKeyGenerateResponse{}
+	if err = s.client.ExecuteRest(ctx, req, res); err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
 func (s *SSHKeyService) List(ctx context.Context) ([]types.SSHKey, error) {
 	uri := fmt.Sprintf("ssh-keys")
 	req, err := s.client.NewAuthorizedRestRequest(Get, uri, nil, nil)

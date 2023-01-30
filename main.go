@@ -144,7 +144,7 @@ func init() {
 	// SSH Key commands
 	sshKeyCmd := &cobra.Command{
 		Use:     "ssh-keys",
-		Short:   "Manage Unweave SSH keys: add | ls",
+		Short:   "Manage Unweave SSH keys: add | generate | ls",
 		GroupID: groupDev,
 		Args:    cobra.NoArgs,
 	}
@@ -153,6 +153,12 @@ func init() {
 		Short: "Add a new SSH key to Unweave",
 		Args:  cobra.RangeArgs(1, 2),
 		RunE:  cmd.SSHKeyAdd,
+	})
+	sshKeyCmd.AddCommand(&cobra.Command{
+		Use:   "generate [name]",
+		Short: "Generate a new SSH key and add it to Unweave",
+		Args:  cobra.RangeArgs(0, 1),
+		RunE:  cmd.SSHKeyGenerate,
 	})
 	sshKeyCmd.AddCommand(&cobra.Command{
 		Use:   "ls",
