@@ -31,8 +31,9 @@ func Login(cmd *cobra.Command, args []string) error {
 	}
 
 	authURL := config.Config.Unweave.AppURL + "/auth/pair?code=" + code
-	openBrowser := ui.Confirm("Do you want to open the browser to login?", "y")
+	openBrowser := ui.Confirm("Do you want to open the browser to login", "y")
 
+	ui.Attentionf("Auth Code: %s", code)
 	var openErr error
 	if openBrowser {
 		openErr = open.Run(authURL)

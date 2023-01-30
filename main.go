@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/muesli/reflow/wordwrap"
+	"github.com/skratchdot/open-golang/open"
 	"github.com/spf13/cobra"
 	"github.com/unweave/cli/cmd"
 	"github.com/unweave/cli/config"
@@ -69,6 +70,19 @@ func init() {
 		Hidden: true,
 	})
 
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "open",
+		Short: "Open the Unweave dashboard in your browser",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := open.Run(config.Config.Unweave.AppURL); err != nil {
+				ui.Errorf("Failed to open browser: %s", err)
+				os.Exit(1)
+			}
+			return nil
+		},
+		Args: cobra.NoArgs,
+	})
+
 	// Provider commands
 	providerCmd := &cobra.Command{
 		Use:     "provider",
@@ -88,7 +102,7 @@ func init() {
 
 	// Session commands
 	sessionCmd := &cobra.Command{
-		Use:     "sessions",
+		Use:     "session",
 		Short:   "Manage Unweave sessions: create | ls | terminate",
 		GroupID: groupDev,
 		Args:    cobra.NoArgs,
