@@ -15,8 +15,8 @@ type Error struct {
 }
 
 func (e *Error) Short() string {
-	str := fmt.Sprintf("%s API error: %s", e.Provider, e.Message)
-	return str
+	str := fmt.Sprintf("%s API error: %s", e.Provider.DisplayName(), e.Message)
+	return errorColor.Render(str)
 }
 
 func (e *Error) Verbose() string {

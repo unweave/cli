@@ -12,7 +12,7 @@ type ResultEntry struct {
 }
 
 func ResultTitle(title string) {
-	fmt.Println(title)
+	Successf(title)
 }
 
 func Result(entries []ResultEntry, indentation uint) {
@@ -29,5 +29,5 @@ func Result(entries []ResultEntry, indentation uint) {
 		str += fmt.Sprintf("%s:%*s%s\n", entry.Key, -padding, "", entry.Value)
 	}
 	str = indent.String(str, indentation)
-	fmt.Println(str)
+	Successf(str)
 }
