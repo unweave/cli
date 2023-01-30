@@ -40,7 +40,7 @@ func (e *Error) Verbose() string {
 		body += wordwrap.String(s, MaxOutputLineLength-IndentWidth)
 		body += "\n"
 	}
-	str := header + indent.String(body, IndentWidth)
+	str := errorColor.Render(header + indent.String(body, IndentWidth))
 	return str
 }
 

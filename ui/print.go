@@ -11,6 +11,7 @@ var (
 	attentionColor = lipgloss.NewStyle().Foreground(lipgloss.Color("#3377FF"))
 	successColor   = lipgloss.NewStyle().Foreground(lipgloss.Color("#3DB958"))
 	errorColor     = lipgloss.NewStyle().Foreground(lipgloss.Color("#E13251"))
+	warningColor   = lipgloss.NewStyle().Foreground(lipgloss.Color("#F5C237"))
 )
 
 func Attentionf(format string, a ...any) {
