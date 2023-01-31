@@ -58,9 +58,10 @@ func (s *SessionService) List(ctx context.Context, projectID uuid.UUID, listTerm
 	return res.Sessions, nil
 }
 
-func (s *SessionService) Terminate(ctx context.Context, projectID, sessionID uuid.UUID) error {
+func (s *SessionService) Terminate(ctx context.Context, projectID, sessionID uuid.UUID, token *string) error {
 	uri := fmt.Sprintf("projects/%s/sessions/%s/terminate", projectID, sessionID)
-	req, err := s.client.NewAuthorizedRestRequest(Put, uri, nil, nil)
+	params := types.SessionTerminateRequestParams{ProviderToken: token}
+	req, err := s.client.NewAuthorizedRestRequest(Put, uri, nil, params)
 	if err != nil {
 		return err
 	}

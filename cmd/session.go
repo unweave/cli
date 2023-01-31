@@ -192,6 +192,15 @@ func SessionTerminate(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
+	var providerToken *string
+	provider := config.Config.Project.DefaultProvider
+	if config.Provider != "" {
+		provider = config.Provider
+	}
+	if p, ok := config.Config.Project.Env.ProviderSecrets[provider]; ok {
+		providerToken = &p.ApiKey
+	}
+
 	confirm := ui.Confirm(fmt.Sprintf("Are you sure you want to terminate session %q", sessionID), "n")
 	if !confirm {
 		return nil
@@ -199,7 +208,7 @@ func SessionTerminate(cmd *cobra.Command, args []string) error {
 
 	uwc := InitUnweaveClient()
 	projectID := config.Config.Project.ID
-	err = uwc.Session.Terminate(cmd.Context(), projectID, sessionID)
+	err = uwc.Session.Terminate(cmd.Context(), projectID, sessionID, providerToken)
 	if err != nil {
 		var e *types.HTTPError
 		if errors.As(err, &e) {

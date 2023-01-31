@@ -20,7 +20,7 @@ func sshKeyAdd(ctx context.Context, publicKeyPath, name string) error {
 	}
 
 	uwc := InitUnweaveClient()
-	params := types.SSHKeyAddParams{
+	params := types.SSHKeyAddRequestParams{
 		Name:      &name,
 		PublicKey: string(publicKey),
 	}
@@ -49,7 +49,7 @@ func SSHKeyAdd(cmd *cobra.Command, args []string) error {
 
 func sshKeyGenerate(ctx context.Context, name *string) (string, string, error) {
 	uwc := InitUnweaveClient()
-	params := types.SSHKeyGenerateParams{Name: name}
+	params := types.SSHKeyGenerateRequestParams{Name: name}
 	res, err := uwc.SSHKey.Generate(ctx, params)
 	if err != nil {
 		return "", "", ui.HandleError(err)
