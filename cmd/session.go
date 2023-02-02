@@ -28,7 +28,6 @@ func SessionCreate(cmd *cobra.Command, args []string) error {
 
 	var region *string
 	var nodeTypeIDs []string
-	var providerToken *string
 
 	provider := config.Config.Project.DefaultProvider
 	if config.Provider != "" {
@@ -43,9 +42,6 @@ func SessionCreate(cmd *cobra.Command, args []string) error {
 	}
 	if config.NodeRegion != "" {
 		region = &config.NodeRegion
-	}
-	if p, ok := config.Config.Project.Env.ProviderSecrets[provider]; ok {
-		providerToken = &p.ApiKey
 	}
 
 	if len(nodeTypeIDs) == 0 {
@@ -91,13 +87,12 @@ func SessionCreate(cmd *cobra.Command, args []string) error {
 	var session *types.Session
 
 	for _, nodeTypeID := range nodeTypeIDs {
-		params := types.SessionCreateRequestParams{
-			Provider:      types.RuntimeProvider(config.Config.Project.DefaultProvider),
-			NodeTypeID:    nodeTypeID,
-			ProviderToken: providerToken,
-			Region:        region,
-			SSHKeyName:    sshKeyName,
-			SSHPublicKey:  sshPublicKey,
+		params := types.SessionCreateParams{
+			Provider:     types.RuntimeProvider(config.Config.Project.DefaultProvider),
+			NodeTypeID:   nodeTypeID,
+			Region:       region,
+			SSHKeyName:   sshKeyName,
+			SSHPublicKey: sshPublicKey,
 		}
 
 		projectID := config.Config.Project.ID
@@ -195,15 +190,6 @@ func SessionTerminate(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	var providerToken *string
-	provider := config.Config.Project.DefaultProvider
-	if config.Provider != "" {
-		provider = config.Provider
-	}
-	if p, ok := config.Config.Project.Env.ProviderSecrets[provider]; ok {
-		providerToken = &p.ApiKey
-	}
-
 	confirm := ui.Confirm(fmt.Sprintf("Are you sure you want to terminate session %q", sessionID), "n")
 	if !confirm {
 		return nil
@@ -211,7 +197,7 @@ func SessionTerminate(cmd *cobra.Command, args []string) error {
 
 	uwc := InitUnweaveClient()
 	projectID := config.Config.Project.ID
-	err = uwc.Session.Terminate(cmd.Context(), projectID, sessionID, providerToken)
+	err = uwc.Session.Terminate(cmd.Context(), projectID, sessionID)
 	if err != nil {
 		var e *types.HTTPError
 		if errors.As(err, &e) {

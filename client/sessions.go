@@ -12,7 +12,7 @@ type SessionService struct {
 	client *Client
 }
 
-func (s *SessionService) Create(ctx context.Context, projectID uuid.UUID, params types.SessionCreateRequestParams) (*types.Session, error) {
+func (s *SessionService) Create(ctx context.Context, projectID uuid.UUID, params types.SessionCreateParams) (*types.Session, error) {
 	uri := fmt.Sprintf("projects/%s/sessions", projectID)
 	req, err := s.client.NewAuthorizedRestRequest(Post, uri, nil, params)
 	if err != nil {
@@ -58,10 +58,9 @@ func (s *SessionService) List(ctx context.Context, projectID uuid.UUID, listTerm
 	return res.Sessions, nil
 }
 
-func (s *SessionService) Terminate(ctx context.Context, projectID, sessionID uuid.UUID, token *string) error {
+func (s *SessionService) Terminate(ctx context.Context, projectID, sessionID uuid.UUID) error {
 	uri := fmt.Sprintf("projects/%s/sessions/%s/terminate", projectID, sessionID)
-	params := types.SessionTerminateRequestParams{ProviderToken: token}
-	req, err := s.client.NewAuthorizedRestRequest(Put, uri, nil, params)
+	req, err := s.client.NewAuthorizedRestRequest(Put, uri, nil, nil)
 	if err != nil {
 		return err
 	}
