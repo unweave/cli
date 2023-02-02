@@ -164,6 +164,16 @@ func init() {
 
 func main() {
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
+	defer func() {
+		if r := recover(); r != nil {
+			// TODO: Send telemetry
+			ui.Errorf("Aw snap 😣 Something went wrong! %v", r)
+			os.Exit(1)
+		}
+	}()
+
+	config.Init()
+
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}

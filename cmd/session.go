@@ -100,6 +100,7 @@ func SessionCreate(cmd *cobra.Command, args []string) error {
 		if err == nil {
 			results := []ui.ResultEntry{
 				{Key: "ID", Value: session.ID.String()},
+				{Key: "Provider", Value: session.Provider.DisplayName()},
 				{Key: "Type", Value: session.NodeTypeID},
 				{Key: "Region", Value: session.Region},
 				{Key: "Status", Value: fmt.Sprintf("%s", session.Status)},

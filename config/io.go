@@ -37,7 +37,7 @@ func unmarshalDotEnv(path string, config interface{}) error {
 		}
 	}
 
-	configDataValue := reflect.ValueOf(&config).Elem()
+	configDataValue := reflect.ValueOf(config).Elem()
 	configDataType := configDataValue.Type()
 
 	for i := 0; i < configDataValue.NumField(); i++ {

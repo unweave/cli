@@ -74,7 +74,7 @@ func getActiveProjectPath() (string, error) {
 	return activeProjectDir, nil
 }
 
-func init() {
+func Init() {
 	// ----- ProjectConfig -----
 	envConfig := &secrets{}
 	projectConfig := &project{}
@@ -86,7 +86,7 @@ func init() {
 		if err = readAndUnmarshal(projectConfigPath, &projectConfig); err != nil {
 			ui.Infof("Failed to read project config at path %q", projectConfigPath)
 		}
-		if err = readAndUnmarshal(envConfigPath, &envConfig); err != nil {
+		if err = readAndUnmarshal(envConfigPath, envConfig); err != nil {
 			ui.Infof("Failed to read environment config at path %q", envConfigPath)
 		}
 	}
