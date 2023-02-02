@@ -84,21 +84,14 @@ func init() {
 	})
 
 	// Provider commands
-	providerCmd := &cobra.Command{
-		Use:     "provider",
-		Short:   "Manage providers",
-		GroupID: groupManagement,
-		Args:    cobra.NoArgs,
-	}
 	lsNodeType := &cobra.Command{
-		Use:   "list-node-types <provider>",
+		Use:   "ls-node-types <provider>",
 		Short: "List node types available on a provider",
 		Args:  cobra.ExactArgs(1),
 		RunE:  cmd.ProviderListNodeTypes,
 	}
 	lsNodeType.Flags().BoolVarP(&config.All, "all", "a", false, "Including out of capacity node types")
-	providerCmd.AddCommand(lsNodeType)
-	rootCmd.AddCommand(providerCmd)
+	rootCmd.AddCommand(lsNodeType)
 
 	// Session commands
 	sessionCmd := &cobra.Command{

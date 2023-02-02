@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 
 	"github.com/google/uuid"
@@ -78,10 +79,12 @@ func SessionCreate(cmd *cobra.Command, args []string) error {
 
 		f, err := os.ReadFile(config.SSHKeyPath)
 		if err != nil {
-			return err
+			ui.Errorf("Failed to read public key file: %s", err.Error())
+			os.Exit(1)
 		}
 		s := string(f)
 		sshPublicKey = &s
+		sshKeyName = tools.Stringy(filepath.Base(config.SSHKeyPath))
 	}
 
 	var err error
@@ -170,7 +173,7 @@ func SessionList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	cols := []ui.Column{{Title: "ID", Width: 20}, {Title: "Status", Width: 15}}
+	cols := []ui.Column{{Title: "ID", Width: 38}, {Title: "Status", Width: 15}}
 	rows := make([]ui.Row, len(sessions))
 
 	for idx, s := range sessions {
