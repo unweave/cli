@@ -10,22 +10,14 @@ import (
 
 type (
 	user struct {
-		Token string `toml:"token"`
-	}
-
-	sshkey struct {
-		Path string `toml:"path"`
-		Name string `toml:"name"`
-	}
-
-	providerSecrets struct {
-		ApiKey string `toml:"api_key"`
+		ID    uuid.UUID `toml:"id"`
+		Token string    `toml:"token"`
 	}
 
 	secrets struct {
-		Token           string                     `toml:"token" env:"UNWEAVE_PROJECT_TOKEN"`
-		SshKeys         []sshkey                   `toml:"ssh_keys"`
-		ProviderSecrets map[string]providerSecrets `toml:"provider_secrets"`
+		ProjectToken string `env:"UNWEAVE_PROJECT_TOKEN"`
+		SSHKeyPath   string `env:"UNWEAVE_SSH_KEY_PATH"`
+		SSHKeyName   string `env:"UNWEAVE_SSH_KEY_NAME"`
 	}
 
 	provider struct {

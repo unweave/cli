@@ -49,7 +49,7 @@ func WriteProjectConfig(projectID uuid.UUID, providers []string) error {
 
 func WriteEnvConfig() error {
 	buf := &bytes.Buffer{}
-	if err := envTemplate.Execute(buf, nil); err != nil {
+	if err := envTemplate.Execute(buf, Config.Project.Env); err != nil {
 		return err
 	}
 	dir := filepath.Dir(envConfigPath)

@@ -43,7 +43,9 @@ func Login(cmd *cobra.Command, args []string) error {
 		fmt.Println("Open the following URL in your browser to login: ", authURL)
 	}
 
-	var token, email string
+	var token string
+	var account *types.Account
+
 	sleep := time.Duration(2)
 	timeout := 5 * time.Minute
 	retryUntil := time.Now().Add(timeout)
@@ -55,7 +57,7 @@ func Login(cmd *cobra.Command, args []string) error {
 			return nil
 		}
 
-		token, email, err = uwc.Account.PairingTokenExchange(cmd.Context(), code)
+		token, account, err = uwc.Account.PairingTokenExchange(cmd.Context(), code)
 		if err != nil {
 			var e *types.HTTPError
 			if errors.As(err, &e) {
@@ -74,10 +76,11 @@ func Login(cmd *cobra.Command, args []string) error {
 	}
 
 	config.Config.Unweave.User.Token = token
+	config.Config.Unweave.User.ID = account.UserID
 	if err = config.Config.Unweave.Save(); err != nil {
 		return err
 	}
 
-	ui.Successf("Logged in as %q", email)
+	ui.Successf("Logged in as %q", account.Email)
 	return nil
 }

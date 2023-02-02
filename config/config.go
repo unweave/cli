@@ -17,16 +17,16 @@ var (
 	configEmbed       string
 	configTemplate, _ = template.New("config.toml").Parse(configEmbed)
 
-	//go:embed templates/env.toml
+	//go:embed templates/env
 	envEmbed       string
-	envTemplate, _ = template.New("env.toml").Parse(envEmbed)
+	envTemplate, _ = template.New("env").Parse(envEmbed)
 
 	//go:embed templates/gitignore
 	gitignoreEmbed string
 
 	unweaveConfigPath = ""
 	projectConfigPath = "unweave/config.toml"
-	envConfigPath     = "unweave/env.toml"
+	envConfigPath     = "unweave/.env"
 
 	Config = &config{
 		Unweave: &unweave{

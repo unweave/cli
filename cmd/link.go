@@ -11,6 +11,7 @@ import (
 
 func Link(cmd *cobra.Command, args []string) error {
 	cmd.SilenceUsage = true
+	ctx := cmd.Context()
 
 	projectID, err := uuid.Parse(args[0])
 	if err != nil {
@@ -19,18 +20,18 @@ func Link(cmd *cobra.Command, args []string) error {
 	}
 
 	uwc := InitUnweaveClient()
-	project, err := uwc.Account.ProjectGet(cmd.Context(), projectID)
+	project, err := uwc.Account.ProjectGet(ctx, projectID)
 	if err != nil {
 		return ui.HandleError(err)
 	}
 
-	account, err := uwc.Account.AccountGet(cmd.Context())
+	account, err := uwc.Account.AccountGet(ctx, config.Config.Unweave.User.ID)
 	if err != nil {
 		return ui.HandleError(err)
 	}
 
 	if config.IsProjectLinked() {
-		ui.Errorf("Project already linked. Delete the '.unweave' directory to unlink.")
+		ui.Errorf("Project already linked. Delete the 'unweave' directory to unlink.")
 		os.Exit(1)
 	}
 

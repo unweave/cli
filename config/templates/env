@@ -1,0 +1,10 @@
+# An auth token with the project scope. You should set this if you're using Unweave in CI
+# or in any other automation.
+UNWEAVE_PROJECT_TOKEN="{{.ProjectToken}}"
+
+# Path to the default SSH key to use
+UNWEAVE_SSH_KEY_PATH="{{.SSHKeyPath}}"
+# Alternatively, name of the SSH key registered in your Unweave account to use. If you're
+# using the Unweave CLI to ssh into a session, make sure you have the corresponding SSH
+# key-pair on your machine.
+UNWEAVE_SSH_KEY_NAME="{{.SSHKeyName}}"

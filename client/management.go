@@ -12,8 +12,8 @@ type AccountService struct {
 	client *Client
 }
 
-func (a *AccountService) AccountGet(ctx context.Context) (types.Account, error) {
-	uri := fmt.Sprintf("account")
+func (a *AccountService) AccountGet(ctx context.Context, accountID uuid.UUID) (types.Account, error) {
+	uri := fmt.Sprintf("account/%s", accountID)
 	req, err := a.client.NewAuthorizedRestRequest(Get, uri, nil, nil)
 	if err != nil {
 		return types.Account{}, err
@@ -38,17 +38,17 @@ func (a *AccountService) PairingTokenCreate(ctx context.Context) (code string, e
 	return res.Code, nil
 }
 
-func (a *AccountService) PairingTokenExchange(ctx context.Context, code string) (token, email string, err error) {
+func (a *AccountService) PairingTokenExchange(ctx context.Context, code string) (token string, account *types.Account, err error) {
 	uri := fmt.Sprintf("account/pair/%s", code)
 	req, err := a.client.NewAuthorizedRestRequest(Put, uri, nil, nil)
 	if err != nil {
-		return "", "", err
+		return "", nil, err
 	}
 	res := &types.PairingTokenExchangeResponse{}
 	if err = a.client.ExecuteRest(ctx, req, res); err != nil {
-		return "", "", err
+		return "", nil, err
 	}
-	return res.Token, res.Email, nil
+	return res.Token, &res.Account, nil
 }
 
 func (a *AccountService) ProjectGet(ctx context.Context, projectID uuid.UUID) (types.Project, error) {
