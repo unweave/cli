@@ -39,6 +39,16 @@ archives:
       386: i386
       amd64: x86_64
 
+nfpms:
+  - maintainer: Unweave
+    homepage: https://github.com/unweave/cli
+    description: Unweave CLI
+    license: Apache-2.0
+    formats:
+      - deb
+      - apk
+      - rpm
+
 checksum:
   name_template: 'checksums.txt'
 
