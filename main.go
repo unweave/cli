@@ -44,15 +44,15 @@ func init() {
 		},
 	})
 
-	linkCmd := &cobra.Command{
-		Use:     "link [project-id]",
-		Short:   "Link your local directory to an Unweave project",
+	initCmd := &cobra.Command{
+		Use:     "init [project-id]",
+		Short:   "Init a new project config in your local directory and link it to an Unweave project",
 		GroupID: groupManagement,
 		Args:    cobra.ExactArgs(1),
-		RunE:    cmd.Link,
+		RunE:    cmd.Init,
 	}
-	linkCmd.Flags().StringP("path", "p", "", "Path to the project directory")
-	rootCmd.AddCommand(linkCmd)
+	initCmd.Flags().StringP("path", "p", "", "Path to the project directory")
+	rootCmd.AddCommand(initCmd)
 
 	// Auth
 	loginCmd := &cobra.Command{

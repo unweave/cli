@@ -9,7 +9,7 @@ import (
 	"github.com/unweave/cli/ui"
 )
 
-func Link(cmd *cobra.Command, args []string) error {
+func Init(cmd *cobra.Command, args []string) error {
 	cmd.SilenceUsage = true
 	ctx := cmd.Context()
 
