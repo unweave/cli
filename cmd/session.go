@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -23,65 +24,11 @@ func dashIfZeroValue(v interface{}) interface{} {
 	return v
 }
 
-func SessionCreate(cmd *cobra.Command, args []string) error {
-	cmd.SilenceUsage = true
-
-	var region *string
-	var nodeTypeIDs []string
-
-	provider := config.Config.Project.DefaultProvider
-	if config.Provider != "" {
-		provider = config.Provider
-	}
-
-	if p, ok := config.Config.Project.Providers[provider]; ok {
-		nodeTypeIDs = p.NodeTypes
-	}
-	if len(config.NodeTypeID) != 0 {
-		nodeTypeIDs = []string{config.NodeTypeID}
-	}
-	if config.NodeRegion != "" {
-		region = &config.NodeRegion
-	}
-
-	if len(nodeTypeIDs) == 0 {
-		ui.Errorf("No node types specified")
-		return nil
-	}
-
-	ctx := cmd.Context()
+// iterateSessionCreateNodeTypes attempts to create a session using the node types provided
+// until the first successful creation. If none of the node types are successful, it
+// returns 503 out of capacity error.
+func iterateSessionCreateNodeTypes(ctx context.Context, nodeTypeIDs []string, region, sshKeyName, sshPublicKey *string) (uuid.UUID, error) {
 	uwc := InitUnweaveClient()
-	sshKeyName := tools.Stringy("")
-	sshPublicKey := tools.Stringy("")
-
-	// Use key name in request is provided, otherwise try reading public key from file
-	if config.SSHKeyName != "" {
-		sshKeyName = &config.SSHKeyName
-	} else {
-		if config.SSHKeyPath == "" {
-			newKey := ui.Confirm("No SSH key path provided. Do you want to generate a new SSH key", "n")
-			if !newKey {
-				fmt.Println("No SSH key path provided")
-				return nil
-			}
-
-			name, path, err := sshKeyGenerate(ctx, nil)
-			if err != nil {
-				return err
-			}
-			sshKeyName = &name
-			config.SSHKeyPath = path
-		}
-
-		f, err := os.ReadFile(config.SSHKeyPath)
-		if err != nil {
-			ui.Errorf("Failed to read public key file: %s", err.Error())
-			os.Exit(1)
-		}
-		s := string(f)
-		sshPublicKey = &s
-		sshKeyName = tools.Stringy(filepath.Base(config.SSHKeyPath))
-	}
 
 	var err error
 	var session *types.Session
@@ -109,28 +56,90 @@ func SessionCreate(cmd *cobra.Command, args []string) error {
 
 			ui.ResultTitle("Session Created:")
 			ui.Result(results, ui.IndentWidth)
-			return nil
+			return session.ID, nil
 		}
 
 		if err != nil {
 			var e *types.HTTPError
 			if errors.As(err, &e) {
-				// If error 503, it's mostly likely an out of capacity error. Try and marshal,
-				// the error message into the list of available instances.
+				// If error 503, it's mostly likely an out of capacity error. Continue to
+				// next node type.
 				if e.Code == 503 {
 					continue
 				}
 				uie := &ui.Error{HTTPError: e}
 				fmt.Println(uie.Verbose())
-				os.Exit(1)
+				return uuid.Nil, e
 			}
 		}
 	}
+	// Return the last error - which will be a 503 if it's an out of capacity error.
+	return uuid.Nil, err
+}
 
+func sessionCreate(ctx context.Context) (uuid.UUID, error) {
+	var region *string
+	var nodeTypeIDs []string
+
+	provider := config.Config.Project.DefaultProvider
+	if config.Provider != "" {
+		provider = config.Provider
+	}
+
+	if p, ok := config.Config.Project.Providers[provider]; ok {
+		nodeTypeIDs = p.NodeTypes
+	}
+	if len(config.NodeTypeID) != 0 {
+		nodeTypeIDs = []string{config.NodeTypeID}
+	}
+	if config.NodeRegion != "" {
+		region = &config.NodeRegion
+	}
+
+	if len(nodeTypeIDs) == 0 {
+		ui.Errorf("No node types specified")
+		return uuid.Nil, fmt.Errorf("no node types specified")
+	}
+
+	sshKeyName := tools.Stringy("")
+	sshPublicKey := tools.Stringy("")
+
+	// Use key name in request is provided, otherwise try reading public key from file
+	if config.SSHKeyName != "" {
+		sshKeyName = &config.SSHKeyName
+	} else {
+		if config.SSHKeyPath == "" {
+			newKey := ui.Confirm("No SSH key path provided. Do you want to generate a new SSH key", "n")
+			if !newKey {
+				ui.Errorf("No SSH key path provided")
+				return uuid.Nil, fmt.Errorf("no ssh key path provided")
+			}
+
+			name, path, err := sshKeyGenerate(ctx, nil)
+			if err != nil {
+				return uuid.Nil, err
+			}
+			sshKeyName = &name
+			config.SSHKeyPath = path
+		}
+
+		f, err := os.ReadFile(config.SSHKeyPath)
+		if err != nil {
+			ui.Errorf("Failed to read public key file: %s", err.Error())
+			os.Exit(1)
+		}
+		s := string(f)
+		sshPublicKey = &s
+		sshKeyName = tools.Stringy(filepath.Base(config.SSHKeyPath))
+	}
+
+	sessionID, err := iterateSessionCreateNodeTypes(ctx, nodeTypeIDs, region, sshKeyName, sshPublicKey)
 	if err != nil {
 		var e *types.HTTPError
 		if errors.As(err, &e) {
 			if e.Code == 503 {
+				// It's mostly likely an out of capacity error. Try to marshal the response
+				// into a list of available node types.
 				var nodeTypes []types.NodeType
 				if err = json.Unmarshal([]byte(e.Suggestion), &nodeTypes); err == nil {
 					cols, rows := nodeTypesToTable(nodeTypes)
@@ -143,11 +152,20 @@ func SessionCreate(cmd *cobra.Command, args []string) error {
 			}
 			uie := &ui.Error{HTTPError: e}
 			fmt.Println(uie.Verbose())
-			os.Exit(1)
+			return uuid.Nil, e
 		}
-		return err
+		return uuid.Nil, err
 	}
 
+	return sessionID, nil
+}
+
+func SessionCreateCmd(cmd *cobra.Command, args []string) error {
+	cmd.SilenceUsage = true
+	if _, err := sessionCreate(cmd.Context()); err != nil {
+		os.Exit(1)
+		return nil
+	}
 	return nil
 }
 

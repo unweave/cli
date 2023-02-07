@@ -107,7 +107,7 @@ func init() {
 		Long: wordwrap.String("Create a new Unweave session. If no region is provided,"+
 			"the first available one will be selected.", ui.MaxOutputLineLength),
 		Args: cobra.NoArgs,
-		RunE: cmd.SessionCreate,
+		RunE: cmd.SessionCreateCmd,
 	}
 	createCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
 	createCmd.Flags().StringVar(&config.NodeTypeID, "type", "", "Node type to use, eg. `gpu_1x_a100`")
