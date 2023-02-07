@@ -11,6 +11,7 @@ import (
 type (
 	user struct {
 		ID    uuid.UUID `toml:"id"`
+		Email string    `toml:"email"`
 		Token string    `toml:"token"`
 	}
 

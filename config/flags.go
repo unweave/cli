@@ -20,8 +20,14 @@ var ProjectPath = ""
 // Provider is the provider to use when executing a request
 var Provider = ""
 
-// SSHKeyPath is the path to the SSH public key to use to connect to a new or existing Session.
-var SSHKeyPath = ""
+// SSHPrivateKeyPath is the path to the SSH public key to use to connect to a new or existing Session.
+var SSHPrivateKeyPath = ""
+
+// SSHPublicKeyPath is the path to the SSH public key to use to connect to a new or existing Session.
+var SSHPublicKeyPath = ""
 
 // SSHKeyName is the name of the SSH Key already configured in Unweave to use for a new or existing Session.
 var SSHKeyName = ""
+
+// CreateSession is used to denote whether to create a new session when running commands that require a session.
+var CreateSession = true

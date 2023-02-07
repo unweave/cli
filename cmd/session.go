@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -77,6 +78,57 @@ func iterateSessionCreateNodeTypes(ctx context.Context, nodeTypeIDs []string, re
 	return uuid.Nil, err
 }
 
+func setupSSHKey(ctx context.Context) (string, []byte, error) {
+	if config.SSHKeyName != "" {
+		return config.SSHKeyName, nil, nil
+	}
+
+	user := strings.Split(config.Config.Unweave.User.Email, "@")[0]
+	rsaPubGenName := fmt.Sprintf("uw:gen_%s_id_rsa", user)
+
+	if config.SSHPrivateKeyPath != "" {
+		name, pub, err := sshKeyGenerateFromRSA(ctx, rsaPubGenName, config.SSHPrivateKeyPath)
+		if err != nil {
+			return "", nil, err
+		}
+		return name, pub, nil
+	}
+
+	// No key details provided, prompt user to generate new key
+
+	options := []string{
+		"Generate new public key from id_rsa",
+		"Generate new ssh keypair and save as .pem",
+	}
+
+	idx, err := ui.Select("No SSH key path provided. Do you want to generate a new SSH key", options)
+	if err != nil {
+		ui.Errorf("No SSH key path provided")
+		return "", nil, fmt.Errorf("no ssh key path provided")
+	}
+
+	if idx == 0 {
+		// Find id_rsa in ~/.ssh
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", nil, err
+		}
+		path := filepath.Join(home, ".ssh", "id_rsa")
+		name, pub, err := sshKeyGenerateFromRSA(ctx, rsaPubGenName, path)
+		if err != nil {
+			return "", nil, err
+		}
+		return name, pub, nil
+	}
+
+	name, pub, err := sshKeyGenerate(ctx, nil)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return name, pub, nil
+}
+
 func sessionCreate(ctx context.Context) (uuid.UUID, error) {
 	var region *string
 	var nodeTypeIDs []string
@@ -101,37 +153,13 @@ func sessionCreate(ctx context.Context) (uuid.UUID, error) {
 		return uuid.Nil, fmt.Errorf("no node types specified")
 	}
 
-	sshKeyName := tools.Stringy("")
-	sshPublicKey := tools.Stringy("")
-
-	// Use key name in request is provided, otherwise try reading public key from file
-	if config.SSHKeyName != "" {
-		sshKeyName = &config.SSHKeyName
-	} else {
-		if config.SSHKeyPath == "" {
-			newKey := ui.Confirm("No SSH key path provided. Do you want to generate a new SSH key", "n")
-			if !newKey {
-				ui.Errorf("No SSH key path provided")
-				return uuid.Nil, fmt.Errorf("no ssh key path provided")
-			}
-
-			name, path, err := sshKeyGenerate(ctx, nil)
-			if err != nil {
-				return uuid.Nil, err
-			}
-			sshKeyName = &name
-			config.SSHKeyPath = path
-		}
-
-		f, err := os.ReadFile(config.SSHKeyPath)
-		if err != nil {
-			ui.Errorf("Failed to read public key file: %s", err.Error())
-			os.Exit(1)
-		}
-		s := string(f)
-		sshPublicKey = &s
-		sshKeyName = tools.Stringy(filepath.Base(config.SSHKeyPath))
+	name, pub, err := setupSSHKey(ctx)
+	if err != nil {
+		return uuid.Nil, err
 	}
+
+	sshKeyName := &name
+	sshPublicKey := tools.Stringy(string(pub))
 
 	sessionID, err := iterateSessionCreateNodeTypes(ctx, nodeTypeIDs, region, sshKeyName, sshPublicKey)
 	if err != nil {

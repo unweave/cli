@@ -1,10 +1,13 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -13,7 +16,7 @@ import (
 	"github.com/unweave/unweave/tools"
 )
 
-func sshKeyAdd(ctx context.Context, publicKeyPath, name string) error {
+func sshKeyAdd(ctx context.Context, publicKeyPath string, name string) error {
 	publicKey, err := os.ReadFile(publicKeyPath)
 	if err != nil {
 		return fmt.Errorf("failed reading public key file: %v", err)
@@ -47,39 +50,90 @@ func SSHKeyAdd(cmd *cobra.Command, args []string) error {
 	return sshKeyAdd(cmd.Context(), publicKeyPath, name)
 }
 
-func sshKeyGenerate(ctx context.Context, name *string) (string, string, error) {
+func sshKeyGenerate(ctx context.Context, name *string) (keyName string, pub []byte, err error) {
 	uwc := InitUnweaveClient()
 	params := types.SSHKeyGenerateParams{Name: name}
 	res, err := uwc.SSHKey.Generate(ctx, params)
 	if err != nil {
-		return "", "", ui.HandleError(err)
+		return "", nil, ui.HandleError(err)
 	}
 
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return "", "", err
+		return "", nil, err
 	}
 
+	prv := []byte(res.PrivateKey)
+	pub = []byte(res.PublicKey)
 	dotSSHPath := filepath.Join(home, ".ssh")
 	publicKeyPath := filepath.Join(dotSSHPath, res.Name+".pub")
 	privateKeyPath := filepath.Join(dotSSHPath, res.Name+".pem")
 
-	if err = os.WriteFile(privateKeyPath, []byte(res.PrivateKey), 0600); err != nil {
+	if err = os.WriteFile(privateKeyPath, prv, 0600); err != nil {
 		ui.Errorf("Failed to write private key to %s: %v", privateKeyPath, err)
 		os.Exit(1)
-		return "", "", nil
+		return "", nil, nil
 	}
-	if err = os.WriteFile(publicKeyPath, []byte(res.PublicKey), 0600); err != nil {
+	if err = os.WriteFile(publicKeyPath, pub, 0600); err != nil {
 		ui.Errorf("Failed to write public key to %s: %v", publicKeyPath, err)
 		os.Exit(1)
-		return "", "", nil
+		return "", nil, nil
 	}
 	ui.Attentionf("Created new SSH key pair:\n"+
 		"  Name: %s\n"+
 		"  Path: %s\n",
 		res.Name, publicKeyPath)
 
-	return res.Name, publicKeyPath, nil
+	return res.Name, pub, nil
+}
+
+func sshKeyGenerateFromRSA(ctx context.Context, name string, path string) (keyName string, pub []byte, err error) {
+	filename := filepath.Base(path)
+	if filename != "id_rsa" {
+		ui.Errorf("Invalid RSA private key filename: %s. Only ida_rsa is supported", filename)
+		return "", nil, fmt.Errorf("invalid RSA private key filename: %s", filename)
+	}
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		ui.Errorf("Private key not found: %s", path)
+		return "", nil, fmt.Errorf("private key not found: %s", path)
+	}
+
+	command := []string{
+		"ssh-keygen",
+		"-y",
+		"-f",
+		path,
+	}
+
+	cmd := exec.Command(command[0], command[1:]...)
+	cmd.Stderr = os.Stderr
+
+	stdoutPipe, err := cmd.StdoutPipe()
+	if err != nil {
+		return "", nil, err
+	}
+	if err = cmd.Start(); err != nil {
+		return "", nil, err
+	}
+	var stdout bytes.Buffer
+	_, err = io.Copy(&stdout, stdoutPipe)
+	if err = cmd.Wait(); err != nil {
+		return "", nil, err
+	}
+	output := stdout.String()
+	pub = []byte(output)
+
+	if err = os.WriteFile(path+".pub", pub, 0600); err != nil {
+		ui.Attentionf("Could not write public key to file.")
+	}
+
+	ui.Infof("Generated public key from private key at path: %s", path)
+
+	if err = sshKeyAdd(ctx, path+".pub", name); err != nil {
+		return "", nil, err
+	}
+	return name, pub, nil
 }
 
 func SSHKeyGenerate(cmd *cobra.Command, args []string) error {

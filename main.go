@@ -112,8 +112,8 @@ func init() {
 	createCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
 	createCmd.Flags().StringVar(&config.NodeTypeID, "type", "", "Node type to use, eg. `gpu_1x_a100`")
 	createCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
-	createCmd.Flags().StringVarP(&config.SSHKeyName, "ssh-key", "k", "", "Name of the SSH key to use for the session")
-	createCmd.Flags().StringVar(&config.SSHKeyPath, "ssh-key-path", "", "Absolute Path to the SSH public key to use")
+	createCmd.Flags().StringVarP(&config.SSHKeyName, "key", "k", "", "Name of the SSH key to use for the session")
+	createCmd.Flags().StringVar(&config.SSHPublicKeyPath, "pub", "", "Path to the SSH public key to use")
 	sessionCmd.AddCommand(createCmd)
 
 	lsCmd := &cobra.Command{

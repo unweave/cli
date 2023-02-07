@@ -4,14 +4,14 @@ import (
 	"github.com/manifoldco/promptui"
 )
 
-func Select(label string, items []string) (int, error) {
+func Select(label string, options []string) (int, error) {
 	prompt := promptui.Select{
 		Label: label,
-		Items: items,
+		Items: options,
 	}
 	idx, _, err := prompt.Run()
 	if err != nil {
-		return 0, err
+		return -1, err
 	}
 	return idx, nil
 }
