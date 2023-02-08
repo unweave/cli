@@ -77,6 +77,7 @@ func Login(cmd *cobra.Command, args []string) error {
 
 	config.Config.Unweave.User.Token = token
 	config.Config.Unweave.User.ID = account.UserID
+	config.Config.Unweave.User.Email = account.Email
 	if err = config.Config.Unweave.Save(); err != nil {
 		return err
 	}
