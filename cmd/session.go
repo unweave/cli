@@ -28,7 +28,7 @@ func dashIfZeroValue(v interface{}) interface{} {
 // iterateSessionCreateNodeTypes attempts to create a session using the node types provided
 // until the first successful creation. If none of the node types are successful, it
 // returns 503 out of capacity error.
-func iterateSessionCreateNodeTypes(ctx context.Context, nodeTypeIDs []string, region, sshKeyName, sshPublicKey *string) (uuid.UUID, error) {
+func iterateSessionCreateNodeTypes(ctx context.Context, provider string, nodeTypeIDs []string, region, sshKeyName, sshPublicKey *string) (uuid.UUID, error) {
 	uwc := InitUnweaveClient()
 
 	var err error
@@ -36,7 +36,7 @@ func iterateSessionCreateNodeTypes(ctx context.Context, nodeTypeIDs []string, re
 
 	for _, nodeTypeID := range nodeTypeIDs {
 		params := types.SessionCreateParams{
-			Provider:     types.RuntimeProvider(config.Config.Project.DefaultProvider),
+			Provider:     types.RuntimeProvider(provider),
 			NodeTypeID:   nodeTypeID,
 			Region:       region,
 			SSHKeyName:   sshKeyName,
@@ -68,9 +68,7 @@ func iterateSessionCreateNodeTypes(ctx context.Context, nodeTypeIDs []string, re
 				if e.Code == 503 {
 					continue
 				}
-				uie := &ui.Error{HTTPError: e}
-				fmt.Println(uie.Verbose())
-				return uuid.Nil, e
+				return uuid.Nil, &ui.Error{HTTPError: e}
 			}
 		}
 	}
@@ -85,6 +83,20 @@ func setupSSHKey(ctx context.Context) (string, []byte, error) {
 
 	user := strings.Split(config.Config.Unweave.User.Email, "@")[0]
 	rsaPubGenName := fmt.Sprintf("uw:gen_%s_id_rsa", user)
+
+	if config.SSHPublicKeyPath != "" {
+		// read public key from file
+		pub, err := os.ReadFile(config.SSHPublicKeyPath)
+		if err != nil {
+			return "", nil, err
+		}
+		name := filepath.Base(config.SSHPublicKeyPath)
+
+		if name == "id_rsa.pub" {
+			name = fmt.Sprintf("%s_id_rsa", user)
+		}
+		return name, pub, nil
+	}
 
 	if config.SSHPrivateKeyPath != "" {
 		name, pub, err := sshKeyGenerateFromRSA(ctx, rsaPubGenName, config.SSHPrivateKeyPath)
@@ -161,7 +173,7 @@ func sessionCreate(ctx context.Context) (uuid.UUID, error) {
 	sshKeyName := &name
 	sshPublicKey := tools.Stringy(string(pub))
 
-	sessionID, err := iterateSessionCreateNodeTypes(ctx, nodeTypeIDs, region, sshKeyName, sshPublicKey)
+	sessionID, err := iterateSessionCreateNodeTypes(ctx, provider, nodeTypeIDs, region, sshKeyName, sshPublicKey)
 	if err != nil {
 		var e *types.HTTPError
 		if errors.As(err, &e) {
