@@ -227,11 +227,23 @@ func SessionList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	cols := []ui.Column{{Title: "ID", Width: 38}, {Title: "Status", Width: 15}}
+	cols := []ui.Column{
+		{Title: "ID", Width: 38},
+		{Title: "Status", Width: 15},
+		{Title: "Connection String", Width: 20},
+	}
 	rows := make([]ui.Row, len(sessions))
 
 	for idx, s := range sessions {
-		row := ui.Row{fmt.Sprintf("%s", s.ID), fmt.Sprintf("%s", s.Status)}
+		conn := "-"
+		if s.Connection != nil && s.Connection.Host != "" {
+			conn = fmt.Sprintf("%s@%s", s.Connection.User, s.Connection.Host)
+		}
+		row := ui.Row{
+			fmt.Sprintf("%s", s.ID),
+			fmt.Sprintf("%s", s.Status),
+			conn,
+		}
 		rows[idx] = row
 	}
 
