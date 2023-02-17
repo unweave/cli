@@ -68,7 +68,7 @@ func iterateSessionCreateNodeTypes(ctx context.Context, provider string, nodeTyp
 				if e.Code == 503 {
 					continue
 				}
-				return uuid.Nil, &ui.Error{HTTPError: e}
+				return uuid.Nil, err
 			}
 		}
 	}
