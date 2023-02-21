@@ -120,11 +120,11 @@ func (c *Client) ExecuteRest(ctx context.Context, req *RestRequest, resp interfa
 		return fmt.Errorf("status %s, fail to read response body", res.Status)
 	}
 	if res.StatusCode < 200 || res.StatusCode >= 400 {
-		var errResp types.HTTPError
+		var errResp types.Error
 		if err = json.NewDecoder(&buf).Decode(&errResp); err != nil {
 			return fmt.Errorf("status %s, fail to decode response body", res.Status)
 		}
-		return &types.HTTPError{
+		return &types.Error{
 			Code:       errResp.Code,
 			Message:    errResp.Message,
 			Suggestion: errResp.Suggestion,

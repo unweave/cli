@@ -20,7 +20,7 @@ func Login(cmd *cobra.Command, args []string) error {
 	uwc := InitUnweaveClient()
 	code, err := uwc.Account.PairingTokenCreate(cmd.Context())
 	if err != nil {
-		var e *types.HTTPError
+		var e *types.Error
 		if errors.As(err, &e) {
 			uie := &ui.Error{HTTPError: e}
 			fmt.Println(uie.Verbose())
@@ -59,7 +59,7 @@ func Login(cmd *cobra.Command, args []string) error {
 
 		token, account, err = uwc.Account.PairingTokenExchange(cmd.Context(), code)
 		if err != nil {
-			var e *types.HTTPError
+			var e *types.Error
 			if errors.As(err, &e) {
 				if e.Code == http.StatusUnauthorized {
 					time.Sleep(sleep * time.Second)

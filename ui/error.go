@@ -11,7 +11,7 @@ import (
 )
 
 type Error struct {
-	*types.HTTPError
+	*types.Error
 }
 
 func (e *Error) Short() string {
@@ -45,7 +45,7 @@ func (e *Error) Verbose() string {
 }
 
 func HandleError(err error) error {
-	var e *types.HTTPError
+	var e *types.Error
 	if errors.As(err, &e) {
 		if e.Code == 401 {
 			fmt.Println("Unauthorized. Please login with `unweave login`")

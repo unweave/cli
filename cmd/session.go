@@ -61,7 +61,7 @@ func iterateSessionCreateNodeTypes(ctx context.Context, provider string, nodeTyp
 		}
 
 		if err != nil {
-			var e *types.HTTPError
+			var e *types.Error
 			if errors.As(err, &e) {
 				// If error 503, it's mostly likely an out of capacity error. Continue to
 				// next node type.
@@ -175,7 +175,7 @@ func sessionCreate(ctx context.Context) (uuid.UUID, error) {
 
 	sessionID, err := iterateSessionCreateNodeTypes(ctx, provider, nodeTypeIDs, region, sshKeyName, sshPublicKey)
 	if err != nil {
-		var e *types.HTTPError
+		var e *types.Error
 		if errors.As(err, &e) {
 			if e.Code == 503 {
 				// It's mostly likely an out of capacity error. Try to marshal the response
@@ -218,7 +218,7 @@ func SessionList(cmd *cobra.Command, args []string) error {
 	projectID := config.Config.Project.ID
 	sessions, err := uwc.Session.List(cmd.Context(), projectID, listTerminated)
 	if err != nil {
-		var e *types.HTTPError
+		var e *types.Error
 		if errors.As(err, &e) {
 			uie := &ui.Error{HTTPError: e}
 			fmt.Println(uie.Verbose())
@@ -270,7 +270,7 @@ func SessionTerminate(cmd *cobra.Command, args []string) error {
 	projectID := config.Config.Project.ID
 	err = uwc.Session.Terminate(cmd.Context(), projectID, sessionID)
 	if err != nil {
-		var e *types.HTTPError
+		var e *types.Error
 		if errors.As(err, &e) {
 			uie := &ui.Error{HTTPError: e}
 			fmt.Println(uie.Verbose())

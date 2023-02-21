@@ -29,7 +29,7 @@ func sshKeyAdd(ctx context.Context, publicKeyPath string, name string) error {
 	}
 
 	if err = uwc.SSHKey.Add(ctx, params); err != nil {
-		var e *types.HTTPError
+		var e *types.Error
 		if errors.As(err, &e) {
 			uie := &ui.Error{HTTPError: e}
 			fmt.Println(uie.Verbose())
@@ -154,7 +154,7 @@ func SSHKeyList(cmd *cobra.Command, args []string) error {
 
 	entries, err := uwc.SSHKey.List(ctx)
 	if err != nil {
-		var e *types.HTTPError
+		var e *types.Error
 		if errors.As(err, &e) {
 			uie := &ui.Error{HTTPError: e}
 			fmt.Println(uie.Verbose())
