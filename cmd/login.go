@@ -22,7 +22,7 @@ func Login(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		var e *types.Error
 		if errors.As(err, &e) {
-			uie := &ui.Error{HTTPError: e}
+			uie := &ui.Error{Error: e}
 			fmt.Println(uie.Verbose())
 			os.Exit(1)
 			return nil
@@ -65,7 +65,7 @@ func Login(cmd *cobra.Command, args []string) error {
 					time.Sleep(sleep * time.Second)
 					continue
 				}
-				uie := &ui.Error{HTTPError: e}
+				uie := &ui.Error{Error: e}
 				fmt.Println(uie.Verbose())
 				os.Exit(1)
 				return nil

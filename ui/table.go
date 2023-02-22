@@ -21,9 +21,18 @@ func Table(title string, cols []Column, rows []Row) {
 	header := ""
 	body := ""
 
-	for _, col := range cols {
-		totalWidth += col.Width
-		header += fmt.Sprintf(" %-*s", -col.Width, col.Title)
+	for idx, col := range cols {
+		if col.Width == -1 {
+			// Use the widest row in the column
+			for _, row := range rows {
+				if len(row[idx]) > cols[idx].Width {
+					cols[idx].Width = len(row[idx])
+				}
+			}
+			cols[idx].Width += 2 // add some padding
+		}
+		totalWidth += cols[idx].Width
+		header += fmt.Sprintf(" %-*s", -cols[idx].Width, cols[idx].Title)
 	}
 	header += "\n"
 	title = center(title, totalWidth)

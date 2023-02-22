@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/google/uuid"
 	"github.com/muesli/reflow/wordwrap"
 	"github.com/skratchdot/open-golang/open"
 	"github.com/spf13/cobra"
@@ -25,6 +26,27 @@ var (
 	}
 )
 
+type RunE func(cmd *cobra.Command, args []string) error
+
+func withValidProjectID(r RunE) RunE {
+	return func(cmd *cobra.Command, args []string) error {
+		if config.ProjectID == "" && config.Config.Project.ID == uuid.Nil {
+			ui.Errorf("No project ID set. Either run `unweave init` first or use the `--project` flag to set a project ID.")
+			os.Exit(1)
+		}
+		if config.ProjectID != "" {
+			// Override project ID if set via flag
+			id, err := uuid.Parse(config.ProjectID)
+			if err != nil {
+				ui.Errorf("Invalid project ID: %s", config.ProjectID)
+				os.Exit(1)
+			}
+			config.Config.Project.ID = id
+		}
+		return r(cmd, args)
+	}
+}
+
 func init() {
 	rootCmd.Version = ""
 	rootCmd.Flags().BoolP("version", "v", false, "Get the version of current Unweave CLI")
@@ -32,8 +54,8 @@ func init() {
 	rootCmd.AddGroup(&cobra.Group{ID: groupManagement, Title: "Account Management:"})
 
 	flags := rootCmd.PersistentFlags()
+	flags.StringVar(&config.ProjectID, "project", "", "Use a specific project ID - overrides config")
 	flags.StringVarP(&config.AuthToken, "token", "t", "", "Use a specific token to authenticate - overrides login token")
-	flags.StringVarP(&config.ProjectPath, "path", "p", "", "ProjectPath to an Unweave project to run")
 
 	rootCmd.AddCommand(&cobra.Command{
 		Use:     "config",
@@ -95,7 +117,8 @@ func init() {
 
 	// Session commands
 	sessionCmd := &cobra.Command{
-		Use:     "session",
+		Use:     "sessions",
+		Aliases: []string{"session", "sess"},
 		Short:   "Manage Unweave sessions: create | ls | terminate",
 		GroupID: groupDev,
 		Args:    cobra.NoArgs,
@@ -107,7 +130,7 @@ func init() {
 		Long: wordwrap.String("Create a new Unweave session. If no region is provided,"+
 			"the first available one will be selected.", ui.MaxOutputLineLength),
 		Args: cobra.NoArgs,
-		RunE: cmd.SessionCreateCmd,
+		RunE: withValidProjectID(cmd.SessionCreateCmd),
 	}
 	createCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
 	createCmd.Flags().StringVar(&config.NodeTypeID, "type", "", "Node type to use, eg. `gpu_1x_a100`")
@@ -121,7 +144,7 @@ func init() {
 		Short: "List active Unweave sessions",
 		Long:  "List active Unweave sessions. To list all sessions, use the --all flag.",
 		Args:  cobra.NoArgs,
-		RunE:  cmd.SessionList,
+		RunE:  withValidProjectID(cmd.SessionList),
 	}
 	lsCmd.Flags().BoolVarP(&config.All, "all", "a", false, "List all sessions")
 	sessionCmd.AddCommand(lsCmd)
@@ -130,13 +153,14 @@ func init() {
 		Use:   "terminate <session-id>",
 		Short: "Terminate an Unweave session",
 		Args:  cobra.ExactArgs(1),
-		RunE:  cmd.SessionTerminate,
+		RunE:  withValidProjectID(cmd.SessionTerminate),
 	})
 	rootCmd.AddCommand(sessionCmd)
 
 	// SSH Key commands
 	sshKeyCmd := &cobra.Command{
 		Use:     "ssh-keys",
+		Aliases: []string{"ssh-key", "sshkey"},
 		Short:   "Manage Unweave SSH keys: add | generate | ls",
 		GroupID: groupDev,
 		Args:    cobra.NoArgs,

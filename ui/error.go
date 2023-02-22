@@ -52,7 +52,7 @@ func HandleError(err error) error {
 			os.Exit(1)
 			return nil
 		}
-		uie := &Error{HTTPError: e}
+		uie := &Error{Error: e}
 		fmt.Println(uie.Verbose())
 		os.Exit(1)
 	}

@@ -145,6 +145,11 @@ func sessionCreate(ctx context.Context) (uuid.UUID, error) {
 	var region *string
 	var nodeTypeIDs []string
 
+	if config.Config.Project.DefaultProvider == "" && config.Provider == "" {
+		ui.Errorf("No provider specified. Either set a default provider in you project config or specify a provider with the --provider flag")
+		os.Exit(1)
+	}
+
 	provider := config.Config.Project.DefaultProvider
 	if config.Provider != "" {
 		provider = config.Provider
@@ -183,14 +188,14 @@ func sessionCreate(ctx context.Context) (uuid.UUID, error) {
 				var nodeTypes []types.NodeType
 				if err = json.Unmarshal([]byte(e.Suggestion), &nodeTypes); err == nil {
 					cols, rows := nodeTypesToTable(nodeTypes)
-					uie := &ui.Error{HTTPError: e}
+					uie := &ui.Error{Error: e}
 					fmt.Println(uie.Short())
 					fmt.Println()
 					ui.Table("Available Instances", cols, rows)
 					os.Exit(1)
 				}
 			}
-			uie := &ui.Error{HTTPError: e}
+			uie := &ui.Error{Error: e}
 			fmt.Println(uie.Verbose())
 			return uuid.Nil, e
 		}
@@ -220,7 +225,7 @@ func SessionList(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		var e *types.Error
 		if errors.As(err, &e) {
-			uie := &ui.Error{HTTPError: e}
+			uie := &ui.Error{Error: e}
 			fmt.Println(uie.Verbose())
 			os.Exit(1)
 		}
@@ -272,7 +277,7 @@ func SessionTerminate(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		var e *types.Error
 		if errors.As(err, &e) {
-			uie := &ui.Error{HTTPError: e}
+			uie := &ui.Error{Error: e}
 			fmt.Println(uie.Verbose())
 			os.Exit(1)
 		}
