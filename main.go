@@ -31,7 +31,7 @@ type RunE func(cmd *cobra.Command, args []string) error
 func withValidProjectID(r RunE) RunE {
 	return func(cmd *cobra.Command, args []string) error {
 		if config.ProjectID == "" && config.Config.Project.ID == uuid.Nil {
-			ui.Errorf("No project ID set. Either run `unweave init` first or use the `--project` flag to set a project ID.")
+			ui.Errorf("No project ID set. Either run `unweave link` first or use the `--project` flag to set a project ID.")
 			os.Exit(1)
 		}
 		if config.ProjectID != "" {
@@ -66,15 +66,16 @@ func init() {
 		},
 	})
 
-	initCmd := &cobra.Command{
-		Use:     "init [project-id]",
+	linkCmd := &cobra.Command{
+		Use:     "link [project-id]",
+		Aliases: []string{"init"}, // this is temp
 		Short:   "Init a new project config in your local directory and link it to an Unweave project",
 		GroupID: groupManagement,
 		Args:    cobra.ExactArgs(1),
-		RunE:    cmd.Init,
+		RunE:    cmd.Link,
 	}
-	initCmd.Flags().StringP("path", "p", "", "Path to the project directory")
-	rootCmd.AddCommand(initCmd)
+	linkCmd.Flags().StringP("path", "p", "", "Path to the project directory")
+	rootCmd.AddCommand(linkCmd)
 
 	// Auth
 	loginCmd := &cobra.Command{
