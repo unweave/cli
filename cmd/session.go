@@ -233,9 +233,10 @@ func SessionList(cmd *cobra.Command, args []string) error {
 	}
 
 	cols := []ui.Column{
-		{Title: "ID", Width: 38},
+		{Title: "ID", Width: -1},
+		{Title: "Provider", Width: -1},
 		{Title: "Status", Width: 15},
-		{Title: "Connection String", Width: 20},
+		{Title: "Connection String", Width: -1},
 	}
 	rows := make([]ui.Row, len(sessions))
 
@@ -246,6 +247,7 @@ func SessionList(cmd *cobra.Command, args []string) error {
 		}
 		row := ui.Row{
 			fmt.Sprintf("%s", s.ID),
+			fmt.Sprintf("%s", s.Provider),
 			fmt.Sprintf("%s", s.Status),
 			conn,
 		}

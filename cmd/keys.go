@@ -174,7 +174,7 @@ func SSHKeyList(cmd *cobra.Command, args []string) error {
 		publicKey := ""
 		if entry.PublicKey != nil && len(*entry.PublicKey) > 50 {
 			publicKey = *entry.PublicKey
-			publicKey = publicKey[len(publicKey)-50:]
+			publicKey = publicKey[:50]
 		}
 
 		rows[idx] = ui.Row{
