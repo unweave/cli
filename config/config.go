@@ -13,6 +13,9 @@ import (
 )
 
 var (
+	// Version is added at build time
+	Version = "dev"
+
 	//go:embed templates/config.toml
 	configEmbed       string
 	configTemplate, _ = template.New("config.toml").Parse(configEmbed)

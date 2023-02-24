@@ -48,7 +48,7 @@ func withValidProjectID(r RunE) RunE {
 }
 
 func init() {
-	rootCmd.Version = ""
+	rootCmd.Version = config.Version
 	rootCmd.Flags().BoolP("version", "v", false, "Get the version of current Unweave CLI")
 	rootCmd.AddGroup(&cobra.Group{ID: groupDev, Title: "Dev:"})
 	rootCmd.AddGroup(&cobra.Group{ID: groupManagement, Title: "Account Management:"})

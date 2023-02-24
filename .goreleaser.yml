@@ -11,6 +11,8 @@ builds:
     binary: unweave
     env:
       - CGO_ENABLED=0
+    ldflags:
+      -w -s -X github.com/unweave/cli/config.Version={{.Version}}
     goos:
       - linux
       - windows
