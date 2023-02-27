@@ -69,6 +69,14 @@ func sshKeyGenerate(ctx context.Context, name *string) (keyName string, pub []by
 	publicKeyPath := filepath.Join(dotSSHPath, res.Name+".pub")
 	privateKeyPath := filepath.Join(dotSSHPath, res.Name+".pem")
 
+	if _, err := os.Stat(dotSSHPath); os.IsNotExist(err) {
+		if err := os.MkdirAll(dotSSHPath, 0700); err != nil {
+			ui.Errorf(".ssh directory not found and attempt to create it failed: %s", err)
+			os.Exit(1)
+			return "", nil, nil
+		}
+	}
+
 	if err = os.WriteFile(privateKeyPath, prv, 0600); err != nil {
 		ui.Errorf("Failed to write private key to %s: %v", privateKeyPath, err)
 		os.Exit(1)
