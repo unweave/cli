@@ -10,7 +10,7 @@ require (
 	github.com/pelletier/go-toml/v2 v2.0.6
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	github.com/spf13/cobra v1.6.1
-	github.com/unweave/unweave v0.0.0-20230227111757-27afb835effc
+	github.com/unweave/unweave v0.0.0-20230301155527-031b1e66d055
 )
 
 require (

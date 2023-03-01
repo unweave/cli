@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/google/uuid"
 	"github.com/muesli/reflow/wordwrap"
 	"github.com/skratchdot/open-golang/open"
 	"github.com/spf13/cobra"
@@ -30,18 +29,13 @@ type RunE func(cmd *cobra.Command, args []string) error
 
 func withValidProjectID(r RunE) RunE {
 	return func(cmd *cobra.Command, args []string) error {
-		if config.ProjectID == "" && config.Config.Project.ID == uuid.Nil {
+		if config.ProjectID == "" && config.Config.Project.ID == "" {
 			ui.Errorf("No project ID set. Either run `unweave link` first or use the `--project` flag to set a project ID.")
 			os.Exit(1)
 		}
 		if config.ProjectID != "" {
 			// Override project ID if set via flag
-			id, err := uuid.Parse(config.ProjectID)
-			if err != nil {
-				ui.Errorf("Invalid project ID: %s", config.ProjectID)
-				os.Exit(1)
-			}
-			config.Config.Project.ID = id
+			config.Config.Project.ID = config.ProjectID
 		}
 		return r(cmd, args)
 	}

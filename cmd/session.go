@@ -10,7 +10,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"github.com/unweave/cli/config"
 	"github.com/unweave/cli/ui"
@@ -28,7 +27,7 @@ func dashIfZeroValue(v interface{}) interface{} {
 // iterateSessionCreateNodeTypes attempts to create a session using the node types provided
 // until the first successful creation. If none of the node types are successful, it
 // returns 503 out of capacity error.
-func iterateSessionCreateNodeTypes(ctx context.Context, provider string, nodeTypeIDs []string, region, sshKeyName, sshPublicKey *string) (uuid.UUID, error) {
+func iterateSessionCreateNodeTypes(ctx context.Context, provider string, nodeTypeIDs []string, region, sshKeyName, sshPublicKey *string) (string, error) {
 	uwc := InitUnweaveClient()
 
 	var err error
@@ -47,7 +46,7 @@ func iterateSessionCreateNodeTypes(ctx context.Context, provider string, nodeTyp
 		session, err = uwc.Session.Create(ctx, projectID, params)
 		if err == nil {
 			results := []ui.ResultEntry{
-				{Key: "ID", Value: session.ID.String()},
+				{Key: "ID", Value: session.ID},
 				{Key: "Provider", Value: session.Provider.DisplayName()},
 				{Key: "Type", Value: session.NodeTypeID},
 				{Key: "Region", Value: session.Region},
@@ -68,12 +67,12 @@ func iterateSessionCreateNodeTypes(ctx context.Context, provider string, nodeTyp
 				if e.Code == 503 {
 					continue
 				}
-				return uuid.Nil, err
+				return "", err
 			}
 		}
 	}
 	// Return the last error - which will be a 503 if it's an out of capacity error.
-	return uuid.Nil, err
+	return "", err
 }
 
 func setupSSHKey(ctx context.Context) (string, []byte, error) {
@@ -141,7 +140,7 @@ func setupSSHKey(ctx context.Context) (string, []byte, error) {
 	return name, pub, nil
 }
 
-func sessionCreate(ctx context.Context) (uuid.UUID, error) {
+func sessionCreate(ctx context.Context) (string, error) {
 	var region *string
 	var nodeTypeIDs []string
 
@@ -167,12 +166,12 @@ func sessionCreate(ctx context.Context) (uuid.UUID, error) {
 
 	if len(nodeTypeIDs) == 0 {
 		ui.Errorf("No node types specified")
-		return uuid.Nil, fmt.Errorf("no node types specified")
+		return "", fmt.Errorf("no node types specified")
 	}
 
 	name, pub, err := setupSSHKey(ctx)
 	if err != nil {
-		return uuid.Nil, err
+		return "", err
 	}
 
 	sshKeyName := &name
@@ -197,9 +196,9 @@ func sessionCreate(ctx context.Context) (uuid.UUID, error) {
 			}
 			uie := &ui.Error{Error: e}
 			fmt.Println(uie.Verbose())
-			return uuid.Nil, e
+			return "", e
 		}
-		return uuid.Nil, err
+		return "", err
 	}
 
 	return sessionID, nil
@@ -262,11 +261,7 @@ func SessionList(cmd *cobra.Command, args []string) error {
 func SessionTerminate(cmd *cobra.Command, args []string) error {
 	cmd.SilenceUsage = true
 
-	sessionID, err := uuid.Parse(args[0])
-	if err != nil {
-		fmt.Println("Invalid session ID")
-		return nil
-	}
+	sessionID := args[0]
 
 	confirm := ui.Confirm(fmt.Sprintf("Are you sure you want to terminate session %q", sessionID), "n")
 	if !confirm {
@@ -275,7 +270,7 @@ func SessionTerminate(cmd *cobra.Command, args []string) error {
 
 	uwc := InitUnweaveClient()
 	projectID := config.Config.Project.ID
-	err = uwc.Session.Terminate(cmd.Context(), projectID, sessionID)
+	err := uwc.Session.Terminate(cmd.Context(), projectID, sessionID)
 	if err != nil {
 		var e *types.Error
 		if errors.As(err, &e) {

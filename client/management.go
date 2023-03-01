@@ -51,7 +51,7 @@ func (a *AccountService) PairingTokenExchange(ctx context.Context, code string) 
 	return res.Token, &res.Account, nil
 }
 
-func (a *AccountService) ProjectGet(ctx context.Context, projectID uuid.UUID) (types.Project, error) {
+func (a *AccountService) ProjectGet(ctx context.Context, projectID string) (types.Project, error) {
 	uri := fmt.Sprintf("projects/%s", projectID)
 	req, err := a.client.NewAuthorizedRestRequest(Get, uri, nil, nil)
 	if err != nil {

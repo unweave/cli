@@ -5,8 +5,6 @@ import (
 	_ "embed"
 	"os"
 	"path/filepath"
-
-	"github.com/google/uuid"
 )
 
 func IsProjectLinked() bool {
@@ -14,7 +12,7 @@ func IsProjectLinked() bool {
 	return err == nil
 }
 
-func WriteProjectConfig(projectID uuid.UUID, providers []string) error {
+func WriteProjectConfig(projectID string, providers []string) error {
 	buf := &bytes.Buffer{}
 
 	vars := struct {
@@ -23,7 +21,7 @@ func WriteProjectConfig(projectID uuid.UUID, providers []string) error {
 			Name string
 		}
 	}{
-		ProjectID: projectID.String(),
+		ProjectID: projectID,
 		Providers: []struct{ Name string }{},
 	}
 

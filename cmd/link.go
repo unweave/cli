@@ -3,7 +3,6 @@ package cmd
 import (
 	"os"
 
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"github.com/unweave/cli/config"
 	"github.com/unweave/cli/ui"
@@ -13,12 +12,7 @@ func Link(cmd *cobra.Command, args []string) error {
 	cmd.SilenceUsage = true
 	ctx := cmd.Context()
 
-	projectID, err := uuid.Parse(args[0])
-	if err != nil {
-		ui.Errorf("Invalid project ID: %s", args[0])
-		os.Exit(1)
-	}
-
+	projectID := args[0]
 	uwc := InitUnweaveClient()
 	project, err := uwc.Account.ProjectGet(ctx, projectID)
 	if err != nil {
