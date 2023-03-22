@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/unweave/unweave/api/types"
 )
 
@@ -12,7 +11,7 @@ type AccountService struct {
 	client *Client
 }
 
-func (a *AccountService) AccountGet(ctx context.Context, accountID uuid.UUID) (types.Account, error) {
+func (a *AccountService) AccountGet(ctx context.Context, accountID string) (types.Account, error) {
 	uri := fmt.Sprintf("account/%s", accountID)
 	req, err := a.client.NewAuthorizedRestRequest(Get, uri, nil, nil)
 	if err != nil {

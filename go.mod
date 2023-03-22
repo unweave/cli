@@ -4,13 +4,12 @@ go 1.19
 
 require (
 	github.com/charmbracelet/lipgloss v0.6.0
-	github.com/google/uuid v1.3.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/muesli/reflow v0.3.0
 	github.com/pelletier/go-toml/v2 v2.0.6
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	github.com/spf13/cobra v1.6.1
-	github.com/unweave/unweave v0.0.0-20230301155527-031b1e66d055
+	github.com/unweave/unweave v0.0.0-20230322142849-d823e7ea61a7
 )
 
 require (

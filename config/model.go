@@ -3,16 +3,15 @@ package config
 import (
 	_ "embed"
 
-	"github.com/google/uuid"
 	"github.com/pelletier/go-toml/v2"
 	"github.com/unweave/cli/ui"
 )
 
 type (
 	user struct {
-		ID    uuid.UUID `toml:"id"`
-		Email string    `toml:"email"`
-		Token string    `toml:"token"`
+		ID    string `toml:"id"`
+		Email string `toml:"email"`
+		Token string `toml:"token"`
 	}
 
 	secrets struct {
