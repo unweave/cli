@@ -11,8 +11,8 @@ type SessionService struct {
 	client *Client
 }
 
-func (s *SessionService) Create(ctx context.Context, projectID string, params types.SessionCreateParams) (*types.Session, error) {
-	uri := fmt.Sprintf("projects/%s/sessions", projectID)
+func (s *SessionService) Create(ctx context.Context, owner, project string, params types.SessionCreateParams) (*types.Session, error) {
+	uri := fmt.Sprintf("projects/%s/%s/sessions", owner, project)
 	req, err := s.client.NewAuthorizedRestRequest(Post, uri, nil, params)
 	if err != nil {
 		return nil, err
@@ -28,8 +28,8 @@ func (s *SessionService) Exec(ctx context.Context, cmd []string, image string, s
 	return nil, nil
 }
 
-func (s *SessionService) Get(ctx context.Context, projectID, sessionID string) (*types.Session, error) {
-	uri := fmt.Sprintf("projects/%s/sessions/%s", projectID, sessionID)
+func (s *SessionService) Get(ctx context.Context, owner, project, sessionID string) (*types.Session, error) {
+	uri := fmt.Sprintf("projects/%s/%s/sessions/%s", owner, project, sessionID)
 	req, err := s.client.NewAuthorizedRestRequest(Get, uri, nil, nil)
 	if err != nil {
 		return nil, err
@@ -41,8 +41,8 @@ func (s *SessionService) Get(ctx context.Context, projectID, sessionID string) (
 	return session, nil
 }
 
-func (s *SessionService) List(ctx context.Context, projectID string, listTerminated bool) ([]types.Session, error) {
-	uri := fmt.Sprintf("projects/%s/sessions", projectID)
+func (s *SessionService) List(ctx context.Context, owner, project string, listTerminated bool) ([]types.Session, error) {
+	uri := fmt.Sprintf("projects/%s/%s/sessions", owner, project)
 	query := map[string]string{
 		"terminated": fmt.Sprintf("%t", listTerminated),
 	}
@@ -57,8 +57,8 @@ func (s *SessionService) List(ctx context.Context, projectID string, listTermina
 	return res.Sessions, nil
 }
 
-func (s *SessionService) Terminate(ctx context.Context, projectID, sessionID string) error {
-	uri := fmt.Sprintf("projects/%s/sessions/%s/terminate", projectID, sessionID)
+func (s *SessionService) Terminate(ctx context.Context, owner, project, sessionID string) error {
+	uri := fmt.Sprintf("projects/%s/%s/sessions/%s/terminate", owner, project, sessionID)
 	req, err := s.client.NewAuthorizedRestRequest(Put, uri, nil, nil)
 	if err != nil {
 		return err

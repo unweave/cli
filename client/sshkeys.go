@@ -11,8 +11,8 @@ type SSHKeyService struct {
 	client *Client
 }
 
-func (s *SSHKeyService) Add(ctx context.Context, params types.SSHKeyAddParams) error {
-	uri := fmt.Sprintf("ssh-keys")
+func (s *SSHKeyService) Add(ctx context.Context, owner string, params types.SSHKeyAddParams) error {
+	uri := fmt.Sprintf("ssh-keys/%s", owner)
 	req, err := s.client.NewAuthorizedRestRequest(Post, uri, nil, params)
 	if err != nil {
 		return err
@@ -24,8 +24,8 @@ func (s *SSHKeyService) Add(ctx context.Context, params types.SSHKeyAddParams) e
 	return nil
 }
 
-func (s *SSHKeyService) Generate(ctx context.Context, params types.SSHKeyGenerateParams) (*types.SSHKeyGenerateResponse, error) {
-	uri := fmt.Sprintf("ssh-keys/generate")
+func (s *SSHKeyService) Generate(ctx context.Context, owner string, params types.SSHKeyGenerateParams) (*types.SSHKeyGenerateResponse, error) {
+	uri := fmt.Sprintf("ssh-keys/%s/generate", owner)
 	req, err := s.client.NewAuthorizedRestRequest(Post, uri, nil, params)
 	if err != nil {
 		return nil, err
@@ -37,8 +37,8 @@ func (s *SSHKeyService) Generate(ctx context.Context, params types.SSHKeyGenerat
 	return res, nil
 }
 
-func (s *SSHKeyService) List(ctx context.Context) ([]types.SSHKey, error) {
-	uri := fmt.Sprintf("ssh-keys")
+func (s *SSHKeyService) List(ctx context.Context, owner string) ([]types.SSHKey, error) {
+	uri := fmt.Sprintf("ssh-keys/%s", owner)
 	req, err := s.client.NewAuthorizedRestRequest(Get, uri, nil, nil)
 	if err != nil {
 		return nil, err

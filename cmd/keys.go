@@ -11,12 +11,13 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+	"github.com/unweave/cli/config"
 	"github.com/unweave/cli/ui"
 	"github.com/unweave/unweave/api/types"
 	"github.com/unweave/unweave/tools"
 )
 
-func sshKeyAdd(ctx context.Context, publicKeyPath string, name string) error {
+func sshKeyAdd(ctx context.Context, publicKeyPath string, owner, name string) error {
 	publicKey, err := os.ReadFile(publicKeyPath)
 	if err != nil {
 		return fmt.Errorf("failed reading public key file: %v", err)
@@ -28,7 +29,7 @@ func sshKeyAdd(ctx context.Context, publicKeyPath string, name string) error {
 		PublicKey: string(publicKey),
 	}
 
-	if err = uwc.SSHKey.Add(ctx, params); err != nil {
+	if err = uwc.SSHKey.Add(ctx, owner, params); err != nil {
 		var e *types.Error
 		if errors.As(err, &e) {
 			uie := &ui.Error{Error: e}
@@ -47,13 +48,13 @@ func SSHKeyAdd(cmd *cobra.Command, args []string) error {
 	if len(args) == 2 {
 		name = args[1]
 	}
-	return sshKeyAdd(cmd.Context(), publicKeyPath, name)
+	return sshKeyAdd(cmd.Context(), publicKeyPath, config.Config.Unweave.User.ID, name)
 }
 
-func sshKeyGenerate(ctx context.Context, name *string) (keyName string, pub []byte, err error) {
+func sshKeyGenerate(ctx context.Context, owner string, name *string) (keyName string, pub []byte, err error) {
 	uwc := InitUnweaveClient()
 	params := types.SSHKeyGenerateParams{Name: name}
-	res, err := uwc.SSHKey.Generate(ctx, params)
+	res, err := uwc.SSHKey.Generate(ctx, owner, params)
 	if err != nil {
 		return "", nil, ui.HandleError(err)
 	}
@@ -138,7 +139,7 @@ func sshKeyGenerateFromRSA(ctx context.Context, name string, path string) (keyNa
 
 	ui.Infof("Generated public key from private key at path: %s", path)
 
-	if err = sshKeyAdd(ctx, path+".pub", name); err != nil {
+	if err = sshKeyAdd(ctx, path+".pub", config.Config.Unweave.User.ID, name); err != nil {
 		return "", nil, err
 	}
 	return name, pub, nil
@@ -150,7 +151,7 @@ func SSHKeyGenerate(cmd *cobra.Command, args []string) error {
 	if len(args) != 0 {
 		name = tools.Stringy(args[0])
 	}
-	_, _, err := sshKeyGenerate(cmd.Context(), name)
+	_, _, err := sshKeyGenerate(cmd.Context(), config.Config.Unweave.User.ID, name)
 	return err
 }
 
@@ -160,7 +161,7 @@ func SSHKeyList(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 	uwc := InitUnweaveClient()
 
-	entries, err := uwc.SSHKey.List(ctx)
+	entries, err := uwc.SSHKey.List(ctx, config.Config.Unweave.User.ID)
 	if err != nil {
 		var e *types.Error
 		if errors.As(err, &e) {

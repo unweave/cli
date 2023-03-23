@@ -14,7 +14,7 @@ func Link(cmd *cobra.Command, args []string) error {
 
 	projectID := args[0]
 	uwc := InitUnweaveClient()
-	project, err := uwc.Account.ProjectGet(ctx, projectID)
+	project, err := uwc.Account.ProjectGet(ctx, config.Config.Unweave.User.ID, projectID)
 	if err != nil {
 		return ui.HandleError(err)
 	}

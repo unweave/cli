@@ -43,7 +43,7 @@ func iterateSessionCreateNodeTypes(ctx context.Context, provider string, nodeTyp
 		}
 
 		projectID := config.Config.Project.ID
-		session, err = uwc.Session.Create(ctx, projectID, params)
+		session, err = uwc.Session.Create(ctx, config.Config.Unweave.User.ID, projectID, params)
 		if err == nil {
 			results := []ui.ResultEntry{
 				{Key: "ID", Value: session.ID},
@@ -132,7 +132,7 @@ func setupSSHKey(ctx context.Context) (string, []byte, error) {
 		return name, pub, nil
 	}
 
-	name, pub, err := sshKeyGenerate(ctx, nil)
+	name, pub, err := sshKeyGenerate(ctx, config.Config.Unweave.User.ID, nil)
 	if err != nil {
 		return "", nil, err
 	}
@@ -220,7 +220,7 @@ func SessionList(cmd *cobra.Command, args []string) error {
 	listTerminated := config.All
 
 	projectID := config.Config.Project.ID
-	sessions, err := uwc.Session.List(cmd.Context(), projectID, listTerminated)
+	sessions, err := uwc.Session.List(cmd.Context(), config.Config.Unweave.User.ID, projectID, listTerminated)
 	if err != nil {
 		var e *types.Error
 		if errors.As(err, &e) {
@@ -270,7 +270,7 @@ func SessionTerminate(cmd *cobra.Command, args []string) error {
 
 	uwc := InitUnweaveClient()
 	projectID := config.Config.Project.ID
-	err := uwc.Session.Terminate(cmd.Context(), projectID, sessionID)
+	err := uwc.Session.Terminate(cmd.Context(), config.Config.Unweave.User.ID, projectID, sessionID)
 	if err != nil {
 		var e *types.Error
 		if errors.As(err, &e) {
