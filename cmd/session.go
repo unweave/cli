@@ -27,20 +27,14 @@ func dashIfZeroValue(v interface{}) interface{} {
 // iterateSessionCreateNodeTypes attempts to create a session using the node types provided
 // until the first successful creation. If none of the node types are successful, it
 // returns 503 out of capacity error.
-func iterateSessionCreateNodeTypes(ctx context.Context, provider string, nodeTypeIDs []string, region, sshKeyName, sshPublicKey *string) (string, error) {
+func iterateSessionCreateNodeTypes(ctx context.Context, params types.ExecCreateParams, nodeTypeIDs []string) (string, error) {
 	uwc := InitUnweaveClient()
 
 	var err error
-	var session *types.Session
+	var session *types.Exec
 
 	for _, nodeTypeID := range nodeTypeIDs {
-		params := types.SessionCreateParams{
-			Provider:     types.RuntimeProvider(provider),
-			NodeTypeID:   nodeTypeID,
-			Region:       region,
-			SSHKeyName:   sshKeyName,
-			SSHPublicKey: sshPublicKey,
-		}
+		params.NodeTypeID = nodeTypeID
 
 		projectID := config.Config.Project.ID
 		session, err = uwc.Session.Create(ctx, config.Config.Unweave.User.ID, projectID, params)
@@ -142,6 +136,7 @@ func setupSSHKey(ctx context.Context) (string, []byte, error) {
 
 func sessionCreate(ctx context.Context) (string, error) {
 	var region *string
+	var buildID *string
 	var nodeTypeIDs []string
 
 	if config.Config.Project.DefaultProvider == "" && config.Provider == "" {
@@ -163,10 +158,12 @@ func sessionCreate(ctx context.Context) (string, error) {
 	if config.NodeRegion != "" {
 		region = &config.NodeRegion
 	}
-
 	if len(nodeTypeIDs) == 0 {
 		ui.Errorf("No node types specified")
 		return "", fmt.Errorf("no node types specified")
+	}
+	if config.BuildID != "" {
+		buildID = &config.BuildID
 	}
 
 	name, pub, err := setupSSHKey(ctx)
@@ -177,7 +174,19 @@ func sessionCreate(ctx context.Context) (string, error) {
 	sshKeyName := &name
 	sshPublicKey := tools.Stringy(string(pub))
 
-	sessionID, err := iterateSessionCreateNodeTypes(ctx, provider, nodeTypeIDs, region, sshKeyName, sshPublicKey)
+	params := types.ExecCreateParams{
+		Provider:      types.Provider(provider),
+		NodeTypeID:    "",
+		Region:        region,
+		SSHKeyName:    sshKeyName,
+		SSHPublicKey:  sshPublicKey,
+		IsInteractive: true,
+		Ctx: types.ExecCtx{
+			BuildID: buildID,
+		},
+	}
+
+	sessionID, err := iterateSessionCreateNodeTypes(ctx, params, nodeTypeIDs)
 	if err != nil {
 		var e *types.Error
 		if errors.As(err, &e) {
@@ -206,6 +215,7 @@ func sessionCreate(ctx context.Context) (string, error) {
 
 func SessionCreateCmd(cmd *cobra.Command, args []string) error {
 	cmd.SilenceUsage = true
+
 	if _, err := sessionCreate(cmd.Context()); err != nil {
 		os.Exit(1)
 		return nil

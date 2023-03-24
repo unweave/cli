@@ -52,6 +52,15 @@ func init() {
 	flags.StringVarP(&config.AuthToken, "token", "t", "", "Use a specific token to authenticate - overrides login token")
 
 	rootCmd.AddCommand(&cobra.Command{
+		Use:     "build [path]",
+		Short:   "Build a project into a container image",
+		GroupID: groupDev,
+		Args:    cobra.RangeArgs(0, 1),
+		RunE:    withValidProjectID(cmd.Build),
+		Hidden:  true,
+	})
+
+	rootCmd.AddCommand(&cobra.Command{
 		Use:     "config",
 		Short:   "Show the current config",
 		GroupID: groupDev,
@@ -127,6 +136,7 @@ func init() {
 		Args: cobra.NoArgs,
 		RunE: withValidProjectID(cmd.SessionCreateCmd),
 	}
+	createCmd.Flags().StringVarP(&config.BuildID, "image", "i", "", "Build ID of the container image to use")
 	createCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
 	createCmd.Flags().StringVar(&config.NodeTypeID, "type", "", "Node type to use, eg. `gpu_1x_a100`")
 	createCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")

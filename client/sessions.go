@@ -11,37 +11,37 @@ type SessionService struct {
 	client *Client
 }
 
-func (s *SessionService) Create(ctx context.Context, owner, project string, params types.SessionCreateParams) (*types.Session, error) {
+func (s *SessionService) Create(ctx context.Context, owner, project string, params types.ExecCreateParams) (*types.Exec, error) {
 	uri := fmt.Sprintf("projects/%s/%s/sessions", owner, project)
 	req, err := s.client.NewAuthorizedRestRequest(Post, uri, nil, params)
 	if err != nil {
 		return nil, err
 	}
-	session := &types.Session{}
+	session := &types.Exec{}
 	if err = s.client.ExecuteRest(ctx, req, session); err != nil {
 		return nil, err
 	}
 	return session, nil
 }
 
-func (s *SessionService) Exec(ctx context.Context, cmd []string, image string, sessionID *string) (*types.Session, error) {
+func (s *SessionService) Exec(ctx context.Context, cmd []string, image string, sessionID *string) (*types.Exec, error) {
 	return nil, nil
 }
 
-func (s *SessionService) Get(ctx context.Context, owner, project, sessionID string) (*types.Session, error) {
+func (s *SessionService) Get(ctx context.Context, owner, project, sessionID string) (*types.Exec, error) {
 	uri := fmt.Sprintf("projects/%s/%s/sessions/%s", owner, project, sessionID)
 	req, err := s.client.NewAuthorizedRestRequest(Get, uri, nil, nil)
 	if err != nil {
 		return nil, err
 	}
-	session := &types.Session{}
+	session := &types.Exec{}
 	if err = s.client.ExecuteRest(ctx, req, session); err != nil {
 		return nil, err
 	}
 	return session, nil
 }
 
-func (s *SessionService) List(ctx context.Context, owner, project string, listTerminated bool) ([]types.Session, error) {
+func (s *SessionService) List(ctx context.Context, owner, project string, listTerminated bool) ([]types.Exec, error) {
 	uri := fmt.Sprintf("projects/%s/%s/sessions", owner, project)
 	query := map[string]string{
 		"terminated": fmt.Sprintf("%t", listTerminated),

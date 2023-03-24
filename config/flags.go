@@ -7,6 +7,9 @@ var All = false
 // config file and can be overridden with runtime flags.
 var AuthToken = ""
 
+// BuildID is the ID of the build to use when running commands that require a build.
+var BuildID = ""
+
 // NodeTypeID is the ID of the provider specific node type to use when creating a new session
 var NodeTypeID = ""
 

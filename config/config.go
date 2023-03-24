@@ -44,9 +44,9 @@ var (
 	}
 )
 
-// getActiveProjectPath returns the active project directory by recursively going up the
+// GetActiveProjectPath returns the active project directory by recursively going up the
 // directory tree until it finds a directory that's contains the .unweave/config.toml file
-func getActiveProjectPath() (string, error) {
+func GetActiveProjectPath() (string, error) {
 	var activeProjectDir string
 	pwd, err := os.Getwd()
 	if err != nil {
@@ -81,7 +81,7 @@ func Init() {
 	// ----- ProjectConfig -----
 	envConfig := &secrets{}
 	projectConfig := &project{}
-	projectDir, err := getActiveProjectPath()
+	projectDir, err := GetActiveProjectPath()
 	if err == nil {
 		projectConfigPath = filepath.Join(projectDir, projectConfigPath)
 		envConfigPath = filepath.Join(projectDir, envConfigPath)

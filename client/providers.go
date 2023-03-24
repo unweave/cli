@@ -11,7 +11,7 @@ type ProviderService struct {
 	client *Client
 }
 
-func (p *ProviderService) ListNodeTypes(ctx context.Context, provider types.RuntimeProvider, filterAvailable bool) ([]types.NodeType, error) {
+func (p *ProviderService) ListNodeTypes(ctx context.Context, provider types.Provider, filterAvailable bool) ([]types.NodeType, error) {
 	uri := fmt.Sprintf("providers/%s/node-types", provider)
 	query := map[string]string{
 		"available": fmt.Sprintf("%t", filterAvailable),

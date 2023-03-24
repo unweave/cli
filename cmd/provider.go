@@ -40,7 +40,7 @@ func nodeTypesToTable(nodeTypes []types.NodeType) ([]ui.Column, []ui.Row) {
 func ProviderListNodeTypes(cmd *cobra.Command, args []string) error {
 	cmd.SilenceUsage = true
 
-	provider := types.RuntimeProvider(args[0])
+	provider := types.Provider(args[0])
 	uwc := InitUnweaveClient()
 	filterAvailable := !config.All
 
