@@ -67,9 +67,7 @@ func Build(cmd *cobra.Command, args []string) error {
 
 	uwc := InitUnweaveClient()
 	projectID := config.Config.Project.ID
-
 	buf := &bytes.Buffer{}
-	// Get absolute path to current directory
 
 	if err := gatherContext(dir, buf); err != nil {
 		return err

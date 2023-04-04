@@ -7,9 +7,10 @@ require (
 	github.com/manifoldco/promptui v0.9.0
 	github.com/muesli/reflow v0.3.0
 	github.com/pelletier/go-toml/v2 v2.0.6
+	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	github.com/spf13/cobra v1.6.1
-	github.com/unweave/unweave v0.0.0-20230322142849-d823e7ea61a7
+	github.com/unweave/unweave v0.0.0-20230403231729-37515149968b
 )
 
 require (
@@ -18,6 +19,7 @@ require (
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-chi/render v1.0.2 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
+	github.com/lib/pq v1.10.6 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect

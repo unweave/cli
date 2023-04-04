@@ -68,7 +68,13 @@ func init() {
 			fmt.Println(config.Config.String())
 		},
 	})
-
+	rootCmd.AddCommand(&cobra.Command{
+		Use:     "exec",
+		Short:   "Execute a command serverlessly",
+		GroupID: groupDev,
+		Hidden:  true,
+		RunE:    withValidProjectID(cmd.Exec),
+	})
 	linkCmd := &cobra.Command{
 		Use:     "link [project-id]",
 		Aliases: []string{"init"}, // this is temp
@@ -96,6 +102,16 @@ func init() {
 		Hidden: true,
 	})
 
+	// Provider commands
+	lsNodeType := &cobra.Command{
+		Use:   "ls-node-types <provider>",
+		Short: "List node types available on a provider",
+		Args:  cobra.ExactArgs(1),
+		RunE:  cmd.ProviderListNodeTypes,
+	}
+	lsNodeType.Flags().BoolVarP(&config.All, "all", "a", false, "Including out of capacity node types")
+	rootCmd.AddCommand(lsNodeType)
+
 	rootCmd.AddCommand(&cobra.Command{
 		Use:   "open",
 		Short: "Open the Unweave dashboard in your browser",
@@ -108,16 +124,6 @@ func init() {
 		},
 		Args: cobra.NoArgs,
 	})
-
-	// Provider commands
-	lsNodeType := &cobra.Command{
-		Use:   "ls-node-types <provider>",
-		Short: "List node types available on a provider",
-		Args:  cobra.ExactArgs(1),
-		RunE:  cmd.ProviderListNodeTypes,
-	}
-	lsNodeType.Flags().BoolVarP(&config.All, "all", "a", false, "Including out of capacity node types")
-	rootCmd.AddCommand(lsNodeType)
 
 	// Session commands
 	sessionCmd := &cobra.Command{

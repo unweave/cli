@@ -134,9 +134,8 @@ func setupSSHKey(ctx context.Context) (string, []byte, error) {
 	return name, pub, nil
 }
 
-func sessionCreate(ctx context.Context) (string, error) {
+func sessionCreate(ctx context.Context, execCtx types.ExecCtx) (string, error) {
 	var region *string
-	var buildID *string
 	var nodeTypeIDs []string
 
 	if config.Config.Project.DefaultProvider == "" && config.Provider == "" {
@@ -163,7 +162,7 @@ func sessionCreate(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("no node types specified")
 	}
 	if config.BuildID != "" {
-		buildID = &config.BuildID
+		execCtx.BuildID = &config.BuildID
 	}
 
 	name, pub, err := setupSSHKey(ctx)
@@ -181,9 +180,7 @@ func sessionCreate(ctx context.Context) (string, error) {
 		SSHKeyName:    sshKeyName,
 		SSHPublicKey:  sshPublicKey,
 		IsInteractive: true,
-		Ctx: types.ExecCtx{
-			BuildID: buildID,
-		},
+		Ctx:           execCtx,
 	}
 
 	sessionID, err := iterateSessionCreateNodeTypes(ctx, params, nodeTypeIDs)
@@ -216,7 +213,7 @@ func sessionCreate(ctx context.Context) (string, error) {
 func SessionCreateCmd(cmd *cobra.Command, args []string) error {
 	cmd.SilenceUsage = true
 
-	if _, err := sessionCreate(cmd.Context()); err != nil {
+	if _, err := sessionCreate(cmd.Context(), types.ExecCtx{}); err != nil {
 		os.Exit(1)
 		return nil
 	}

@@ -1,8 +1,13 @@
 package client
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"mime/multipart"
+	"net/http"
 
 	"github.com/unweave/unweave/api/types"
 )
@@ -12,16 +17,54 @@ type SessionService struct {
 }
 
 func (s *SessionService) Create(ctx context.Context, owner, project string, params types.ExecCreateParams) (*types.Exec, error) {
-	uri := fmt.Sprintf("projects/%s/%s/sessions", owner, project)
-	req, err := s.client.NewAuthorizedRestRequest(Post, uri, nil, params)
+	buf := &bytes.Buffer{}
+	w := multipart.NewWriter(buf)
+
+	if params.Ctx.Context != nil {
+
+		fw, err := w.CreateFormFile("context", "context.zip")
+		if err != nil {
+			return nil, err
+		}
+		if _, err = io.Copy(fw, params.Ctx.Context); err != nil {
+			return nil, err
+		}
+	}
+
+	paramsJSON, err := json.Marshal(params)
 	if err != nil {
 		return nil, err
 	}
-	session := &types.Exec{}
-	if err = s.client.ExecuteRest(ctx, req, session); err != nil {
+	if err = w.WriteField("params", string(paramsJSON)); err != nil {
 		return nil, err
 	}
-	return session, nil
+	if err = w.Close(); err != nil {
+		return nil, err
+	}
+
+	uri := fmt.Sprintf("projects/%s/%s/sessions", owner, project)
+
+	req, err := http.NewRequest("POST", uri, buf)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	req.Header.Set("Authorization", "Bearer "+s.client.cfg.Token)
+
+	r := &RestRequest{
+		Url:    fmt.Sprintf("%s/%s?%s", s.client.cfg.ApiURL, uri, ""),
+		Header: req.Header,
+		Body:   buf,
+		Type:   Post,
+	}
+	req.Header.Set("Content-Type", w.FormDataContentType())
+
+	exec := &types.Exec{}
+	if err = s.client.ExecuteRest(ctx, r, exec); err != nil {
+		return nil, err
+	}
+	return exec, nil
 }
 
 func (s *SessionService) Exec(ctx context.Context, cmd []string, image string, sessionID *string) (*types.Exec, error) {
