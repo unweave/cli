@@ -25,7 +25,7 @@ type (
 	}
 
 	project struct {
-		ID              string              `toml:"project_id"`
+		URI             string              `toml:"project_uri"`
 		Env             *secrets            `toml:"env"`
 		Providers       map[string]provider `toml:"provider"`
 		DefaultProvider string              `toml:"default_provider"`

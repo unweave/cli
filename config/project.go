@@ -12,17 +12,17 @@ func IsProjectLinked() bool {
 	return err == nil
 }
 
-func WriteProjectConfig(projectID string, providers []string) error {
+func WriteProjectConfig(projectURI string, providers []string) error {
 	buf := &bytes.Buffer{}
 
 	vars := struct {
-		ProjectID string
-		Providers []struct {
+		ProjectURI string
+		Providers  []struct {
 			Name string
 		}
 	}{
-		ProjectID: projectID,
-		Providers: []struct{ Name string }{},
+		ProjectURI: projectURI,
+		Providers:  []struct{ Name string }{},
 	}
 
 	for _, p := range providers {

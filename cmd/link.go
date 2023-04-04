@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/unweave/cli/config"
@@ -12,9 +13,19 @@ func Link(cmd *cobra.Command, args []string) error {
 	cmd.SilenceUsage = true
 	ctx := cmd.Context()
 
-	projectID := args[0]
+	projectURI := args[0]
+	parts := strings.Split(projectURI, "/")
+	owner := config.Config.Unweave.User.ID
+
+	if len(parts) != 2 {
+		ui.Errorf("Invalid project URI: %q. Should be of type '<owner>/<project>", projectURI)
+		os.Exit(1)
+	}
+	owner = parts[0]
+	projectName := parts[1]
+
 	uwc := InitUnweaveClient()
-	project, err := uwc.Account.ProjectGet(ctx, config.Config.Unweave.User.ID, projectID)
+	project, err := uwc.Account.ProjectGet(ctx, owner, projectName)
 	if err != nil {
 		return ui.HandleError(err)
 	}
@@ -29,7 +40,7 @@ func Link(cmd *cobra.Command, args []string) error {
 		os.Exit(1)
 	}
 
-	if err = config.WriteProjectConfig(project.ID, account.Providers); err != nil {
+	if err = config.WriteProjectConfig(projectURI, account.Providers); err != nil {
 		ui.Errorf("Failed to write project config: %s", err)
 		os.Exit(1)
 	}

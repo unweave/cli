@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/unweave/cli/ui"
@@ -43,6 +44,20 @@ var (
 		},
 	}
 )
+
+func GetProjectOwnerAndName() (string, string) {
+	uri := Config.Project.URI
+	parts := strings.Split(uri, "/")
+
+	if len(parts) != 2 {
+		ui.Errorf("Invalid project URI: %q. Should be of type '<owner>/<project>", uri)
+		os.Exit(1)
+	}
+
+	owner := strings.Split(uri, "/")[0]
+	name := strings.Split(uri, "/")[1]
+	return owner, name
+}
 
 // GetActiveProjectPath returns the active project directory by recursively going up the
 // directory tree until it finds a directory that's contains the .unweave/config.toml file

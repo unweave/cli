@@ -66,19 +66,20 @@ func Build(cmd *cobra.Command, args []string) error {
 	}
 
 	uwc := InitUnweaveClient()
-	projectID := config.Config.Project.ID
 	buf := &bytes.Buffer{}
+
+	owner, projectName := config.GetProjectOwnerAndName()
 
 	if err := gatherContext(dir, buf); err != nil {
 		return err
 	}
-	ui.Infof("Starting build for project %q", projectID)
+	ui.Infof("Starting build for project '%s/%s'", owner, projectName)
 
 	params := types.BuildsCreateParams{
 		Builder:      "docker",
 		BuildContext: io.NopCloser(buf),
 	}
-	buildID, err := uwc.Build.Create(cmd.Context(), config.Config.Unweave.User.ID, projectID, params)
+	buildID, err := uwc.Build.Create(cmd.Context(), owner, projectName, params)
 	if err != nil {
 		var e *types.Error
 		if errors.As(err, &e) {

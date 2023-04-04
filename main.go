@@ -27,15 +27,15 @@ var (
 
 type RunE func(cmd *cobra.Command, args []string) error
 
-func withValidProjectID(r RunE) RunE {
+func withValidProjectURI(r RunE) RunE {
 	return func(cmd *cobra.Command, args []string) error {
-		if config.ProjectID == "" && config.Config.Project.ID == "" {
+		if config.ProjectURI == "" && config.Config.Project.URI == "" {
 			ui.Errorf("No project ID set. Either run `unweave link` first or use the `--project` flag to set a project ID.")
 			os.Exit(1)
 		}
-		if config.ProjectID != "" {
+		if config.ProjectURI != "" {
 			// Override project ID if set via flag
-			config.Config.Project.ID = config.ProjectID
+			config.Config.Project.URI = config.ProjectURI
 		}
 		return r(cmd, args)
 	}
@@ -48,7 +48,7 @@ func init() {
 	rootCmd.AddGroup(&cobra.Group{ID: groupManagement, Title: "Account Management:"})
 
 	flags := rootCmd.PersistentFlags()
-	flags.StringVar(&config.ProjectID, "project", "", "Use a specific project ID - overrides config")
+	flags.StringVar(&config.ProjectURI, "project", "", "Use a specific project ID - overrides config")
 	flags.StringVarP(&config.AuthToken, "token", "t", "", "Use a specific token to authenticate - overrides login token")
 
 	rootCmd.AddCommand(&cobra.Command{
@@ -56,7 +56,7 @@ func init() {
 		Short:   "Build a project into a container image",
 		GroupID: groupDev,
 		Args:    cobra.RangeArgs(0, 1),
-		RunE:    withValidProjectID(cmd.Build),
+		RunE:    withValidProjectURI(cmd.Build),
 		Hidden:  true,
 	})
 
@@ -73,7 +73,7 @@ func init() {
 		Short:   "Execute a command serverlessly",
 		GroupID: groupDev,
 		Hidden:  true,
-		RunE:    withValidProjectID(cmd.Exec),
+		RunE:    withValidProjectURI(cmd.Exec),
 	})
 	linkCmd := &cobra.Command{
 		Use:     "link [project-id]",
@@ -140,7 +140,7 @@ func init() {
 		Long: wordwrap.String("Create a new Unweave session. If no region is provided,"+
 			"the first available one will be selected.", ui.MaxOutputLineLength),
 		Args: cobra.NoArgs,
-		RunE: withValidProjectID(cmd.SessionCreateCmd),
+		RunE: withValidProjectURI(cmd.SessionCreateCmd),
 	}
 	createCmd.Flags().StringVarP(&config.BuildID, "image", "i", "", "Build ID of the container image to use")
 	createCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
@@ -155,7 +155,7 @@ func init() {
 		Short: "List active Unweave sessions",
 		Long:  "List active Unweave sessions. To list all sessions, use the --all flag.",
 		Args:  cobra.NoArgs,
-		RunE:  withValidProjectID(cmd.SessionList),
+		RunE:  withValidProjectURI(cmd.SessionList),
 	}
 	lsCmd.Flags().BoolVarP(&config.All, "all", "a", false, "List all sessions")
 	sessionCmd.AddCommand(lsCmd)
@@ -164,7 +164,7 @@ func init() {
 		Use:   "terminate <session-id>",
 		Short: "Terminate an Unweave session",
 		Args:  cobra.ExactArgs(1),
-		RunE:  withValidProjectID(cmd.SessionTerminate),
+		RunE:  withValidProjectURI(cmd.SessionTerminate),
 	})
 	rootCmd.AddCommand(sessionCmd)
 

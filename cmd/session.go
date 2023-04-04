@@ -36,8 +36,8 @@ func iterateSessionCreateNodeTypes(ctx context.Context, params types.ExecCreateP
 	for _, nodeTypeID := range nodeTypeIDs {
 		params.NodeTypeID = nodeTypeID
 
-		projectID := config.Config.Project.ID
-		session, err = uwc.Session.Create(ctx, config.Config.Unweave.User.ID, projectID, params)
+		owner, projectName := config.GetProjectOwnerAndName()
+		session, err = uwc.Session.Create(ctx, owner, projectName, params)
 		if err == nil {
 			results := []ui.ResultEntry{
 				{Key: "ID", Value: session.ID},
@@ -226,8 +226,8 @@ func SessionList(cmd *cobra.Command, args []string) error {
 	uwc := InitUnweaveClient()
 	listTerminated := config.All
 
-	projectID := config.Config.Project.ID
-	sessions, err := uwc.Session.List(cmd.Context(), config.Config.Unweave.User.ID, projectID, listTerminated)
+	owner, projectName := config.GetProjectOwnerAndName()
+	sessions, err := uwc.Session.List(cmd.Context(), owner, projectName, listTerminated)
 	if err != nil {
 		var e *types.Error
 		if errors.As(err, &e) {
@@ -276,8 +276,8 @@ func SessionTerminate(cmd *cobra.Command, args []string) error {
 	}
 
 	uwc := InitUnweaveClient()
-	projectID := config.Config.Project.ID
-	err := uwc.Session.Terminate(cmd.Context(), config.Config.Unweave.User.ID, projectID, sessionID)
+	owner, projectName := config.GetProjectOwnerAndName()
+	err := uwc.Session.Terminate(cmd.Context(), owner, projectName, sessionID)
 	if err != nil {
 		var e *types.Error
 		if errors.As(err, &e) {

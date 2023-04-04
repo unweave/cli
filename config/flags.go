@@ -16,9 +16,9 @@ var NodeTypeID = ""
 // NodeRegion is the region to use when creating a new session
 var NodeRegion = ""
 
-// ProjectID is the ProjectID ID of the project to run commands on. It is loaded from the saved
-// config file and can be overridden with runtime flags.
-var ProjectID = ""
+// ProjectURI is the project slug with syntax `<owner>/<project` of the project to run
+// commands on. It is loaded from the saved config file and can be overridden with runtime flags.
+var ProjectURI = ""
 
 // Provider is the provider to use when executing a request
 var Provider = ""
