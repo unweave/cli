@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/unweave/cli/config"
@@ -17,28 +18,36 @@ import (
 	"github.com/unweave/unweave/tools"
 )
 
-func sshKeyAdd(ctx context.Context, publicKeyPath string, owner, name string) error {
+func sshKeyAdd(ctx context.Context, publicKeyPath string, owner string, name *string) (string, error) {
 	publicKey, err := os.ReadFile(publicKeyPath)
 	if err != nil {
-		return fmt.Errorf("failed reading public key file: %v", err)
+		return "", fmt.Errorf("failed reading public key file: %v", err)
+	}
+
+	// If the name is id_rsa or id_rsa.pub, we'll use the user's email address to avoid conflicts
+	if name != nil && (*name == "id_rsa" || *name == "id_rsa.pub") {
+		user := strings.Split(config.Config.Unweave.User.Email, "@")[0]
+		n := fmt.Sprintf("%s_id_rsa.pub", user)
+		name = &n
 	}
 
 	uwc := InitUnweaveClient()
 	params := types.SSHKeyAddParams{
-		Name:      &name,
+		Name:      name,
 		PublicKey: string(publicKey),
 	}
 
-	if err = uwc.SSHKey.Add(ctx, owner, params); err != nil {
+	keyname, err := uwc.SSHKey.Add(ctx, owner, params)
+	if err != nil {
 		var e *types.Error
 		if errors.As(err, &e) {
 			uie := &ui.Error{Error: e}
 			fmt.Println(uie.Verbose())
 			os.Exit(1)
 		}
-		return err
+		return "", err
 	}
-	return nil
+	return keyname, nil
 }
 
 func SSHKeyAdd(cmd *cobra.Command, args []string) error {
@@ -48,7 +57,13 @@ func SSHKeyAdd(cmd *cobra.Command, args []string) error {
 	if len(args) == 2 {
 		name = args[1]
 	}
-	return sshKeyAdd(cmd.Context(), publicKeyPath, config.Config.Unweave.User.ID, name)
+	keyname, err := sshKeyAdd(cmd.Context(), publicKeyPath, config.Config.Unweave.User.ID, &name)
+	if err != nil {
+		return err
+	}
+
+	ui.Successf("SSH key added as %q", keyname)
+	return nil
 }
 
 func sshKeyGenerate(ctx context.Context, owner string, name *string) (keyName string, pub []byte, err error) {
@@ -88,7 +103,7 @@ func sshKeyGenerate(ctx context.Context, owner string, name *string) (keyName st
 		os.Exit(1)
 		return "", nil, nil
 	}
-	ui.Attentionf("Created new SSH key pair:\n"+
+	ui.Successf("Created new SSH key pair:\n"+
 		"  Name: %s\n"+
 		"  Path: %s\n",
 		res.Name, publicKeyPath)
@@ -96,16 +111,14 @@ func sshKeyGenerate(ctx context.Context, owner string, name *string) (keyName st
 	return res.Name, pub, nil
 }
 
-func sshKeyGenerateFromRSA(ctx context.Context, name string, path string) (keyName string, pub []byte, err error) {
-	filename := filepath.Base(path)
-	if filename != "id_rsa" {
-		ui.Errorf("Invalid RSA private key filename: %s. Only ida_rsa is supported", filename)
-		return "", nil, fmt.Errorf("invalid RSA private key filename: %s", filename)
-	}
-
+func sshKeyGenerateFromPrivateKey(ctx context.Context, path string, name *string) (keyName string, pub []byte, err error) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		ui.Errorf("Private key not found: %s", path)
 		return "", nil, fmt.Errorf("private key not found: %s", path)
+	}
+	if name == nil {
+		n := filepath.Base(path)
+		name = &n
 	}
 
 	command := []string{
@@ -139,10 +152,33 @@ func sshKeyGenerateFromRSA(ctx context.Context, name string, path string) (keyNa
 
 	ui.Infof("Generated public key from private key at path: %s", path)
 
-	if err = sshKeyAdd(ctx, path+".pub", config.Config.Unweave.User.ID, name); err != nil {
+	keyname, err := sshKeyAdd(ctx, path+".pub", config.Config.Unweave.User.ID, name)
+	if err != nil {
 		return "", nil, err
 	}
-	return name, pub, nil
+	return keyname, pub, nil
+}
+
+func sshKeyAddIDRSA(ctx context.Context, path string, name *string) (keyName string, pub []byte, err error) {
+	filename := filepath.Base(path)
+	if filename != "id_rsa" {
+		ui.Errorf("Invalid RSA private key filename: %s. Only ida_rsa is supported", filename)
+		return "", nil, fmt.Errorf("invalid RSA private key filename: %s", filename)
+	}
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		ui.Errorf("Private key not found: %s", path)
+		return "", nil, fmt.Errorf("private key not found: %s", path)
+	}
+	if _, err := os.Stat(path + ".pub"); os.IsNotExist(err) {
+		ui.Errorf("Public key not found: %s", path+".pub")
+		return "", nil, fmt.Errorf("public key not found: %s", path+".pub")
+	}
+
+	keyname, err := sshKeyAdd(ctx, path+".pub", config.Config.Unweave.User.ID, name)
+	if err != nil {
+		return "", nil, err
+	}
+	return keyname, pub, nil
 }
 
 func SSHKeyGenerate(cmd *cobra.Command, args []string) error {

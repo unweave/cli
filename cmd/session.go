@@ -74,44 +74,54 @@ func setupSSHKey(ctx context.Context) (string, []byte, error) {
 		return config.SSHKeyName, nil, nil
 	}
 
-	user := strings.Split(config.Config.Unweave.User.Email, "@")[0]
-	rsaPubGenName := fmt.Sprintf("uw:gen_%s_id_rsa", user)
-
 	if config.SSHPublicKeyPath != "" {
-		// read public key from file
-		pub, err := os.ReadFile(config.SSHPublicKeyPath)
-		if err != nil {
-			return "", nil, err
-		}
-		name := filepath.Base(config.SSHPublicKeyPath)
-
-		if name == "id_rsa.pub" {
-			name = fmt.Sprintf("%s_id_rsa", user)
-		}
-		return name, pub, nil
+		path := strings.Replace(config.SSHPublicKeyPath, ".pub", "", 1)
+		return sshKeyAddIDRSA(ctx, path, nil)
 	}
 
 	if config.SSHPrivateKeyPath != "" {
-		name, pub, err := sshKeyGenerateFromRSA(ctx, rsaPubGenName, config.SSHPrivateKeyPath)
+		name, pub, err := sshKeyGenerateFromPrivateKey(ctx, config.SSHPrivateKeyPath, nil)
 		if err != nil {
 			return "", nil, err
 		}
 		return name, pub, nil
 	}
 
-	// No key details provided, prompt user to generate new key
+	// No key details provided, try using ~/.ssh/id_rsa.pub
 	ui.Attentionf("No SSH key path provided. Using default key path ~/.ssh/id_rsa")
-	// Find id_rsa in ~/.ssh
+
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", nil, err
 	}
 	path := filepath.Join(home, ".ssh", "id_rsa")
-	name, pub, err := sshKeyGenerateFromRSA(ctx, rsaPubGenName, path)
+
+	idrsaExists := false
+	idrsaPubExists := false
+
+	if _, err := os.Stat(path); err == nil {
+		idrsaPubExists = true
+	}
+	if _, err := os.Stat(path + ".pub"); err == nil {
+		idrsaExists = true
+	}
+
+	if idrsaExists && idrsaPubExists {
+		name, pub, err := sshKeyAddIDRSA(ctx, path, nil)
+		if err != nil {
+			return "", nil, err
+		}
+		return name, pub, nil
+	}
+	ui.Attentionf("No SSH key found at %s", path)
+	ui.Attentionf("Generating new SSH key")
+
+	genName, pub, err := sshKeyGenerate(ctx, config.Config.Unweave.User.ID, nil)
 	if err != nil {
 		return "", nil, err
 	}
-	return name, pub, nil
+
+	return genName, pub, nil
 }
 
 func sessionCreate(ctx context.Context, execCtx types.ExecCtx) (string, error) {

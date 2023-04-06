@@ -11,26 +11,26 @@ type SSHKeyService struct {
 	client *Client
 }
 
-func (s *SSHKeyService) Add(ctx context.Context, owner string, params types.SSHKeyAddParams) error {
+func (s *SSHKeyService) Add(ctx context.Context, owner string, params types.SSHKeyAddParams) (string, error) {
 	uri := fmt.Sprintf("ssh-keys/%s", owner)
 	req, err := s.client.NewAuthorizedRestRequest(Post, uri, nil, params)
 	if err != nil {
-		return err
+		return "", err
 	}
-	res := &types.SSHKeyAddResponse{}
+	res := &types.SSHKeyResponse{}
 	if err = s.client.ExecuteRest(ctx, req, res); err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return res.Name, nil
 }
 
-func (s *SSHKeyService) Generate(ctx context.Context, owner string, params types.SSHKeyGenerateParams) (*types.SSHKeyGenerateResponse, error) {
+func (s *SSHKeyService) Generate(ctx context.Context, owner string, params types.SSHKeyGenerateParams) (*types.SSHKeyResponse, error) {
 	uri := fmt.Sprintf("ssh-keys/%s/generate", owner)
 	req, err := s.client.NewAuthorizedRestRequest(Post, uri, nil, params)
 	if err != nil {
 		return nil, err
 	}
-	res := &types.SSHKeyGenerateResponse{}
+	res := &types.SSHKeyResponse{}
 	if err = s.client.ExecuteRest(ctx, req, res); err != nil {
 		return nil, err
 	}
