@@ -168,6 +168,21 @@ func init() {
 	})
 	rootCmd.AddCommand(sessionCmd)
 
+	sshCmd := &cobra.Command{
+		Use:     "ssh",
+		Short:   "Initialize a session and SSH into",
+		Hidden:  true,
+		GroupID: groupDev,
+		Args:    cobra.NoArgs,
+		RunE:    withValidProjectURI(cmd.SSH),
+	}
+	sshCmd.Flags().StringVarP(&config.BuildID, "image", "i", "", "Build ID of the container image to use")
+	sshCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
+	sshCmd.Flags().StringVar(&config.NodeTypeID, "type", "", "Node type to use, eg. `gpu_1x_a100`")
+	sshCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
+	sshCmd.Flags().StringVar(&config.SSHPrivateKeyPath, "prv", "", "Absolute Path to the SSH private key to use")
+	rootCmd.AddCommand(sshCmd)
+
 	// SSH Key commands
 	sshKeyCmd := &cobra.Command{
 		Use:     "ssh-keys",

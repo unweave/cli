@@ -100,37 +100,17 @@ func setupSSHKey(ctx context.Context) (string, []byte, error) {
 	}
 
 	// No key details provided, prompt user to generate new key
-
-	options := []string{
-		"Generate new public key from id_rsa",
-		"Generate new ssh keypair and save as .pem",
-	}
-
-	idx, err := ui.Select("No SSH key path provided. Do you want to generate a new SSH key", options)
-	if err != nil {
-		ui.Errorf("No SSH key path provided")
-		return "", nil, fmt.Errorf("no ssh key path provided")
-	}
-
-	if idx == 0 {
-		// Find id_rsa in ~/.ssh
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return "", nil, err
-		}
-		path := filepath.Join(home, ".ssh", "id_rsa")
-		name, pub, err := sshKeyGenerateFromRSA(ctx, rsaPubGenName, path)
-		if err != nil {
-			return "", nil, err
-		}
-		return name, pub, nil
-	}
-
-	name, pub, err := sshKeyGenerate(ctx, config.Config.Unweave.User.ID, nil)
+	ui.Attentionf("No SSH key path provided. Using default key path ~/.ssh/id_rsa")
+	// Find id_rsa in ~/.ssh
+	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", nil, err
 	}
-
+	path := filepath.Join(home, ".ssh", "id_rsa")
+	name, pub, err := sshKeyGenerateFromRSA(ctx, rsaPubGenName, path)
+	if err != nil {
+		return "", nil, err
+	}
 	return name, pub, nil
 }
 
@@ -265,19 +245,10 @@ func SessionList(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func SessionTerminate(cmd *cobra.Command, args []string) error {
-	cmd.SilenceUsage = true
-
-	sessionID := args[0]
-
-	confirm := ui.Confirm(fmt.Sprintf("Are you sure you want to terminate session %q", sessionID), "n")
-	if !confirm {
-		return nil
-	}
-
+func sessionTerminate(ctx context.Context, sessionID string) error {
 	uwc := InitUnweaveClient()
 	owner, projectName := config.GetProjectOwnerAndName()
-	err := uwc.Session.Terminate(cmd.Context(), owner, projectName, sessionID)
+	err := uwc.Session.Terminate(ctx, owner, projectName, sessionID)
 	if err != nil {
 		var e *types.Error
 		if errors.As(err, &e) {
@@ -286,6 +257,22 @@ func SessionTerminate(cmd *cobra.Command, args []string) error {
 			os.Exit(1)
 		}
 		return err
+	}
+	return nil
+}
+
+func SessionTerminate(cmd *cobra.Command, args []string) error {
+	cmd.SilenceUsage = true
+	sessionID := args[0]
+
+	confirm := ui.Confirm(fmt.Sprintf("Are you sure you want to terminate session %q", sessionID), "n")
+	if !confirm {
+		return nil
+	}
+
+	if err := sessionTerminate(cmd.Context(), sessionID); err != nil {
+		ui.Errorf("Failed to terminate session: %s", err.Error())
+		os.Exit(1)
 	}
 
 	ui.Successf("Session terminated")
