@@ -60,6 +60,19 @@ func init() {
 		Hidden:  true,
 	})
 
+	codeCmd := &cobra.Command{
+		Use:     "code",
+		Short:   "Create a new session and open it in VS Code",
+		GroupID: groupDev,
+		Hidden:  true,
+		RunE:    withValidProjectURI(cmd.Code),
+	}
+	codeCmd.Flags().StringVarP(&config.BuildID, "image", "i", "", "Build ID of the container image to use")
+	codeCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
+	codeCmd.Flags().StringVar(&config.NodeTypeID, "type", "", "Node type to use, eg. `gpu_1x_a100`")
+	codeCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
+	rootCmd.AddCommand(codeCmd)
+
 	rootCmd.AddCommand(&cobra.Command{
 		Use:     "config",
 		Short:   "Show the current config",
