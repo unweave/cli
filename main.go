@@ -10,6 +10,7 @@ import (
 	"github.com/unweave/cli/cmd"
 	"github.com/unweave/cli/config"
 	"github.com/unweave/cli/ui"
+	"github.com/unweave/cli/vars"
 )
 
 var (
@@ -50,6 +51,7 @@ func init() {
 	flags := rootCmd.PersistentFlags()
 	flags.StringVar(&config.ProjectURI, "project", "", "Use a specific project ID - overrides config")
 	flags.StringVarP(&config.AuthToken, "token", "t", "", "Use a specific token to authenticate - overrides login token")
+	flags.BoolVar(&vars.Debug, "debug", false, "Enable debug mode")
 
 	rootCmd.AddCommand(&cobra.Command{
 		Use:     "build [path]",

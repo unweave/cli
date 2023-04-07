@@ -37,6 +37,10 @@ func Code(cmd *cobra.Command, args []string) error {
 					ui.Infof("🚀 Session %q up and running", e.ID)
 					ui.Infof("Setting up VS Code ...")
 
+					if err := removeKnownHostsEntry(e.Connection.Host); err != nil {
+						// Log and continue anyway. Most likely the entry is not there.
+						ui.Debugf("Failed to remove known_hosts entry: %v", err)
+					}
 					arg := fmt.Sprintf("vscode-remote://ssh-remote+%s@%s/home/ubuntu", e.Connection.User, e.Connection.Host)
 					codeCmd := exec.Command("code", "--folder-uri="+arg)
 					codeCmd.Stdout = os.Stdout
@@ -52,7 +56,7 @@ func Code(cmd *cobra.Command, args []string) error {
 
 				return nil
 			}
-			
+
 		case err := <-errch:
 			var e *types.Error
 			if errors.As(err, &e) {

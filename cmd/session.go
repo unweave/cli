@@ -253,7 +253,7 @@ func sessionCreateAndWatch(ctx context.Context, execCtx types.ExecCtx) (exech ch
 							os.Exit(1)
 						}
 
-						if ticketCount%10 == 0 {
+						if ticketCount%10 == 0 && s.Status != types.StatusRunning {
 							ui.Infof("Waiting for session %q to start...", sessionID)
 						}
 						ticketCount++

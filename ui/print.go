@@ -5,6 +5,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/reflow/wordwrap"
+	"github.com/unweave/cli/vars"
 )
 
 var (
@@ -32,4 +33,11 @@ func Infof(format string, a ...any) {
 func Successf(format string, a ...any) {
 	s := fmt.Sprintf(format, a...)
 	fmt.Println(successColor.Render(wordwrap.String(s, MaxOutputLineLength)))
+}
+
+func Debugf(format string, a ...any) {
+	s := fmt.Sprintf(format, a...)
+	if vars.Debug {
+		fmt.Println(wordwrap.String(s, MaxOutputLineLength))
+	}
 }

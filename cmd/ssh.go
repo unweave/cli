@@ -6,16 +6,29 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"os/signal"
 	"strings"
 	"syscall"
-	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/unweave/cli/config"
 	"github.com/unweave/cli/ui"
 	"github.com/unweave/unweave/api/types"
 )
+
+func removeKnownHostsEntry(hostname string) error {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("failed to get user home directory: %v", err)
+	}
+	knownHostsFile := fmt.Sprintf("%s/.ssh/known_hosts", home)
+	removeHostKeyCmd := exec.Command("ssh-keygen", "-R", hostname, "-f", knownHostsFile)
+
+	ui.Debugf("Removing host key from known_hosts: %s", strings.Join(removeHostKeyCmd.Args, " "))
+
+	if err = removeHostKeyCmd.Run(); err != nil {
+		return fmt.Errorf("failed to remove host key from known_hosts: %v", err)
+	}
+	return nil
+}
 
 func ssh(ctx context.Context, connectionInfo types.ConnectionInfo) error {
 	sshCommand := exec.Command(
@@ -28,20 +41,6 @@ func ssh(ctx context.Context, connectionInfo types.ConnectionInfo) error {
 	sshCommand.Stdin = os.Stdin
 	sshCommand.Stdout = os.Stdout
 	sshCommand.Stderr = os.Stderr
-
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt)
-
-	go func() {
-		<-signalChan
-		fmt.Println("\nReceived an interrupt, do you really want to exit? (y/n)")
-		var response string
-		fmt.Scanf("%s", &response)
-		response = strings.ToLower(response)
-		if response == "y" || response == "yes" {
-			os.Exit(0)
-		}
-	}()
 
 	if err := sshCommand.Run(); err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
@@ -67,70 +66,55 @@ func SSH(cmd *cobra.Command, args []string) error {
 
 	ui.Infof("Initializing node...")
 
-	sessionID, err := sessionCreate(cmd.Context(), types.ExecCtx{})
+	execch, errch, err := sessionCreateAndWatch(ctx, types.ExecCtx{})
 	if err != nil {
-		os.Exit(1)
-		return nil
+		return err
 	}
-
-	uwc := InitUnweaveClient()
-	listTerminated := config.All
-	owner, projectName := config.GetProjectOwnerAndName()
-
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
 
 	for {
 		select {
-		case <-ticker.C:
-			sessions, err := uwc.Session.List(ctx, owner, projectName, listTerminated)
-			if err != nil {
-				var e *types.Error
-				if errors.As(err, &e) {
-					uie := &ui.Error{Error: e}
-					fmt.Println(uie.Verbose())
-					os.Exit(1)
-				}
-				return err
-			}
-
-			for _, s := range sessions {
-				if s.ID == sessionID {
-					if s.Status == types.StatusRunning {
-						if s.Connection == nil {
-							ui.Errorf("❌ Something unexpected happened. No connection info found for session %q", sessionID)
-							ui.Infof("Run `unweave session ls` to see the status of your session and try connecting manually.")
-							os.Exit(1)
-						}
-						ui.Infof("🚀 Session %q up and running", sessionID)
-						if err := ssh(ctx, *s.Connection); err != nil {
-							ui.Errorf("%s", err)
-							os.Exit(1)
-						}
-
-						// Ask to terminate session
-						if terminate := ui.Confirm("SSH session terminated. Do you want to terminate the session?", "n"); terminate {
-							if err := sessionTerminate(ctx, sessionID); err != nil {
-								return err
-							}
-							ui.Infof("Session %q terminated.", sessionID)
-							os.Exit(0)
-						}
-
-					}
-					if s.Status == types.StatusError {
-						ui.Errorf("❌ Session %s failed to start", sessionID)
+		case e := <-execch:
+			if e.Status == types.StatusRunning {
+				if e.Status == types.StatusRunning {
+					if e.Connection == nil {
+						ui.Errorf("❌ Something unexpected happened. No connection info found for session %q", e.ID)
+						ui.Infof("Run `unweave session ls` to see the status of your session and try connecting manually.")
 						os.Exit(1)
 					}
-					if s.Status == types.StatusTerminated {
-						ui.Errorf("Session %q is terminated.", sessionID)
+					ui.Infof("🚀 Session %q up and running", e.ID)
+
+					if err := removeKnownHostsEntry(e.Connection.Host); err != nil {
+						// Log and continue anyway. Most likely the entry is not there.
+						ui.Debugf("Failed to remove known_hosts entry: %v", err)
+					}
+
+					if err := ssh(ctx, *e.Connection); err != nil {
+						ui.Errorf("%s", err)
 						os.Exit(1)
 					}
+
+					if terminate := ui.Confirm("SSH session terminated. Do you want to terminate the session?", "n"); terminate {
+						if err := sessionTerminate(ctx, e.ID); err != nil {
+							return err
+						}
+						ui.Infof("Session %q terminated.", e.ID)
+						os.Exit(0)
+					}
 				}
+				return nil
 			}
+
+		case err := <-errch:
+			var e *types.Error
+			if errors.As(err, &e) {
+				uie := &ui.Error{Error: e}
+				fmt.Println(uie.Verbose())
+				os.Exit(1)
+			}
+			return err
 
 		case <-ctx.Done():
-			return ctx.Err()
+			return nil
 		}
 	}
 }

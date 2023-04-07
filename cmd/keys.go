@@ -24,11 +24,21 @@ func sshKeyAdd(ctx context.Context, publicKeyPath string, owner string, name *st
 		return "", fmt.Errorf("failed reading public key file: %v", err)
 	}
 
+	user := strings.Split(config.Config.Unweave.User.Email, "@")[0]
+
+	filename := filepath.Base(publicKeyPath)
+	if filename == "id_rsa" || filename == "id_rsa.pub" {
+		filename = fmt.Sprintf("%s_id_rsa.pub", user)
+	}
+
 	// If the name is id_rsa or id_rsa.pub, we'll use the user's email address to avoid conflicts
-	if name != nil && (*name == "id_rsa" || *name == "id_rsa.pub") {
-		user := strings.Split(config.Config.Unweave.User.Email, "@")[0]
-		n := fmt.Sprintf("%s_id_rsa.pub", user)
-		name = &n
+	if name != nil {
+		if *name == "id_rsa" || *name == "id_rsa.pub" {
+			n := fmt.Sprintf("%s_id_rsa.pub", user)
+			name = &n
+		}
+	} else {
+		name = &filename
 	}
 
 	uwc := InitUnweaveClient()
