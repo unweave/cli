@@ -3,7 +3,6 @@ package config
 import (
 	_ "embed"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -92,6 +91,15 @@ func GetActiveProjectPath() (string, error) {
 	return activeProjectDir, nil
 }
 
+func GetDotUnweavePath() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		ui.Errorf("Could not get user home directory")
+		os.Exit(1)
+	}
+	return filepath.Join(home, ".unweave")
+}
+
 func Init() {
 	// ----- ProjectConfig -----
 	envConfig := &secrets{}
@@ -111,10 +119,6 @@ func Init() {
 	projectConfig.Env = envConfig
 
 	// ----- Unweave Config -----
-	home, err := os.UserHomeDir()
-	if err != nil {
-		log.Fatal("Could not get user home directory")
-	}
 
 	env := "production"
 	if e, ok := os.LookupEnv("UNWEAVE_ENV"); ok {
@@ -125,15 +129,15 @@ func Init() {
 
 	switch env {
 	case "staging", "stg":
-		unweaveConfigPath = filepath.Join(home, ".unweave/stg-config.toml")
+		unweaveConfigPath = filepath.Join(GetDotUnweavePath(), "stg-config.toml")
 		apiURL = "https://api.staging-unweave.io"
 		appURL = "https://app.staging-unweave.io"
 	case "development", "dev":
-		unweaveConfigPath = filepath.Join(home, ".unweave/dev-config.toml")
+		unweaveConfigPath = filepath.Join(GetDotUnweavePath(), "dev-config.toml")
 		apiURL = "http://localhost:4000"
 		appURL = "http://localhost:3000"
 	case "production", "prod":
-		unweaveConfigPath = filepath.Join(home, ".unweave/config.toml")
+		unweaveConfigPath = filepath.Join(GetDotUnweavePath(), "config.toml")
 	default:
 		// If anything else, assume production
 		fmt.Println("Unrecognized environment. Assuming production.")
