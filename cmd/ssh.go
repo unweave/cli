@@ -6,12 +6,10 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"syscall"
 
 	"github.com/spf13/cobra"
-	"github.com/unweave/cli/config"
 	"github.com/unweave/cli/ui"
 	"github.com/unweave/unweave/api/types"
 )
@@ -73,13 +71,6 @@ func SSH(cmd *cobra.Command, args []string) error {
 
 	ui.Infof("Initializing node...")
 
-	keyname, _, err := sshKeyGenerate(ctx, config.Config.Unweave.User.ID, nil)
-	config.SSHKeyName = keyname
-	if err != nil {
-		// Log and use the default key
-		ui.Debugf("Failed to generate SSH key: %v", err)
-	}
-
 	execch, errch, err := sessionCreateAndWatch(ctx, types.ExecCtx{})
 	if err != nil {
 		return err
@@ -102,8 +93,7 @@ func SSH(cmd *cobra.Command, args []string) error {
 						ui.Debugf("Failed to remove known_hosts entry: %v", err)
 					}
 
-					keypath := filepath.Join(getSSHKeyFolder(), keyname)
-					if err := ssh(ctx, *e.Connection, &keypath); err != nil {
+					if err := ssh(ctx, *e.Connection, nil); err != nil {
 						ui.Errorf("%s", err)
 						os.Exit(1)
 					}
