@@ -10,7 +10,7 @@ require (
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	github.com/spf13/cobra v1.6.1
-	github.com/unweave/unweave v0.0.0-20230406234149-02a8510469ac
+	github.com/unweave/unweave v0.0.0-20230407024101-befac99e57d8
 )
 
 require (

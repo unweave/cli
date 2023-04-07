@@ -76,6 +76,22 @@ func SSHKeyAdd(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+func getSSHKeyFolder() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		ui.Errorf("Unable to find home directory: %s", err)
+		os.Exit(1)
+	}
+	dotSSHPath := filepath.Join(home, ".ssh")
+	if _, err := os.Stat(dotSSHPath); os.IsNotExist(err) {
+		if err := os.MkdirAll(dotSSHPath, 0700); err != nil {
+			ui.Errorf(".ssh directory not found and attempt to create it failed: %s", err)
+			os.Exit(1)
+		}
+	}
+	return dotSSHPath
+}
+
 func sshKeyGenerate(ctx context.Context, owner string, name *string) (keyName string, pub []byte, err error) {
 	uwc := InitUnweaveClient()
 	params := types.SSHKeyGenerateParams{Name: name}
@@ -84,24 +100,11 @@ func sshKeyGenerate(ctx context.Context, owner string, name *string) (keyName st
 		return "", nil, ui.HandleError(err)
 	}
 
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", nil, err
-	}
-
 	prv := []byte(res.PrivateKey)
 	pub = []byte(res.PublicKey)
-	dotSSHPath := filepath.Join(home, ".ssh")
+	dotSSHPath := getSSHKeyFolder()
 	publicKeyPath := filepath.Join(dotSSHPath, res.Name+".pub")
-	privateKeyPath := filepath.Join(dotSSHPath, res.Name+".pem")
-
-	if _, err := os.Stat(dotSSHPath); os.IsNotExist(err) {
-		if err := os.MkdirAll(dotSSHPath, 0700); err != nil {
-			ui.Errorf(".ssh directory not found and attempt to create it failed: %s", err)
-			os.Exit(1)
-			return "", nil, nil
-		}
-	}
+	privateKeyPath := filepath.Join(dotSSHPath, res.Name)
 
 	if err = os.WriteFile(privateKeyPath, prv, 0600); err != nil {
 		ui.Errorf("Failed to write private key to %s: %v", privateKeyPath, err)

@@ -71,8 +71,8 @@ github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
 github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
-github.com/unweave/unweave v0.0.0-20230406234149-02a8510469ac h1:SAvQVlnWa17oLhKYueIGuDn0VMPJOkWyYraCDbthF/w=
-github.com/unweave/unweave v0.0.0-20230406234149-02a8510469ac/go.mod h1:Kf8tPlqWrB62b14sN8vIx5t7H2b+ZOwN58WjOKs0/vw=
+github.com/unweave/unweave v0.0.0-20230407024101-befac99e57d8 h1:PA5THBJZ+1SQQ8Z9PXnJmJy5g8nDIONQgAm1DtUxBXg=
+github.com/unweave/unweave v0.0.0-20230407024101-befac99e57d8/go.mod h1:Kf8tPlqWrB62b14sN8vIx5t7H2b+ZOwN58WjOKs0/vw=
 golang.org/x/crypto v0.1.0 h1:MDRAIl0xIo9Io2xV565hzXHw3zVseKrJKodhohM5CjU=
 golang.org/x/crypto v0.1.0/go.mod h1:RecgLatLF4+eUMCP1PoPZQb+cVrJcOPbHkTkbkB9sbw=
 golang.org/x/sys v0.0.0-20181122145206-62eef0e2fa9b/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=

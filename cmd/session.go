@@ -74,7 +74,6 @@ func setupSSHKey(ctx context.Context) (string, []byte, error) {
 	if config.SSHKeyName != "" {
 		return config.SSHKeyName, nil, nil
 	}
-
 	if config.SSHPublicKeyPath != "" {
 		path := strings.Replace(config.SSHPublicKeyPath, ".pub", "", 1)
 		return sshKeyAddIDRSA(ctx, path, nil)

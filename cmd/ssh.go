@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"syscall"
 
 	"github.com/spf13/cobra"
+	"github.com/unweave/cli/config"
 	"github.com/unweave/cli/ui"
 	"github.com/unweave/unweave/api/types"
 )
@@ -30,13 +32,18 @@ func removeKnownHostsEntry(hostname string) error {
 	return nil
 }
 
-func ssh(ctx context.Context, connectionInfo types.ConnectionInfo) error {
+func ssh(ctx context.Context, connectionInfo types.ConnectionInfo, prvKeyPath *string) error {
 	sshCommand := exec.Command(
 		"ssh",
 		"-o", "StrictHostKeyChecking=no",
 		"-o", "UserKnownHostsFile=/dev/null",
 		fmt.Sprintf("%s@%s", connectionInfo.User, connectionInfo.Host),
 	)
+	if prvKeyPath != nil {
+		sshCommand.Args = append(sshCommand.Args, "-i", *prvKeyPath)
+	}
+
+	ui.Debugf("Running SSH command: %s", strings.Join(sshCommand.Args, " "))
 
 	sshCommand.Stdin = os.Stdin
 	sshCommand.Stdout = os.Stdout
@@ -66,6 +73,13 @@ func SSH(cmd *cobra.Command, args []string) error {
 
 	ui.Infof("Initializing node...")
 
+	keyname, _, err := sshKeyGenerate(ctx, config.Config.Unweave.User.ID, nil)
+	config.SSHKeyName = keyname
+	if err != nil {
+		// Log and use the default key
+		ui.Debugf("Failed to generate SSH key: %v", err)
+	}
+
 	execch, errch, err := sessionCreateAndWatch(ctx, types.ExecCtx{})
 	if err != nil {
 		return err
@@ -88,7 +102,8 @@ func SSH(cmd *cobra.Command, args []string) error {
 						ui.Debugf("Failed to remove known_hosts entry: %v", err)
 					}
 
-					if err := ssh(ctx, *e.Connection); err != nil {
+					keypath := filepath.Join(getSSHKeyFolder(), keyname)
+					if err := ssh(ctx, *e.Connection, &keypath); err != nil {
 						ui.Errorf("%s", err)
 						os.Exit(1)
 					}
