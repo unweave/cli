@@ -53,7 +53,21 @@ func addHost(alias, host, user string, port int) error {
 	}
 	sshConfigPath := filepath.Join(home, ".ssh", "config")
 
-	return writeLines(sshConfigPath, []string{"Include " + getUnweaveSSHConfigPath()})
+	lines, err := readLines(sshConfigPath)
+	if err != nil {
+		return err
+	}
+
+	// Add to the top of the file if it doesn't already exist
+	includeEntry := "Include " + getUnweaveSSHConfigPath()
+	for _, line := range lines {
+		if strings.HasPrefix(line, includeEntry) {
+			return nil
+		}
+	}
+	lines = append([]string{includeEntry}, lines...)
+
+	return writeLines(sshConfigPath, lines)
 }
 
 func removeHost(alias string) error {
