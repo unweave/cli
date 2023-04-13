@@ -52,8 +52,14 @@ func (s *SessionService) Create(ctx context.Context, owner, project string, para
 	req.Header.Set("Content-Type", w.FormDataContentType())
 	req.Header.Set("Authorization", "Bearer "+s.client.cfg.Token)
 
+	// TODO: hack for now: add box query if PersistentFS is set
+	query := ""
+	if params.PersistentFS {
+		query = "isBox=true"
+	}
+
 	r := &RestRequest{
-		Url:    fmt.Sprintf("%s/%s?%s", s.client.cfg.ApiURL, uri, ""),
+		Url:    fmt.Sprintf("%s/%s?%s", s.client.cfg.ApiURL, uri, query),
 		Header: req.Header,
 		Body:   buf,
 		Type:   Post,

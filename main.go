@@ -62,6 +62,22 @@ func init() {
 		Hidden:  true,
 	})
 
+	boxCmd := &cobra.Command{
+		Use:     "box [box-name]",
+		Short:   "Create a new session with a persistent filesystem",
+		GroupID: groupDev,
+		RunE:    withValidProjectURI(cmd.BoxUp),
+		Args:    cobra.RangeArgs(0, 1),
+		Hidden:  true,
+	}
+	boxCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
+	boxCmd.Flags().StringVar(&config.NodeTypeID, "type", "", "Node type to use, eg. `gpu_1x_a100`")
+	boxCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
+	boxCmd.Flags().StringVarP(&config.SSHKeyName, "key", "k", "", "Name of the SSH key to use for the session")
+	boxCmd.Flags().StringVar(&config.SSHPublicKeyPath, "pub", "", "Path to the SSH public key to use")
+
+	rootCmd.AddCommand(boxCmd)
+
 	codeCmd := &cobra.Command{
 		Use:     "code",
 		Short:   "Create a new session and open it in VS Code",
