@@ -124,7 +124,7 @@ func setupSSHKey(ctx context.Context) (string, []byte, error) {
 	return genName, pub, nil
 }
 
-func sessionCreate(ctx context.Context, execCtx types.ExecCtx, persistFS bool) (string, error) {
+func sessionCreate(ctx context.Context, execCtx types.ExecCtx, persistFS bool, filesystemID *string) (string, error) {
 	var region *string
 	var nodeTypeIDs []string
 
@@ -171,6 +171,7 @@ func sessionCreate(ctx context.Context, execCtx types.ExecCtx, persistFS bool) (
 		SSHPublicKey:  sshPublicKey,
 		IsInteractive: true,
 		PersistentFS:  persistFS,
+		FilesystemID:  filesystemID,
 		Ctx:           execCtx,
 	}
 
@@ -202,7 +203,7 @@ func sessionCreate(ctx context.Context, execCtx types.ExecCtx, persistFS bool) (
 }
 
 func sessionCreateAndWatch(ctx context.Context, execCtx types.ExecCtx) (exech chan types.Exec, errch chan error, err error) {
-	sessionID, err := sessionCreate(ctx, execCtx, false)
+	sessionID, err := sessionCreate(ctx, execCtx, false, nil)
 	if err != nil {
 		ui.Errorf("Failed to create session: %v", err)
 		os.Exit(1)
@@ -272,7 +273,7 @@ func sessionCreateAndWatch(ctx context.Context, execCtx types.ExecCtx) (exech ch
 func SessionCreateCmd(cmd *cobra.Command, args []string) error {
 	cmd.SilenceUsage = true
 
-	if _, err := sessionCreate(cmd.Context(), types.ExecCtx{}, false); err != nil {
+	if _, err := sessionCreate(cmd.Context(), types.ExecCtx{}, false, nil); err != nil {
 		os.Exit(1)
 		return nil
 	}

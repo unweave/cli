@@ -9,10 +9,14 @@ import (
 
 func BoxUp(cmd *cobra.Command, args []string) error {
 	cmd.SilenceUsage = true
-
 	params := types.ExecCtx{}
 
-	if _, err := sessionCreate(cmd.Context(), params, true); err != nil {
+	var filesystemID *string
+
+	if len(args) > 0 {
+		filesystemID = &args[0]
+	}
+	if _, err := sessionCreate(cmd.Context(), params, true, filesystemID); err != nil {
 		os.Exit(1)
 		return nil
 	}

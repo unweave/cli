@@ -142,7 +142,7 @@ func Exec(cmd *cobra.Command, args []string) error {
 		Context:  io.NopCloser(buf),
 	}
 
-	_, err = sessionCreate(cmd.Context(), exeCtx, false)
+	_, err = sessionCreate(cmd.Context(), exeCtx, false, nil)
 	if err != nil {
 		return err
 	}

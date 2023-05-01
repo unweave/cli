@@ -22,7 +22,7 @@ type Client struct {
 
 	Build    *BuildService
 	Provider *ProviderService
-	Session  *SessionService
+	Session  *ExecService
 	SSHKey   *SSHKeyService
 
 	// Management
@@ -36,7 +36,7 @@ func NewClient(cfg Config) *Client {
 	}
 	c.Build = &BuildService{client: c}
 	c.Provider = &ProviderService{client: c}
-	c.Session = &SessionService{client: c}
+	c.Session = &ExecService{client: c}
 	c.SSHKey = &SSHKeyService{client: c}
 	c.Account = &AccountService{client: c}
 

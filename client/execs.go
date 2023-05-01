@@ -12,11 +12,11 @@ import (
 	"github.com/unweave/unweave/api/types"
 )
 
-type SessionService struct {
+type ExecService struct {
 	client *Client
 }
 
-func (s *SessionService) Create(ctx context.Context, owner, project string, params types.ExecCreateParams) (*types.Exec, error) {
+func (s *ExecService) Create(ctx context.Context, owner, project string, params types.ExecCreateParams) (*types.Exec, error) {
 	buf := &bytes.Buffer{}
 	w := multipart.NewWriter(buf)
 
@@ -55,7 +55,13 @@ func (s *SessionService) Create(ctx context.Context, owner, project string, para
 	// TODO: hack for now: add box query if PersistentFS is set
 	query := ""
 	if params.PersistentFS {
-		query = "isBox=true"
+		query = "persistFS=true"
+	}
+	if params.FilesystemID != nil {
+		if query != "" {
+			query += "&"
+		}
+		query += "filesystemID=" + *params.FilesystemID
 	}
 
 	r := &RestRequest{
@@ -73,11 +79,11 @@ func (s *SessionService) Create(ctx context.Context, owner, project string, para
 	return exec, nil
 }
 
-func (s *SessionService) Exec(ctx context.Context, cmd []string, image string, sessionID *string) (*types.Exec, error) {
+func (s *ExecService) Exec(ctx context.Context, cmd []string, image string, sessionID *string) (*types.Exec, error) {
 	return nil, nil
 }
 
-func (s *SessionService) Get(ctx context.Context, owner, project, sessionID string) (*types.Exec, error) {
+func (s *ExecService) Get(ctx context.Context, owner, project, sessionID string) (*types.Exec, error) {
 	uri := fmt.Sprintf("projects/%s/%s/sessions/%s", owner, project, sessionID)
 	req, err := s.client.NewAuthorizedRestRequest(Get, uri, nil, nil)
 	if err != nil {
@@ -90,7 +96,7 @@ func (s *SessionService) Get(ctx context.Context, owner, project, sessionID stri
 	return session, nil
 }
 
-func (s *SessionService) List(ctx context.Context, owner, project string, listTerminated bool) ([]types.Exec, error) {
+func (s *ExecService) List(ctx context.Context, owner, project string, listTerminated bool) ([]types.Exec, error) {
 	uri := fmt.Sprintf("projects/%s/%s/sessions", owner, project)
 	query := map[string]string{
 		"terminated": fmt.Sprintf("%t", listTerminated),
@@ -106,7 +112,7 @@ func (s *SessionService) List(ctx context.Context, owner, project string, listTe
 	return res.Sessions, nil
 }
 
-func (s *SessionService) Terminate(ctx context.Context, owner, project, sessionID string) error {
+func (s *ExecService) Terminate(ctx context.Context, owner, project, sessionID string) error {
 	uri := fmt.Sprintf("projects/%s/%s/sessions/%s/terminate", owner, project, sessionID)
 	req, err := s.client.NewAuthorizedRestRequest(Put, uri, nil, nil)
 	if err != nil {
