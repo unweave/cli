@@ -325,10 +325,11 @@ func SessionList(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func sessionTerminate(ctx context.Context, sessionID string) error {
+func sessionTerminate(ctx context.Context, execID string) error {
 	uwc := InitUnweaveClient()
 	owner, projectName := config.GetProjectOwnerAndName()
-	err := uwc.Session.Terminate(ctx, owner, projectName, sessionID)
+
+	err := uwc.Session.Terminate(ctx, owner, projectName, execID)
 	if err != nil {
 		var e *types.Error
 		if errors.As(err, &e) {
@@ -343,14 +344,52 @@ func sessionTerminate(ctx context.Context, sessionID string) error {
 
 func SessionTerminate(cmd *cobra.Command, args []string) error {
 	cmd.SilenceUsage = true
-	sessionID := args[0]
 
-	confirm := ui.Confirm(fmt.Sprintf("Are you sure you want to terminate session %q", sessionID), "n")
+	var execID string
+
+	if len(args) == 1 {
+		execID = args[0]
+	}
+
+	if len(args) == 0 {
+		uwc := InitUnweaveClient()
+		listTerminated := config.All
+
+		owner, projectName := config.GetProjectOwnerAndName()
+		execs, err := uwc.Session.List(cmd.Context(), owner, projectName, listTerminated)
+		if err != nil {
+			var e *types.Error
+			if errors.As(err, &e) {
+				uie := &ui.Error{Error: e}
+				fmt.Println(uie.Verbose())
+				os.Exit(1)
+			}
+			return err
+		}
+
+		optionMap := make(map[int]string)
+		options := make([]string, len(execs))
+
+		for idx, s := range execs {
+			txt := fmt.Sprintf("%s - %s - %s - (%s)", s.Name, s.Provider, s.NodeTypeID, s.Status)
+			options[idx] = txt
+			optionMap[idx] = s.ID
+		}
+
+		selected, err := ui.Select("Select session to terminate", options)
+		if err != nil {
+			return err
+		}
+
+		execID = optionMap[selected]
+	}
+
+	confirm := ui.Confirm(fmt.Sprintf("Are you sure you want to terminate session %q", execID), "n")
 	if !confirm {
 		return nil
 	}
 
-	if err := sessionTerminate(cmd.Context(), sessionID); err != nil {
+	if err := sessionTerminate(cmd.Context(), execID); err != nil {
 		ui.Errorf("Failed to terminate session: %s", err.Error())
 		os.Exit(1)
 	}

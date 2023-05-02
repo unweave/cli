@@ -192,9 +192,9 @@ func init() {
 	sessionCmd.AddCommand(lsCmd)
 
 	sessionCmd.AddCommand(&cobra.Command{
-		Use:   "terminate <session-id>",
+		Use:   "terminate [session-id]",
 		Short: "Terminate an Unweave session",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.RangeArgs(0, 1),
 		RunE:  withValidProjectURI(cmd.SessionTerminate),
 	})
 	rootCmd.AddCommand(sessionCmd)
