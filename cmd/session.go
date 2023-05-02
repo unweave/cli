@@ -38,7 +38,7 @@ func iterateSessionCreateNodeTypes(ctx context.Context, params types.ExecCreateP
 		params.NodeTypeID = nodeTypeID
 
 		owner, projectName := config.GetProjectOwnerAndName()
-		session, err = uwc.Session.Create(ctx, owner, projectName, params)
+		session, err = uwc.Exec.Create(ctx, owner, projectName, params)
 		if err == nil {
 			results := []ui.ResultEntry{
 				{Key: "ID", Value: session.ID},
@@ -204,20 +204,13 @@ func sessionCreate(ctx context.Context, execConfig types.ExecConfig, gitConfig t
 	return sessionID, nil
 }
 
-func sessionCreateAndWatch(ctx context.Context, execConfig types.ExecConfig, gitConfig types.GitConfig) (exech chan types.Exec, errch chan error, err error) {
-	sessionID, err := sessionCreate(ctx, execConfig, gitConfig)
-	if err != nil {
-		ui.Errorf("Failed to create session: %v", err)
-		os.Exit(1)
-		return nil, nil, nil
-	}
-
+func execWaitTillReady(ctx context.Context, execID string) (execch chan types.Exec, errch chan error, err error) {
 	uwc := InitUnweaveClient()
 	listTerminated := config.All
 	owner, projectName := config.GetProjectOwnerAndName()
 
 	errch = make(chan error)
-	exech = make(chan types.Exec)
+	execch = make(chan types.Exec)
 	currentStatus := types.StatusInitializing
 
 	go func() {
@@ -228,7 +221,7 @@ func sessionCreateAndWatch(ctx context.Context, execConfig types.ExecConfig, git
 		for {
 			select {
 			case <-ticker.C:
-				sessions, err := uwc.Session.List(ctx, owner, projectName, listTerminated)
+				sessions, err := uwc.Exec.List(ctx, owner, projectName, listTerminated)
 				if err != nil {
 					var e *types.Error
 					if errors.As(err, &e) {
@@ -242,22 +235,22 @@ func sessionCreateAndWatch(ctx context.Context, execConfig types.ExecConfig, git
 
 				for _, s := range sessions {
 					s := s
-					if s.ID == sessionID {
+					if s.ID == execID {
 						if s.Status != currentStatus {
 							currentStatus = s.Status
-							exech <- s
+							execch <- s
 						}
 						if s.Status == types.StatusError {
-							ui.Errorf("❌ Session %s failed to start", sessionID)
+							ui.Errorf("❌ Session %s failed to start", execID)
 							os.Exit(1)
 						}
 						if s.Status == types.StatusTerminated {
-							ui.Errorf("Session %q is terminated.", sessionID)
+							ui.Errorf("Session %q is terminated.", execID)
 							os.Exit(1)
 						}
 
 						if ticketCount%10 == 0 && s.Status != types.StatusRunning {
-							ui.Infof("Waiting for session %q to start...", sessionID)
+							ui.Infof("Waiting for session %q to start...", execID)
 						}
 						ticketCount++
 					}
@@ -269,7 +262,17 @@ func sessionCreateAndWatch(ctx context.Context, execConfig types.ExecConfig, git
 		}
 	}()
 
-	return exech, errch, nil
+	return execch, errch, nil
+}
+
+func execCreateAndWatch(ctx context.Context, execConfig types.ExecConfig, gitConfig types.GitConfig) (exech chan types.Exec, errch chan error, err error) {
+	execID, err := sessionCreate(ctx, execConfig, gitConfig)
+	if err != nil {
+		ui.Errorf("Failed to create session: %v", err)
+		os.Exit(1)
+		return nil, nil, nil
+	}
+	return execWaitTillReady(ctx, execID)
 }
 
 func SessionCreateCmd(cmd *cobra.Command, args []string) error {
@@ -289,7 +292,7 @@ func SessionList(cmd *cobra.Command, args []string) error {
 	listTerminated := config.All
 
 	owner, projectName := config.GetProjectOwnerAndName()
-	sessions, err := uwc.Session.List(cmd.Context(), owner, projectName, listTerminated)
+	sessions, err := uwc.Exec.List(cmd.Context(), owner, projectName, listTerminated)
 	if err != nil {
 		var e *types.Error
 		if errors.As(err, &e) {
@@ -331,7 +334,7 @@ func sessionTerminate(ctx context.Context, execID string) error {
 	uwc := InitUnweaveClient()
 	owner, projectName := config.GetProjectOwnerAndName()
 
-	err := uwc.Session.Terminate(ctx, owner, projectName, execID)
+	err := uwc.Exec.Terminate(ctx, owner, projectName, execID)
 	if err != nil {
 		var e *types.Error
 		if errors.As(err, &e) {
@@ -344,6 +347,44 @@ func sessionTerminate(ctx context.Context, execID string) error {
 	return nil
 }
 
+func selectExec(ctx context.Context, msg string) (execID string, execs []types.Exec, err error) {
+	uwc := InitUnweaveClient()
+	listTerminated := config.All
+
+	owner, projectName := config.GetProjectOwnerAndName()
+	execs, err = uwc.Exec.List(ctx, owner, projectName, listTerminated)
+	if err != nil {
+		var e *types.Error
+		if errors.As(err, &e) {
+			uie := &ui.Error{Error: e}
+			fmt.Println(uie.Verbose())
+			os.Exit(1)
+		}
+		return "", nil, err
+	}
+
+	optionMap := make(map[int]string)
+	options := make([]string, len(execs))
+	if len(execs) == 0 {
+		return "", nil, nil
+	}
+
+	for idx, s := range execs {
+		txt := fmt.Sprintf("%s - %s - %s - (%s)", s.Name, s.Provider, s.NodeTypeID, s.Status)
+		options[idx] = txt
+		optionMap[idx] = s.ID
+	}
+
+	selected, err := ui.Select(msg, options)
+	if err != nil {
+		return "", nil, err
+	}
+
+	execID = optionMap[selected]
+
+	return execID, execs, nil
+}
+
 func SessionTerminate(cmd *cobra.Command, args []string) error {
 	cmd.SilenceUsage = true
 
@@ -354,36 +395,19 @@ func SessionTerminate(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(args) == 0 {
-		uwc := InitUnweaveClient()
-		listTerminated := config.All
+		var execs []types.Exec
+		execID, execs, _ = selectExec(cmd.Context(), "Select session to terminate")
 
-		owner, projectName := config.GetProjectOwnerAndName()
-		execs, err := uwc.Session.List(cmd.Context(), owner, projectName, listTerminated)
-		if err != nil {
-			var e *types.Error
-			if errors.As(err, &e) {
-				uie := &ui.Error{Error: e}
-				fmt.Println(uie.Verbose())
-				os.Exit(1)
-			}
-			return err
+		if len(execs) == 0 {
+			ui.Attentionf("No active sessions found")
+			return nil
 		}
+	}
 
-		optionMap := make(map[int]string)
-		options := make([]string, len(execs))
-
-		for idx, s := range execs {
-			txt := fmt.Sprintf("%s - %s - %s - (%s)", s.Name, s.Provider, s.NodeTypeID, s.Status)
-			options[idx] = txt
-			optionMap[idx] = s.ID
-		}
-
-		selected, err := ui.Select("Select session to terminate", options)
-		if err != nil {
-			return err
-		}
-
-		execID = optionMap[selected]
+	if execID == "" {
+		// This shouldn't really happen
+		ui.Attentionf("No session selected")
+		return nil
 	}
 
 	confirm := ui.Confirm(fmt.Sprintf("Are you sure you want to terminate session %q", execID), "n")

@@ -154,16 +154,30 @@ func removeKnownHostsEntry(hostname string) error {
 	return nil
 }
 
-func ssh(ctx context.Context, connectionInfo types.ConnectionInfo, prvKeyPath *string) error {
+func ssh(ctx context.Context, connectionInfo types.ConnectionInfo, args []string) error {
+	overrideUserKnownHostsFile := false
+	overrideStrictHostKeyChecking := false
+
+	for _, arg := range args {
+		if strings.Contains(arg, "UserKnownHostsFile") {
+			overrideUserKnownHostsFile = true
+		}
+		if strings.Contains(arg, "StrictHostKeyChecking") {
+			overrideStrictHostKeyChecking = true
+		}
+	}
+
+	if !overrideUserKnownHostsFile {
+		args = append(args, "-o", "UserKnownHostsFile=/dev/null")
+	}
+	if !overrideStrictHostKeyChecking {
+		args = append(args, "-o", "StrictHostKeyChecking=no")
+	}
+
 	sshCommand := exec.Command(
 		"ssh",
-		"-o", "StrictHostKeyChecking=no",
-		"-o", "UserKnownHostsFile=/dev/null",
-		fmt.Sprintf("%s@%s", connectionInfo.User, connectionInfo.Host),
+		append(args, fmt.Sprintf("%s@%s", connectionInfo.User, connectionInfo.Host))...,
 	)
-	if prvKeyPath != nil {
-		sshCommand.Args = append(sshCommand.Args, "-i", *prvKeyPath)
-	}
 
 	ui.Debugf("Running SSH command: %s", strings.Join(sshCommand.Args, " "))
 
@@ -193,16 +207,73 @@ func SSH(cmd *cobra.Command, args []string) error {
 
 	// TODO: parse args and forward to ssh command
 
-	ui.Infof("Initializing node...")
+	errMsg := "❌ Invalid arguments. If you want to pass arguments to the ssh command, " +
+		"use the -- flag. See `unweave ssh --help` for  more information."
 
-	execch, errch, err := sessionCreateAndWatch(ctx, types.ExecConfig{}, types.GitConfig{})
-	if err != nil {
-		return err
+	execCh := make(chan types.Exec)
+	errCh := make(chan error)
+
+	var err error
+	var sshArgs []string
+	var execRef string // Can be execID or name
+
+	// If the number of args is great than one, we always expect the first arg to be
+	// the separator flag "--". If the number of args is one, we expect it to be the
+	// execID or name
+	if len(args) > 1 {
+		sshArgs = args[1:]
+		if sshArgs[0] != "--" {
+			ui.Errorf(errMsg)
+			os.Exit(1)
+		}
+
+		if len(args) == 1 {
+			execRef = args[0]
+		} else {
+			execRef = args[0]
+		}
+	}
+
+	if config.CreateExec {
+		// If the flag to create a new exec is passed, any arguments must be forwarded to
+		// the ssh command
+		if len(args) > 0 && args[0] != "--" {
+			ui.Errorf(errMsg)
+			os.Exit(1)
+		}
+
+		ui.Infof("Initializing node...")
+
+		execCh, errCh, err = execCreateAndWatch(ctx, types.ExecConfig{}, types.GitConfig{})
+		if err != nil {
+			return err
+		}
+
+	} else {
+
+		if execRef == "" {
+			var execs []types.Exec
+
+			execRef, execs, err = selectExec(cmd.Context(), "Select a session to connect to")
+			if err != nil {
+				return err
+			}
+			if len(execs) == 0 {
+				ui.Errorf("❌ No active sessions found and no session name or ID provided. If " +
+					"you want to create a new session, use the --new flag.")
+				os.Exit(1)
+			}
+		}
+
+		execCh, errCh, err = execWaitTillReady(ctx, execRef)
+		if err != nil {
+			return err
+		}
 	}
 
 	for {
 		select {
-		case e := <-execch:
+		case e := <-execCh:
 			if e.Status == types.StatusRunning {
 				if e.Connection == nil {
 					ui.Errorf("❌ Something unexpected happened. No connection info found for session %q", e.ID)
@@ -226,7 +297,7 @@ func SSH(cmd *cobra.Command, args []string) error {
 					}
 				}()
 
-				if err := ssh(ctx, *e.Connection, nil); err != nil {
+				if err := ssh(ctx, *e.Connection, args); err != nil {
 					ui.Errorf("%s", err)
 					os.Exit(1)
 				}
@@ -240,7 +311,7 @@ func SSH(cmd *cobra.Command, args []string) error {
 				return nil
 			}
 
-		case err := <-errch:
+		case err := <-errCh:
 			var e *types.Error
 			if errors.As(err, &e) {
 				uie := &ui.Error{Error: e}

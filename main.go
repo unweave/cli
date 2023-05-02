@@ -200,13 +200,18 @@ func init() {
 	rootCmd.AddCommand(sessionCmd)
 
 	sshCmd := &cobra.Command{
-		Use:     "ssh",
-		Short:   "Initialize a session and SSH into",
+		Use:   "ssh [session-name|id]",
+		Short: "SSH into existing session or create a new one",
+		Long: "You can specify arguments for the ssh command after a double dash (--). \n" +
+			"For example: \n" +
+			"	`unweave ssh -- -L 8080:localhost:8080`\n" +
+			"   `unweave ssh <session-name|id> -- -L 8080:localhost:8080`\n",
 		Hidden:  true,
 		GroupID: groupDev,
-		Args:    cobra.NoArgs,
 		RunE:    withValidProjectURI(cmd.SSH),
 	}
+	sshCmd.Flags().BoolVar(&config.CreateExec, "new", false, "Create a new session if none exists")
+	sshCmd.Flags().BoolVar(&config.NoCopySource, "no-copy", false, "Do not copy source code to the session")
 	sshCmd.Flags().StringVarP(&config.BuildID, "image", "i", "", "Build ID of the container image to use")
 	sshCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
 	sshCmd.Flags().StringVar(&config.NodeTypeID, "type", "", "Node type to use, eg. `gpu_1x_a100`")
