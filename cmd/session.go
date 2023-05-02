@@ -124,8 +124,8 @@ func setupSSHKey(ctx context.Context) (string, []byte, error) {
 	return genName, pub, nil
 }
 
-func sessionCreate(ctx context.Context, execCtx types.ExecCtx, persistFS bool, filesystemID *string) (string, error) {
-	var region *string
+func sessionCreate(ctx context.Context, execConfig types.ExecConfig, gitConfig types.GitConfig) (string, error) {
+	var region, image *string
 	var nodeTypeIDs []string
 
 	if config.Config.Project.DefaultProvider == "" && config.Provider == "" {
@@ -151,8 +151,9 @@ func sessionCreate(ctx context.Context, execCtx types.ExecCtx, persistFS bool, f
 		ui.Errorf("No node types specified")
 		return "", fmt.Errorf("no node types specified")
 	}
+
 	if config.BuildID != "" {
-		execCtx.BuildID = &config.BuildID
+		image = &config.BuildID
 	}
 
 	name, pub, err := setupSSHKey(ctx)
@@ -164,15 +165,16 @@ func sessionCreate(ctx context.Context, execCtx types.ExecCtx, persistFS bool, f
 	sshPublicKey := tools.Stringy(string(pub))
 
 	params := types.ExecCreateParams{
-		Provider:      types.Provider(provider),
-		NodeTypeID:    "",
-		Region:        region,
-		SSHKeyName:    sshKeyName,
-		SSHPublicKey:  sshPublicKey,
-		IsInteractive: true,
-		PersistentFS:  persistFS,
-		FilesystemID:  filesystemID,
-		Ctx:           execCtx,
+		Provider:     types.Provider(provider),
+		NodeTypeID:   "",
+		Region:       region,
+		SSHKeyName:   sshKeyName,
+		SSHPublicKey: sshPublicKey,
+		Image:        image,
+		Command:      execConfig.Command,
+		CommitID:     gitConfig.CommitID,
+		GitURL:       gitConfig.GitURL,
+		Source:       execConfig.Src,
 	}
 
 	sessionID, err := iterateSessionCreateNodeTypes(ctx, params, nodeTypeIDs)
@@ -202,8 +204,8 @@ func sessionCreate(ctx context.Context, execCtx types.ExecCtx, persistFS bool, f
 	return sessionID, nil
 }
 
-func sessionCreateAndWatch(ctx context.Context, execCtx types.ExecCtx) (exech chan types.Exec, errch chan error, err error) {
-	sessionID, err := sessionCreate(ctx, execCtx, false, nil)
+func sessionCreateAndWatch(ctx context.Context, execConfig types.ExecConfig, gitConfig types.GitConfig) (exech chan types.Exec, errch chan error, err error) {
+	sessionID, err := sessionCreate(ctx, execConfig, gitConfig)
 	if err != nil {
 		ui.Errorf("Failed to create session: %v", err)
 		os.Exit(1)
@@ -273,7 +275,7 @@ func sessionCreateAndWatch(ctx context.Context, execCtx types.ExecCtx) (exech ch
 func SessionCreateCmd(cmd *cobra.Command, args []string) error {
 	cmd.SilenceUsage = true
 
-	if _, err := sessionCreate(cmd.Context(), types.ExecCtx{}, false, nil); err != nil {
+	if _, err := sessionCreate(cmd.Context(), types.ExecConfig{}, types.GitConfig{}); err != nil {
 		os.Exit(1)
 		return nil
 	}

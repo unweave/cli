@@ -134,15 +134,23 @@ func Exec(cmd *cobra.Command, args []string) error {
 	commitURL := fmt.Sprintf("%s/commit/%s", gitRemote, commitID)
 	ui.Infof("Commit URL: %s", commitURL)
 
-	exeCtx := types.ExecCtx{
-		Command:  args,
-		CommitID: &commitID,
-		GitURL:   &gitRemote,
-		BuildID:  nil,
-		Context:  io.NopCloser(buf),
+	execConfig := types.ExecConfig{
+		Image:   "",
+		Command: args,
+		Keys:    nil,
+		Volumes: nil,
+		Src: &types.SourceContext{
+			MountPath: "/home/ubuntu",
+			Context:   io.NopCloser(buf),
+		},
 	}
 
-	_, err = sessionCreate(cmd.Context(), exeCtx, false, nil)
+	gitConfig := types.GitConfig{
+		CommitID: &commitID,
+		GitURL:   &gitRemote,
+	}
+
+	_, err = sessionCreate(cmd.Context(), execConfig, gitConfig)
 	if err != nil {
 		return err
 	}

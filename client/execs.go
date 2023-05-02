@@ -20,13 +20,12 @@ func (s *ExecService) Create(ctx context.Context, owner, project string, params 
 	buf := &bytes.Buffer{}
 	w := multipart.NewWriter(buf)
 
-	if params.Ctx.Context != nil {
-
+	if params.Source != nil && params.Source.Context != nil {
 		fw, err := w.CreateFormFile("context", "context.zip")
 		if err != nil {
 			return nil, err
 		}
-		if _, err = io.Copy(fw, params.Ctx.Context); err != nil {
+		if _, err = io.Copy(fw, params.Source.Context); err != nil {
 			return nil, err
 		}
 	}
@@ -54,16 +53,6 @@ func (s *ExecService) Create(ctx context.Context, owner, project string, params 
 
 	// TODO: hack for now: add box query if PersistentFS is set
 	query := ""
-	if params.PersistentFS {
-		query = "persistFS=true"
-	}
-	if params.FilesystemID != nil {
-		if query != "" {
-			query += "&"
-		}
-		query += "filesystemID=" + *params.FilesystemID
-	}
-
 	r := &RestRequest{
 		Url:    fmt.Sprintf("%s/%s?%s", s.client.cfg.ApiURL, uri, query),
 		Header: req.Header,

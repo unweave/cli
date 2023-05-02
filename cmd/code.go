@@ -19,7 +19,7 @@ func Code(cmd *cobra.Command, args []string) error {
 
 	ui.Infof("Initializing node...")
 
-	execch, errch, err := sessionCreateAndWatch(ctx, types.ExecCtx{})
+	execch, errch, err := sessionCreateAndWatch(ctx, types.ExecConfig{}, types.GitConfig{})
 	if err != nil {
 		return err
 	}
