@@ -16,40 +16,13 @@ func Code(cmd *cobra.Command, args []string) error {
 	cmd.SilenceUsage = true
 	ctx := cmd.Context()
 
-	errMsg := "❌ Invalid arguments. If you want to pass arguments to the ssh command, " +
-		"use the -- flag. See `unweave ssh --help` for  more information."
-
 	execCh := make(chan types.Exec)
 	errCh := make(chan error)
 
 	var err error
-	var sshArgs []string
 	var execRef string // Can be execID or name
 
-	// If the number of args is great than one, we always expect the first arg to be
-	// the separator flag "--". If the number of args is one, we expect it to be the
-	// execID or name
-	if len(args) > 1 {
-		sshArgs = args[1:]
-		if sshArgs[0] != "--" {
-			ui.Errorf(errMsg)
-			os.Exit(1)
-		}
-
-		if len(args) == 1 {
-			execRef = args[0]
-		} else {
-			execRef = args[0]
-		}
-	}
 	if config.CreateExec {
-
-		// If the flag to create a new exec is passed, any arguments must be forwarded to
-		// the ssh command
-		if len(args) > 0 && args[0] != "--" {
-			ui.Errorf(errMsg)
-			os.Exit(1)
-		}
 
 		ui.Infof("Initializing node...")
 
