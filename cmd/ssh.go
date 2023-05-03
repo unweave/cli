@@ -383,14 +383,18 @@ func SSH(cmd *cobra.Command, args []string) error {
 					}
 				}()
 
-				dir, err := config.GetActiveProjectPath()
-				if err != nil {
-					ui.Errorf("Failed to get active project path. Skipping copying source directory")
-					return fmt.Errorf("failed to get active project path: %v", err)
-				}
+				if !config.NoCopySource {
+					dir, err := config.GetActiveProjectPath()
+					if err != nil {
+						ui.Errorf("Failed to get active project path. Skipping copying source directory")
+						return fmt.Errorf("failed to get active project path: %v", err)
+					}
 
-				if err := copySource(e.ID, dir, "/home/ubuntu", *e.Connection, ""); err != nil {
-					fmt.Println(err)
+					if err := copySource(e.ID, dir, "/home/ubuntu", *e.Connection, ""); err != nil {
+						fmt.Println(err)
+					}
+				} else {
+					ui.Infof("Skipping copying source directory")
 				}
 
 				if err := ssh(ctx, *e.Connection, args); err != nil {

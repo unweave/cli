@@ -82,6 +82,20 @@ func Code(cmd *cobra.Command, args []string) error {
 
 				// TODO we should wait until port is open
 
+				if !config.NoCopySource {
+					dir, err := config.GetActiveProjectPath()
+					if err != nil {
+						ui.Errorf("Failed to get active project path. Skipping copying source directory")
+						return fmt.Errorf("failed to get active project path: %v", err)
+					}
+
+					if err := copySource(e.ID, dir, "/home/ubuntu", *e.Connection, ""); err != nil {
+						fmt.Println(err)
+					}
+				} else {
+					ui.Infof("Skipping copying source directory")
+				}
+
 				arg := fmt.Sprintf("vscode-remote://ssh-remote+%s@%s/home/ubuntu", e.Connection.User, e.Connection.Host)
 
 				codeCmd := exec.Command("code", "--folder-uri="+arg)

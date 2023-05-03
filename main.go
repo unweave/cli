@@ -85,6 +85,7 @@ func init() {
 		Hidden:  true,
 		RunE:    withValidProjectURI(cmd.Code),
 	}
+	codeCmd.Flags().BoolVar(&config.CreateExec, "new", false, "Create a new")
 	codeCmd.Flags().StringVarP(&config.BuildID, "image", "i", "", "Build ID of the container image to use")
 	codeCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
 	codeCmd.Flags().StringVar(&config.NodeTypeID, "type", "", "Node type to use, eg. `gpu_1x_a100`")
@@ -210,7 +211,7 @@ func init() {
 		GroupID: groupDev,
 		RunE:    withValidProjectURI(cmd.SSH),
 	}
-	sshCmd.Flags().BoolVar(&config.CreateExec, "new", false, "Create a new session if none exists")
+	sshCmd.Flags().BoolVar(&config.CreateExec, "new", false, "Create a new session")
 	sshCmd.Flags().BoolVar(&config.NoCopySource, "no-copy", false, "Do not copy source code to the session")
 	sshCmd.Flags().StringVarP(&config.BuildID, "image", "i", "", "Build ID of the container image to use")
 	sshCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
