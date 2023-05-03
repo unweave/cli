@@ -23,7 +23,11 @@ func Gzip(rootDir string, w io.Writer, ignore *ignore.GitIgnore) error {
 		if err != nil {
 			return err
 		}
-		if ignore.MatchesPath(path) {
+		rPath, err := filepath.Rel(rootDir, path)
+		if err != nil {
+			return err
+		}
+		if ignore.MatchesPath(rPath) {
 			return nil
 		}
 		if d.IsDir() {
@@ -35,10 +39,6 @@ func Gzip(rootDir string, w io.Writer, ignore *ignore.GitIgnore) error {
 		}
 
 		// generate tar header
-		rPath, err := filepath.Rel(rootDir, path)
-		if err != nil {
-			return err
-		}
 		header, err := tar.FileInfoHeader(fi, rPath)
 		if err != nil {
 			return err
@@ -72,15 +72,13 @@ func Zip(rootDir string, w io.Writer, ignore *ignore.GitIgnore) error {
 		if err != nil {
 			return err
 		}
-		if ignore.MatchesPath(path) {
-			return nil
-		}
-
 		rPath, err := filepath.Rel(rootDir, path)
 		if err != nil {
 			return err
 		}
-
+		if ignore.MatchesPath(rPath) {
+			return nil
+		}
 		if d.IsDir() {
 			rPath += "/" // Add a trailing slash for directories
 		}

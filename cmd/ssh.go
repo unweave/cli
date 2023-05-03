@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -154,6 +155,88 @@ func removeKnownHostsEntry(hostname string) error {
 	return nil
 }
 
+func copySource(execID, rootDir, dstPath string, connectionInfo types.ConnectionInfo, keyPath string) error {
+	name := fmt.Sprintf("uw-context-%s.zip", execID)
+	tmpFile, err := os.CreateTemp(os.TempDir(), name)
+	if err != nil {
+		return err
+	}
+
+	ui.Infof("🧳 Gathering context from %q", rootDir)
+
+	if err := gatherContext(rootDir, tmpFile); err != nil {
+		return fmt.Errorf("failed to gather context: %v", err)
+	}
+
+	tmpDstPath := filepath.Join("/tmp", name)
+	scpCommand := exec.Command(
+		"scp",
+		"-r",
+		"-o", "StrictHostKeyChecking=no",
+		"-o", "UserKnownHostsFile=/dev/null",
+		tmpFile.Name(),
+		fmt.Sprintf("%s@%s:%s", connectionInfo.User, connectionInfo.Host, tmpDstPath),
+	)
+	if keyPath != "" {
+		scpCommand.Args = append(scpCommand.Args, "-i", keyPath)
+	}
+
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+
+	scpCommand.Stdout = stdout
+	scpCommand.Stderr = stderr
+
+	ui.Infof("🔄 Copying source to %q", dstPath)
+
+	if err := scpCommand.Run(); err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			// Exited with non-zero exit code
+			if status, ok := exitError.Sys().(syscall.WaitStatus); ok {
+				if status.ExitStatus() == 255 {
+					ui.Infof("The remote host closed the connection.")
+					return fmt.Errorf("failed to copy source: %w", err)
+				}
+			}
+			ui.Infof("Failed to copy source directory to remote host: %s", stderr.String())
+			return err
+		}
+		return fmt.Errorf("scp command failed: %v", err)
+	}
+
+	// Unzip on remote host
+	sshCommand := exec.Command(
+		"ssh",
+		"-o", "StrictHostKeyChecking=no",
+		"-o", "UserKnownHostsFile=/dev/null",
+		"-i", keyPath,
+		fmt.Sprintf("%s@%s", connectionInfo.User, connectionInfo.Host),
+		fmt.Sprintf("unzip %s -d %s && rm -rf %s", tmpDstPath, dstPath, tmpDstPath),
+	)
+
+	sshCommand.Stdout = stdout
+	sshCommand.Stderr = stderr
+
+	if err := sshCommand.Run(); err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			// Exited with non-zero exit code
+			if status, ok := exitError.Sys().(syscall.WaitStatus); ok {
+				if status.ExitStatus() == 255 {
+					ui.Infof("The remote host closed the connection.")
+					return fmt.Errorf("failed to copy source: %w", err)
+				}
+			}
+			ui.Infof("Failed to extract source directory on remote host: %s", stderr.String())
+			return err
+		}
+		return fmt.Errorf("failed to unzip on remote host: %v", err)
+	}
+
+	ui.Infof("✅  Successfully copied source directory to remote host")
+
+	return nil
+}
+
 func ssh(ctx context.Context, connectionInfo types.ConnectionInfo, args []string) error {
 	overrideUserKnownHostsFile := false
 	overrideStrictHostKeyChecking := false
@@ -234,6 +317,9 @@ func SSH(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	watchCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	if config.CreateExec {
 		// If the flag to create a new exec is passed, any arguments must be forwarded to
 		// the ssh command
@@ -244,7 +330,7 @@ func SSH(cmd *cobra.Command, args []string) error {
 
 		ui.Infof("Initializing node...")
 
-		execCh, errCh, err = execCreateAndWatch(ctx, types.ExecConfig{}, types.GitConfig{})
+		execCh, errCh, err = execCreateAndWatch(watchCtx, types.ExecConfig{}, types.GitConfig{})
 		if err != nil {
 			return err
 		}
@@ -265,7 +351,7 @@ func SSH(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		execCh, errCh, err = execWaitTillReady(ctx, execRef)
+		execCh, errCh, err = execWaitTillReady(watchCtx, execRef)
 		if err != nil {
 			return err
 		}
@@ -296,6 +382,16 @@ func SSH(cmd *cobra.Command, args []string) error {
 						ui.Debugf("Failed to remove host from ssh config: %v", e)
 					}
 				}()
+
+				dir, err := config.GetActiveProjectPath()
+				if err != nil {
+					ui.Errorf("Failed to get active project path. Skipping copying source directory")
+					return fmt.Errorf("failed to get active project path: %v", err)
+				}
+
+				if err := copySource(e.ID, dir, "/home/ubuntu", *e.Connection, ""); err != nil {
+					fmt.Println(err)
+				}
 
 				if err := ssh(ctx, *e.Connection, args); err != nil {
 					ui.Errorf("%s", err)
