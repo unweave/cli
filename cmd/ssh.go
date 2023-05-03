@@ -295,6 +295,7 @@ func SSH(cmd *cobra.Command, args []string) error {
 
 	execCh := make(chan types.Exec)
 	errCh := make(chan error)
+	isNew := false
 
 	var err error
 	var sshArgs []string
@@ -334,6 +335,7 @@ func SSH(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
+		isNew = true
 
 	} else {
 
@@ -383,7 +385,7 @@ func SSH(cmd *cobra.Command, args []string) error {
 					}
 				}()
 
-				if !config.NoCopySource {
+				if !config.NoCopySource && isNew {
 					dir, err := config.GetActiveProjectPath()
 					if err != nil {
 						ui.Errorf("Failed to get active project path. Skipping copying source directory")
