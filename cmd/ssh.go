@@ -156,7 +156,7 @@ func removeKnownHostsEntry(hostname string) error {
 }
 
 func copySource(execID, rootDir, dstPath string, connectionInfo types.ConnectionInfo, keyPath string) error {
-	name := fmt.Sprintf("uw-context-%s.zip", execID)
+	name := fmt.Sprintf("uw-context-%s.tar.gz", execID)
 	tmpFile, err := os.CreateTemp(os.TempDir(), name)
 	if err != nil {
 		return err
@@ -164,7 +164,7 @@ func copySource(execID, rootDir, dstPath string, connectionInfo types.Connection
 
 	ui.Infof("🧳 Gathering context from %q", rootDir)
 
-	if err := gatherContext(rootDir, tmpFile); err != nil {
+	if err := gatherContext(rootDir, tmpFile, "tar"); err != nil {
 		return fmt.Errorf("failed to gather context: %v", err)
 	}
 
@@ -211,7 +211,7 @@ func copySource(execID, rootDir, dstPath string, connectionInfo types.Connection
 		"-o", "UserKnownHostsFile=/dev/null",
 		"-i", keyPath,
 		fmt.Sprintf("%s@%s", connectionInfo.User, connectionInfo.Host),
-		fmt.Sprintf("unzip %s -d %s && rm -rf %s", tmpDstPath, dstPath, tmpDstPath),
+		fmt.Sprintf("tar -xzf %s -C %s && rm -rf %s", tmpDstPath, dstPath, tmpDstPath),
 	)
 
 	sshCommand.Stdout = stdout

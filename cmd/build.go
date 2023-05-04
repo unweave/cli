@@ -26,7 +26,7 @@ type gatherContextFunc func(w io.Writer) error
 
 // gatherContext zips up the user's code and environment and write it to a buffer to be
 // uploaded to the server.
-func gatherContext(rootDir string, w io.Writer) error {
+func gatherContext(rootDir string, w io.Writer, archiveType string) error {
 	giPath := filepath.Join(rootDir, ".gitignore")
 	lines := strings.Split(defaultGitIgnore, "\n")
 
@@ -41,7 +41,11 @@ func gatherContext(rootDir string, w io.Writer) error {
 			ui.Errorf("Ignoring .gitignore file")
 		}
 	}
-	return tools.Zip(rootDir, w, gi)
+
+	if archiveType == "zip" {
+		return tools.Zip(rootDir, w, gi)
+	}
+	return tools.Tar(rootDir, w, gi)
 }
 
 func Build(cmd *cobra.Command, args []string) error {
@@ -70,7 +74,7 @@ func Build(cmd *cobra.Command, args []string) error {
 
 	owner, projectName := config.GetProjectOwnerAndName()
 
-	if err := gatherContext(dir, buf); err != nil {
+	if err := gatherContext(dir, buf, "zip"); err != nil {
 		return err
 	}
 	ui.Infof("Starting build for project '%s/%s'", owner, projectName)

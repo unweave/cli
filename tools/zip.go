@@ -12,11 +12,11 @@ import (
 	ignore "github.com/sabhiram/go-gitignore"
 )
 
-func Gzip(rootDir string, w io.Writer, ignore *ignore.GitIgnore) error {
-	zw := gzip.NewWriter(w)
-	tw := tar.NewWriter(zw)
+func Tar(rootDir string, w io.Writer, ignore *ignore.GitIgnore) error {
+	gzw := gzip.NewWriter(w)
+	defer gzw.Close()
 
-	defer zw.Close()
+	tw := tar.NewWriter(gzw)
 	defer tw.Close()
 
 	return filepath.WalkDir(rootDir, func(path string, d fs.DirEntry, err error) error {
@@ -30,35 +30,32 @@ func Gzip(rootDir string, w io.Writer, ignore *ignore.GitIgnore) error {
 		if ignore.MatchesPath(rPath) {
 			return nil
 		}
-		if d.IsDir() {
-			return nil
-		}
 		fi, err := d.Info()
 		if err != nil {
 			return err
 		}
 
-		// generate tar header
 		header, err := tar.FileInfoHeader(fi, rPath)
 		if err != nil {
 			return err
 		}
+		header.Name = rPath
 
-		// must provide real name
-		// (see https://golang.org/src/archive/tar/common.go?#L626)
-		header.Name = filepath.ToSlash(rPath)
-		if err = tw.WriteHeader(header); err != nil {
+		if err := tw.WriteHeader(header); err != nil {
 			return err
 		}
 
-		data, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		defer data.Close()
+		if !d.IsDir() {
+			data, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+			defer data.Close()
 
-		if _, err = io.Copy(tw, data); err != nil {
-			return err
+			_, err = io.Copy(tw, data)
+			if err != nil {
+				return err
+			}
 		}
 		return nil
 	})

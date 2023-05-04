@@ -108,7 +108,7 @@ func Exec(cmd *cobra.Command, args []string) error {
 
 	ui.Infof("Gathering context from %q", dir)
 	buf := &bytes.Buffer{}
-	if err := gatherContext(dir, buf); err != nil {
+	if err := gatherContext(dir, buf, "zip"); err != nil {
 		return err
 	}
 
