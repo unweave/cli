@@ -158,47 +158,40 @@ func init() {
 	})
 
 	// Session commands
-	sessionCmd := &cobra.Command{
-		Use:     "sessions",
-		Aliases: []string{"session", "sess"},
-		Short:   "Manage Unweave sessions: create | ls | terminate",
-		GroupID: groupDev,
-		Args:    cobra.NoArgs,
-	}
-
-	createCmd := &cobra.Command{
-		Use:   "create",
+	newCmd := &cobra.Command{
+		Use:   "new",
 		Short: "Create a new Unweave session.",
 		Long: wordwrap.String("Create a new Unweave session. If no region is provided,"+
 			"the first available one will be selected.", ui.MaxOutputLineLength),
 		Args: cobra.NoArgs,
 		RunE: withValidProjectURI(cmd.SessionCreateCmd),
 	}
-	createCmd.Flags().StringVarP(&config.BuildID, "image", "i", "", "Build ID of the container image to use")
-	createCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
-	createCmd.Flags().StringVar(&config.NodeTypeID, "type", "", "Node type to use, eg. `gpu_1x_a100`")
-	createCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
-	createCmd.Flags().StringVarP(&config.SSHKeyName, "key", "k", "", "Name of the SSH key to use for the session")
-	createCmd.Flags().StringVar(&config.SSHPublicKeyPath, "pub", "", "Path to the SSH public key to use")
-	sessionCmd.AddCommand(createCmd)
+	newCmd.Flags().StringVarP(&config.BuildID, "image", "i", "", "Build ID of the container image to use")
+	newCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
+	newCmd.Flags().StringVar(&config.NodeTypeID, "type", "", "Node type to use, eg. `gpu_1x_a100`")
+	newCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
+	newCmd.Flags().StringVarP(&config.SSHKeyName, "key", "k", "", "Name of the SSH key to use for the session")
+	newCmd.Flags().StringVar(&config.SSHPublicKeyPath, "pub", "", "Path to the SSH public key to use")
+	rootCmd.AddCommand(newCmd)
 
 	lsCmd := &cobra.Command{
-		Use:   "ls",
-		Short: "List active Unweave sessions",
-		Long:  "List active Unweave sessions. To list all sessions, use the --all flag.",
-		Args:  cobra.NoArgs,
-		RunE:  withValidProjectURI(cmd.SessionList),
+		Use:     "ls",
+		Short:   "List active Unweave sessions",
+		Long:    "List active Unweave sessions. To list all sessions, use the --all flag.",
+		Args:    cobra.NoArgs,
+		Aliases: []string{"list"},
+		RunE:    withValidProjectURI(cmd.SessionList),
 	}
 	lsCmd.Flags().BoolVarP(&config.All, "all", "a", false, "List all sessions")
-	sessionCmd.AddCommand(lsCmd)
+	rootCmd.AddCommand(lsCmd)
 
-	sessionCmd.AddCommand(&cobra.Command{
-		Use:   "terminate [session-id]",
-		Short: "Terminate an Unweave session",
-		Args:  cobra.RangeArgs(0, 1),
-		RunE:  withValidProjectURI(cmd.SessionTerminate),
+	rootCmd.AddCommand(&cobra.Command{
+		Use:     "terminate [session-id]",
+		Short:   "Terminate an Unweave session",
+		Args:    cobra.RangeArgs(0, 1),
+		Aliases: []string{"delete", "del"},
+		RunE:    withValidProjectURI(cmd.SessionTerminate),
 	})
-	rootCmd.AddCommand(sessionCmd)
 
 	sshCmd := &cobra.Command{
 		Use:   "ssh [session-name|id]",

@@ -27,9 +27,11 @@ var (
 	//go:embed templates/gitignore
 	gitignoreEmbed string
 
-	unweaveConfigPath = ""
-	projectConfigPath = "unweave/config.toml"
-	envConfigPath     = "unweave/.env"
+	GlobalConfigDirName  = ".unweave_global"
+	ProjectConfigDirName = ".unweave"
+	unweaveConfigPath    = ""
+	projectConfigPath    = ProjectConfigDirName + "/config.toml"
+	envConfigPath        = ProjectConfigDirName + "/.env"
 
 	Config = &config{
 		Unweave: &unweave{
@@ -69,9 +71,9 @@ func GetActiveProjectPath() (string, error) {
 
 	var walk func(path string)
 	walk = func(path string) {
-		dotUnw := filepath.Join(path, "unweave")
-		if _, err = os.Stat(dotUnw); err == nil {
-			if _, err = os.Stat(filepath.Join(dotUnw, "config.toml")); err == nil {
+		cfgDir := filepath.Join(path, ProjectConfigDirName)
+		if _, err = os.Stat(cfgDir); err == nil {
+			if _, err = os.Stat(filepath.Join(cfgDir, "config.toml")); err == nil {
 				activeProjectDir = path
 				return
 			}
@@ -91,13 +93,13 @@ func GetActiveProjectPath() (string, error) {
 	return activeProjectDir, nil
 }
 
-func GetDotUnweavePath() string {
+func GetGlobalConfigPath() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		ui.Errorf("Could not get user home directory")
 		os.Exit(1)
 	}
-	return filepath.Join(home, ".unweave")
+	return filepath.Join(home, GlobalConfigDirName)
 }
 
 func Init() {
@@ -129,15 +131,15 @@ func Init() {
 
 	switch env {
 	case "staging", "stg":
-		unweaveConfigPath = filepath.Join(GetDotUnweavePath(), "stg-config.toml")
+		unweaveConfigPath = filepath.Join(GetGlobalConfigPath(), "stg-config.toml")
 		apiURL = "https://api.staging-unweave.io"
 		appURL = "https://app.staging-unweave.io"
 	case "development", "dev":
-		unweaveConfigPath = filepath.Join(GetDotUnweavePath(), "dev-config.toml")
+		unweaveConfigPath = filepath.Join(GetGlobalConfigPath(), "dev-config.toml")
 		apiURL = "http://localhost:4000"
 		appURL = "http://localhost:3000"
 	case "production", "prod":
-		unweaveConfigPath = filepath.Join(GetDotUnweavePath(), "config.toml")
+		unweaveConfigPath = filepath.Join(GetGlobalConfigPath(), "config.toml")
 	default:
 		// If anything else, assume production
 		fmt.Println("Unrecognized environment. Assuming production.")

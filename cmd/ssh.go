@@ -19,7 +19,7 @@ import (
 )
 
 func getUnweaveSSHConfigPath() string {
-	return filepath.Join(config.GetDotUnweavePath(), "ssh_config")
+	return filepath.Join(config.GetGlobalConfigPath(), "ssh_config")
 }
 
 func addHost(alias, host, user string, port int) error {

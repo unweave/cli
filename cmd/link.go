@@ -36,7 +36,7 @@ func Link(cmd *cobra.Command, args []string) error {
 	}
 
 	if config.IsProjectLinked() {
-		ui.Errorf("Project already linked. Delete the 'unweave' directory to unlink.")
+		ui.Errorf("Project already linked. Delete the %q directory to unlink.", config.ProjectConfigDirName)
 		os.Exit(1)
 	}
 
