@@ -365,7 +365,7 @@ func SSH(cmd *cobra.Command, args []string) error {
 			if e.Status == types.StatusRunning {
 				if e.Connection == nil {
 					ui.Errorf("❌ Something unexpected happened. No connection info found for session %q", e.ID)
-					ui.Infof("Run `unweave session ls` to see the status of your session and try connecting manually.")
+					ui.Infof("Run `unweave ls` to see the status of your session and try connecting manually.")
 					os.Exit(1)
 				}
 				ui.Infof("🚀 Session %q up and running", e.ID)
