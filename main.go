@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 
@@ -72,7 +72,8 @@ func getLatestReleaseVersion(owner, repo string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+
 	if err != nil {
 		return "", err
 	}
@@ -302,8 +303,7 @@ func main() {
 	latestVersion, err := getLatestReleaseVersion(repoOwner, repoName)
 
 	if err != nil {
-		ui.Errorf("Failed to fetch updates: %s", err)
-		os.Exit(1)
+		ui.Errorf("Failed to check latest CLI version: %s", err)
 	}
 
 	checkForUpdates(currentVersion, latestVersion)
