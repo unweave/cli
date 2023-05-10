@@ -304,9 +304,9 @@ func main() {
 
 	if err != nil {
 		ui.Errorf("Failed to check latest CLI version: %s", err)
+	} else {
+		checkForUpdates(currentVersion, latestVersion)
 	}
-
-	checkForUpdates(currentVersion, latestVersion)
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
