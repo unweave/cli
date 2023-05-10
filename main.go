@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/muesli/reflow/wordwrap"
 	"github.com/skratchdot/open-golang/open"
@@ -50,7 +51,7 @@ func withValidProjectURI(r RunE) RunE {
 	}
 }
 
-func checkForUpdates(latestVersion string, currentVersion string) {
+func verifyCLIVersion(currentVersion, latestVersion string) {
 
 	// Don't check for updates if we're running a dev version
 	if latestVersion == "dev" || currentVersion == "dev" {
@@ -84,7 +85,8 @@ func getLatestReleaseVersion(owner, repo string) (string, error) {
 		return "", err
 	}
 
-	return release.TagName, nil
+	v := strings.TrimPrefix(release.TagName, "v")
+	return v, nil
 }
 
 func init() {
@@ -301,11 +303,10 @@ func main() {
 
 	currentVersion := config.Version
 	latestVersion, err := getLatestReleaseVersion(repoOwner, repoName)
-
 	if err != nil {
 		ui.Errorf("Failed to check latest CLI version: %s", err)
 	} else {
-		checkForUpdates(currentVersion, latestVersion)
+		verifyCLIVersion(currentVersion, latestVersion)
 	}
 
 	if err := rootCmd.Execute(); err != nil {
