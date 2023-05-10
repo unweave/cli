@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 
 	"github.com/muesli/reflow/wordwrap"
@@ -16,6 +19,8 @@ import (
 var (
 	groupDev        = "dev"
 	groupManagement = "management"
+	repoOwner       = "unweave"
+	repoName        = "cli"
 
 	rootCmd = &cobra.Command{
 		Use:           "unweave <command>",
@@ -27,6 +32,9 @@ var (
 )
 
 type RunE func(cmd *cobra.Command, args []string) error
+type Release struct {
+	TagName string `json:"tag_name"`
+}
 
 func withValidProjectURI(r RunE) RunE {
 	return func(cmd *cobra.Command, args []string) error {
@@ -40,6 +48,43 @@ func withValidProjectURI(r RunE) RunE {
 		}
 		return r(cmd, args)
 	}
+}
+
+func checkForUpdates(latestVersion string, currentVersion string) {
+
+	// Don't check for updates if we're running a dev version
+	if latestVersion == "dev" || currentVersion == "dev" {
+		return
+	}
+
+	if latestVersion != currentVersion {
+		ui.Attentionf("Your unweave CLI is out of date. Yours: %s, Latest: %s.", currentVersion, latestVersion)
+		ui.Attentionf("Run `brew upgrade unweave` to update it.")
+	}
+}
+
+func getLatestReleaseVersion(owner, repo string) (string, error) {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", owner, repo)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+
+	if err != nil {
+		return "", err
+	}
+
+	var release Release
+	err = json.Unmarshal(body, &release)
+	if err != nil {
+		return "", err
+	}
+
+	return release.TagName, nil
 }
 
 func init() {
@@ -253,6 +298,15 @@ func main() {
 	}()
 
 	config.Init()
+
+	currentVersion := config.Version
+	latestVersion, err := getLatestReleaseVersion(repoOwner, repoName)
+
+	if err != nil {
+		ui.Errorf("Failed to check latest CLI version: %s", err)
+	} else {
+		checkForUpdates(currentVersion, latestVersion)
+	}
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)

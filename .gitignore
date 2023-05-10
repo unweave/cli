@@ -21,3 +21,5 @@ tmp/
 .idea
 .unweave
 unweave
+cli
+.tool-versions
