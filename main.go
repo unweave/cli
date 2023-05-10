@@ -52,7 +52,6 @@ func withValidProjectURI(r RunE) RunE {
 }
 
 func verifyCLIVersion(currentVersion, latestVersion string) {
-
 	// Don't check for updates if we're running a dev version
 	if latestVersion == "dev" || currentVersion == "dev" {
 		return
@@ -60,7 +59,7 @@ func verifyCLIVersion(currentVersion, latestVersion string) {
 
 	if latestVersion != currentVersion {
 		ui.Attentionf("Your unweave CLI is out of date. Yours: %s, Latest: %s.", currentVersion, latestVersion)
-		ui.Attentionf("Run `brew upgrade unweave` to update it.")
+		ui.Attentionf("To update, run: brew update && brew upgrade unweave")
 	}
 }
 
@@ -129,7 +128,6 @@ func init() {
 		Use:     "code",
 		Short:   "Create a new session and open it in VS Code",
 		GroupID: groupDev,
-		Hidden:  true,
 		RunE:    withValidProjectURI(cmd.Code),
 	}
 	codeCmd.Flags().BoolVar(&config.CreateExec, "new", false, "Create a new")
@@ -210,8 +208,9 @@ func init() {
 		Short: "Create a new Unweave session.",
 		Long: wordwrap.String("Create a new Unweave session. If no region is provided,"+
 			"the first available one will be selected.", ui.MaxOutputLineLength),
-		Args: cobra.NoArgs,
-		RunE: withValidProjectURI(cmd.SessionCreateCmd),
+		Args:    cobra.NoArgs,
+		GroupID: groupDev,
+		RunE:    withValidProjectURI(cmd.SessionCreateCmd),
 	}
 	newCmd.Flags().StringVarP(&config.BuildID, "image", "i", "", "Build ID of the container image to use")
 	newCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
@@ -227,6 +226,7 @@ func init() {
 		Long:    "List active Unweave sessions. To list all sessions, use the --all flag.",
 		Args:    cobra.NoArgs,
 		Aliases: []string{"list"},
+		GroupID: groupDev,
 		RunE:    withValidProjectURI(cmd.SessionList),
 	}
 	lsCmd.Flags().BoolVarP(&config.All, "all", "a", false, "List all sessions")
@@ -237,17 +237,17 @@ func init() {
 		Short:   "Terminate an Unweave session",
 		Args:    cobra.RangeArgs(0, 1),
 		Aliases: []string{"delete", "del"},
+		GroupID: groupDev,
 		RunE:    withValidProjectURI(cmd.SessionTerminate),
 	})
 
 	sshCmd := &cobra.Command{
 		Use:   "ssh [session-name|id]",
 		Short: "SSH into existing session or create a new one",
-		Long: "You can specify arguments for the ssh command after a double dash (--). \n" +
-			"For example: \n" +
-			"	`unweave ssh -- -L 8080:localhost:8080`\n" +
-			"   `unweave ssh <session-name|id> -- -L 8080:localhost:8080`\n",
-		Hidden:  true,
+		//Long: "You can specify arguments for the ssh command after a double dash (--). \n" +
+		//	"For example: \n" +
+		//	"	`unweave ssh -- -L 8080:localhost:8080`\n" +
+		//	"   `unweave ssh <session-name|id> -- -L 8080:localhost:8080`\n",
 		GroupID: groupDev,
 		RunE:    withValidProjectURI(cmd.SSH),
 	}
@@ -304,7 +304,7 @@ func main() {
 	currentVersion := config.Version
 	latestVersion, err := getLatestReleaseVersion(repoOwner, repoName)
 	if err != nil {
-		ui.Errorf("Failed to check latest CLI version: %s", err)
+		ui.Errorf("Failed to check latest CLI version")
 	} else {
 		verifyCLIVersion(currentVersion, latestVersion)
 	}
