@@ -1,10 +1,13 @@
 package ssh
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -55,12 +58,12 @@ func Add(ctx context.Context, publicKeyPath, owner string, name *string) (string
 	return keyname, nil
 }
 
-func Generate(ctx context.Context, owner string, name *string) (keyName string, pub []byte, err error) {
+func Generate(ctx context.Context, owner string, name *string) (keyname, keypath string, pub []byte, err error) {
 	uwc := config.InitUnweaveClient()
 	params := types.SSHKeyGenerateParams{Name: name}
 	res, err := uwc.SSHKey.Generate(ctx, owner, params)
 	if err != nil {
-		return "", nil, ui.HandleError(err)
+		return "", "", nil, ui.HandleError(err)
 	}
 
 	prv := []byte(res.PrivateKey)
@@ -72,17 +75,66 @@ func Generate(ctx context.Context, owner string, name *string) (keyName string, 
 	if err = os.WriteFile(privateKeyPath, prv, 0600); err != nil {
 		ui.Errorf("Failed to write private key to %s: %v", privateKeyPath, err)
 		os.Exit(1)
-		return "", nil, nil
+		return "", "", nil, nil
 	}
+
 	if err = os.WriteFile(publicKeyPath, pub, 0600); err != nil {
 		ui.Errorf("Failed to write public key to %s: %v", publicKeyPath, err)
 		os.Exit(1)
-		return "", nil, nil
+		return "", "", nil, nil
 	}
-	ui.Successf("Created new SSH key pair:\n"+
-		"  Name: %s\n"+
-		"  Path: %s\n",
-		res.Name, publicKeyPath)
 
-	return res.Name, pub, nil
+	return res.Name, publicKeyPath, pub, nil
+}
+
+func GenerateFromPrivateKey(ctx context.Context, path string, name *string) (keyName string, pub []byte, err error) {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		ui.Errorf("Private key not found: %s", path)
+		return "", nil, fmt.Errorf("private key not found: %s", path)
+	}
+
+	if name == nil {
+		n := filepath.Base(path)
+		name = &n
+	}
+
+	command := []string{
+		"ssh-keygen",
+		"-y",
+		"-f",
+		path,
+	}
+
+	cmd := exec.Command(command[0], command[1:]...)
+	cmd.Stderr = os.Stderr
+
+	stdoutPipe, err := cmd.StdoutPipe()
+	if err != nil {
+		return "", nil, err
+	}
+
+	if err = cmd.Start(); err != nil {
+		return "", nil, err
+	}
+
+	var stdout bytes.Buffer
+	_, err = io.Copy(&stdout, stdoutPipe)
+	if err = cmd.Wait(); err != nil {
+		return "", nil, err
+	}
+
+	output := stdout.String()
+	pub = []byte(output)
+
+	if err = os.WriteFile(path+".pub", pub, 0600); err != nil {
+		ui.Attentionf("Could not write public key to file.")
+	}
+
+	ui.Infof("Generated public key from private key at path: %s", path)
+
+	keyname, err := Add(ctx, path+".pub", config.Config.Unweave.User.ID, name)
+	if err != nil {
+		return "", nil, err
+	}
+	return keyname, pub, nil
 }
