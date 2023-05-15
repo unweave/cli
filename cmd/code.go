@@ -8,6 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/unweave/cli/config"
+	"github.com/unweave/cli/session"
+	"github.com/unweave/cli/ssh"
 	"github.com/unweave/cli/ui"
 	"github.com/unweave/unweave/api/types"
 )
@@ -49,7 +51,7 @@ func Code(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		execCh, errCh, err = execWaitTillReady(ctx, execRef)
+		execCh, errCh, err = session.Wait(ctx, execRef)
 		if err != nil {
 			return err
 		}
@@ -67,17 +69,17 @@ func Code(cmd *cobra.Command, args []string) error {
 				ui.Infof("🚀 Session %q up and running", e.ID)
 				ui.Infof("🔧 Setting up VS Code ...")
 
-				if err := removeKnownHostsEntry(e.Connection.Host); err != nil {
+				if err := ssh.RemoveKnownHostsEntry(e.Connection.Host); err != nil {
 					// Log and continue anyway. Most likely the entry is not there.
 					ui.Debugf("Failed to remove known_hosts entry: %v", err)
 				}
 
-				if err := addHost("uw:"+e.ID, e.Connection.Host, e.Connection.User, e.Connection.Port); err != nil {
+				if err := ssh.AddHost("uw:"+e.ID, e.Connection.Host, e.Connection.User, e.Connection.Port); err != nil {
 					ui.Debugf("Failed to add host to ssh config: %v", err)
 				}
 
 				defer func() {
-					if e := removeHost("uw:" + e.ID); e != nil {
+					if e := ssh.RemoveHost("uw:" + e.ID); e != nil {
 						ui.Debugf("Failed to remove host from ssh config: %v", e)
 					}
 				}()

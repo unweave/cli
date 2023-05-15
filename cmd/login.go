@@ -17,7 +17,7 @@ import (
 func Login(cmd *cobra.Command, args []string) error {
 	cmd.SilenceUsage = true
 
-	uwc := InitUnweaveClient()
+	uwc := config.InitUnweaveClient()
 	code, err := uwc.Account.PairingTokenCreate(cmd.Context())
 	if err != nil {
 		var e *types.Error

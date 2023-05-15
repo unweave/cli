@@ -41,7 +41,7 @@ func ProviderListNodeTypes(cmd *cobra.Command, args []string) error {
 	cmd.SilenceUsage = true
 
 	provider := types.Provider(args[0])
-	uwc := InitUnweaveClient()
+	uwc := config.InitUnweaveClient()
 	filterAvailable := !config.All
 
 	res, err := uwc.Provider.ListNodeTypes(cmd.Context(), provider, filterAvailable)

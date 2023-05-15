@@ -69,7 +69,7 @@ func Build(cmd *cobra.Command, args []string) error {
 		os.Exit(1)
 	}
 
-	uwc := InitUnweaveClient()
+	uwc := config.InitUnweaveClient()
 	buf := &bytes.Buffer{}
 
 	owner, projectName := config.GetProjectOwnerAndName()

@@ -9,10 +9,11 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
-	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/unweave/cli/config"
+	"github.com/unweave/cli/session"
+	"github.com/unweave/cli/ssh"
 	"github.com/unweave/cli/ui"
 	"github.com/unweave/unweave/api/types"
 	"github.com/unweave/unweave/tools"
@@ -29,29 +30,30 @@ func dashIfZeroValue(v interface{}) interface{} {
 // until the first successful creation. If none of the node types are successful, it
 // returns 503 out of capacity error.
 func iterateSessionCreateNodeTypes(ctx context.Context, params types.ExecCreateParams, nodeTypeIDs []string) (string, error) {
-	uwc := InitUnweaveClient()
+	uwc := config.InitUnweaveClient()
 
 	var err error
-	var session *types.Exec
+	var exec *types.Exec
 
 	for _, nodeTypeID := range nodeTypeIDs {
 		params.NodeTypeID = nodeTypeID
 
 		owner, projectName := config.GetProjectOwnerAndName()
-		session, err = uwc.Exec.Create(ctx, owner, projectName, params)
+		exec, err = uwc.Exec.Create(ctx, owner, projectName, params)
 		if err == nil {
 			results := []ui.ResultEntry{
-				{Key: "ID", Value: session.ID},
-				{Key: "Provider", Value: session.Provider.DisplayName()},
-				{Key: "Type", Value: session.NodeTypeID},
-				{Key: "Region", Value: session.Region},
-				{Key: "Status", Value: fmt.Sprintf("%s", session.Status)},
-				{Key: "SSHKey", Value: fmt.Sprintf("%s", session.SSHKey.Name)},
+				{Key: "Name", Value: exec.Name},
+				{Key: "ID", Value: exec.ID},
+				{Key: "Provider", Value: exec.Provider.DisplayName()},
+				{Key: "Type", Value: exec.NodeTypeID},
+				{Key: "Region", Value: exec.Region},
+				{Key: "Status", Value: fmt.Sprintf("%s", exec.Status)},
+				{Key: "SSHKey", Value: fmt.Sprintf("%s", exec.SSHKey.Name)},
 			}
 
 			ui.ResultTitle("Session Created:")
 			ui.Result(results, ui.IndentWidth)
-			return session.ID, nil
+			return exec.ID, nil
 		}
 
 		if err != nil {
@@ -116,7 +118,7 @@ func setupSSHKey(ctx context.Context) (string, []byte, error) {
 	ui.Attentionf("No SSH key found at %s", path)
 	ui.Attentionf("Generating new SSH key")
 
-	genName, pub, err := sshKeyGenerate(ctx, config.Config.Unweave.User.ID, nil)
+	genName, pub, err := ssh.Generate(ctx, config.Config.Unweave.User.ID, nil)
 	if err != nil {
 		return "", nil, err
 	}
@@ -204,68 +206,6 @@ func sessionCreate(ctx context.Context, execConfig types.ExecConfig, gitConfig t
 	return sessionID, nil
 }
 
-func execWaitTillReady(ctx context.Context, execID string) (execch chan types.Exec, errch chan error, err error) {
-	uwc := InitUnweaveClient()
-	listTerminated := config.All
-	owner, projectName := config.GetProjectOwnerAndName()
-
-	errch = make(chan error)
-	execch = make(chan types.Exec)
-	currentStatus := types.StatusInitializing
-
-	go func() {
-		ticketCount := 0
-		ticker := time.NewTicker(1 * time.Second)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-ticker.C:
-				sessions, err := uwc.Exec.List(ctx, owner, projectName, listTerminated)
-				if err != nil {
-					var e *types.Error
-					if errors.As(err, &e) {
-						uie := &ui.Error{Error: e}
-						fmt.Println(uie.Verbose())
-						os.Exit(1)
-					}
-					errch <- err
-					return
-				}
-
-				for _, s := range sessions {
-					s := s
-					if s.ID == execID {
-						if s.Status != currentStatus {
-							currentStatus = s.Status
-							execch <- s
-							return
-						}
-						if s.Status == types.StatusError {
-							ui.Errorf("❌ Session %s failed to start", execID)
-							os.Exit(1)
-						}
-						if s.Status == types.StatusTerminated {
-							ui.Errorf("Session %q is terminated.", execID)
-							os.Exit(1)
-						}
-
-						if ticketCount%10 == 0 && s.Status != types.StatusRunning {
-							ui.Infof("Waiting for session %q to start...", execID)
-						}
-						ticketCount++
-					}
-				}
-
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-
-	return execch, errch, nil
-}
-
 func execCreateAndWatch(ctx context.Context, execConfig types.ExecConfig, gitConfig types.GitConfig) (exech chan types.Exec, errch chan error, err error) {
 	execID, err := sessionCreate(ctx, execConfig, gitConfig)
 	if err != nil {
@@ -273,7 +213,7 @@ func execCreateAndWatch(ctx context.Context, execConfig types.ExecConfig, gitCon
 		os.Exit(1)
 		return nil, nil, nil
 	}
-	return execWaitTillReady(ctx, execID)
+	return session.Wait(ctx, execID)
 }
 
 func SessionCreateCmd(cmd *cobra.Command, args []string) error {
@@ -289,7 +229,7 @@ func SessionCreateCmd(cmd *cobra.Command, args []string) error {
 func SessionList(cmd *cobra.Command, args []string) error {
 	cmd.SilenceUsage = true
 
-	uwc := InitUnweaveClient()
+	uwc := config.InitUnweaveClient()
 	listTerminated := config.All
 
 	owner, projectName := config.GetProjectOwnerAndName()
@@ -332,7 +272,7 @@ func SessionList(cmd *cobra.Command, args []string) error {
 }
 
 func sessionTerminate(ctx context.Context, execID string) error {
-	uwc := InitUnweaveClient()
+	uwc := config.InitUnweaveClient()
 	owner, projectName := config.GetProjectOwnerAndName()
 
 	err := uwc.Exec.Terminate(ctx, owner, projectName, execID)
@@ -349,7 +289,7 @@ func sessionTerminate(ctx context.Context, execID string) error {
 }
 
 func selectExec(ctx context.Context, msg string) (execID string, execs []types.Exec, err error) {
-	uwc := InitUnweaveClient()
+	uwc := config.InitUnweaveClient()
 	listTerminated := config.All
 
 	owner, projectName := config.GetProjectOwnerAndName()
