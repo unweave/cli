@@ -99,6 +99,9 @@ func init() {
 	flags.StringVarP(&config.AuthToken, "token", "t", "", "Use a specific token to authenticate - overrides login token")
 	flags.BoolVar(&vars.Debug, "debug", false, "Enable debug mode")
 
+	flags.StringVarP(&config.SSHKeyName, "key", "k", "", "Name of the SSH key to use")
+	flags.StringVar(&config.SSHPublicKeyPath, "pub", "", "Path to the SSH public key to use")
+
 	rootCmd.AddCommand(&cobra.Command{
 		Use:     "build [path]",
 		Short:   "Build a project into a container image",
@@ -119,8 +122,6 @@ func init() {
 	boxCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
 	boxCmd.Flags().StringVar(&config.NodeTypeID, "type", "", "Node type to use, eg. `gpu_1x_a100`")
 	boxCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
-	boxCmd.Flags().StringVarP(&config.SSHKeyName, "key", "k", "", "Name of the SSH key to use for the session")
-	boxCmd.Flags().StringVar(&config.SSHPublicKeyPath, "pub", "", "Path to the SSH public key to use")
 
 	rootCmd.AddCommand(boxCmd)
 
@@ -135,6 +136,7 @@ func init() {
 	codeCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
 	codeCmd.Flags().StringVar(&config.NodeTypeID, "type", "", "Node type to use, eg. `gpu_1x_a100`")
 	codeCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
+	codeCmd.Flags().StringVar(&config.SSHPrivateKeyPath, "prv", "", "Absolute Path to the private key to use")
 	rootCmd.AddCommand(codeCmd)
 
 	rootCmd.AddCommand(&cobra.Command{
@@ -152,6 +154,7 @@ func init() {
 		Hidden:  true,
 		RunE:    withValidProjectURI(cmd.Exec),
 	})
+
 	linkCmd := &cobra.Command{
 		Use:     "link [project-id]",
 		Aliases: []string{"init"}, // this is temp
@@ -216,8 +219,6 @@ func init() {
 	newCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
 	newCmd.Flags().StringVar(&config.NodeTypeID, "type", "", "Node type to use, eg. `gpu_1x_a100`")
 	newCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
-	newCmd.Flags().StringVarP(&config.SSHKeyName, "key", "k", "", "Name of the SSH key to use for the session")
-	newCmd.Flags().StringVar(&config.SSHPublicKeyPath, "pub", "", "Path to the SSH public key to use")
 	rootCmd.AddCommand(newCmd)
 
 	lsCmd := &cobra.Command{
@@ -257,7 +258,7 @@ func init() {
 	sshCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
 	sshCmd.Flags().StringVar(&config.NodeTypeID, "type", "", "Node type to use, eg. `gpu_1x_a100`")
 	sshCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
-	sshCmd.Flags().StringVar(&config.SSHPrivateKeyPath, "prv", "", "Absolute Path to the SSH private key to use")
+	sshCmd.Flags().StringVar(&config.SSHPrivateKeyPath, "prv", "", "Absolute Path to the private key to use")
 	rootCmd.AddCommand(sshCmd)
 
 	// SSH Key commands

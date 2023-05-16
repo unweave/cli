@@ -37,10 +37,12 @@ func sshKeyAddIDRSA(ctx context.Context, path string, name *string) (keyName str
 		ui.Errorf("Invalid RSA private key filename: %s. Only ida_rsa is supported", filename)
 		return "", nil, fmt.Errorf("invalid RSA private key filename: %s", filename)
 	}
+
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		ui.Errorf("Private key not found: %s", path)
 		return "", nil, fmt.Errorf("private key not found: %s", path)
 	}
+
 	if _, err := os.Stat(path + ".pub"); os.IsNotExist(err) {
 		ui.Errorf("Public key not found: %s", path+".pub")
 		return "", nil, fmt.Errorf("public key not found: %s", path+".pub")
@@ -50,6 +52,7 @@ func sshKeyAddIDRSA(ctx context.Context, path string, name *string) (keyName str
 	if err != nil {
 		return "", nil, err
 	}
+
 	return keyname, pub, nil
 }
 

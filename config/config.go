@@ -27,11 +27,9 @@ var (
 	//go:embed templates/gitignore
 	gitignoreEmbed string
 
-	GlobalConfigDirName  = ".unweave_global"
-	ProjectConfigDirName = ".unweave"
-	unweaveConfigPath    = ""
-	projectConfigPath    = ProjectConfigDirName + "/config.toml"
-	envConfigPath        = ProjectConfigDirName + "/.env"
+	unweaveConfigPath = ""
+	projectConfigPath = ProjectConfigDirName + "/config.toml"
+	envConfigPath     = ProjectConfigDirName + "/.env"
 
 	Config = &config{
 		Unweave: &unweave{

@@ -61,6 +61,7 @@ func Add(ctx context.Context, publicKeyPath, owner string, name *string) (string
 func Generate(ctx context.Context, owner string, name *string) (keyname, keypath string, pub []byte, err error) {
 	uwc := config.InitUnweaveClient()
 	params := types.SSHKeyGenerateParams{Name: name}
+
 	res, err := uwc.SSHKey.Generate(ctx, owner, params)
 	if err != nil {
 		return "", "", nil, ui.HandleError(err)
@@ -68,23 +69,24 @@ func Generate(ctx context.Context, owner string, name *string) (keyname, keypath
 
 	prv := []byte(res.PrivateKey)
 	pub = []byte(res.PublicKey)
-	dotSSHPath := config.GetSSHKeysFolder()
-	publicKeyPath := filepath.Join(dotSSHPath, res.Name+".pub")
-	privateKeyPath := filepath.Join(dotSSHPath, res.Name)
 
-	if err = os.WriteFile(privateKeyPath, prv, 0600); err != nil {
-		ui.Errorf("Failed to write private key to %s: %v", privateKeyPath, err)
+	sshDir := config.GetUnweaveSSHKeysFolder()
+	pubPath := filepath.Join(sshDir, res.Name+".pub")
+	prvPath := filepath.Join(sshDir, res.Name)
+
+	if err = os.WriteFile(prvPath, prv, 0600); err != nil {
+		ui.Errorf("Failed to write private key to %s: %v", prvPath, err)
 		os.Exit(1)
 		return "", "", nil, nil
 	}
 
-	if err = os.WriteFile(publicKeyPath, pub, 0600); err != nil {
-		ui.Errorf("Failed to write public key to %s: %v", publicKeyPath, err)
+	if err = os.WriteFile(pubPath, pub, 0600); err != nil {
+		ui.Errorf("Failed to write public key to %s: %v", pubPath, err)
 		os.Exit(1)
 		return "", "", nil, nil
 	}
 
-	return res.Name, publicKeyPath, pub, nil
+	return res.Name, pubPath, pub, nil
 }
 
 func GenerateFromPrivateKey(ctx context.Context, path string, name *string) (keyName string, pub []byte, err error) {
