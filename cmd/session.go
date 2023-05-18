@@ -330,7 +330,7 @@ func SessionTerminate(cmd *cobra.Command, args []string) error {
 
 // sessionSelectSSHExecRef selects an exec id from all sessions in the Unweave environment or whether to create a new
 // provides an option to create a new Exec an error or exits if unrecoverable
-func sessionSelectSSHExecRef(cmd *cobra.Command, execRef string, allowNew bool) (string, bool, error) {
+func sessionSelectSSHExecRef(cmd *cobra.Command, execRef string, allowNew bool) (execID string, isNewSession bool, err error) {
 	const newSessionOpt = "✨  Create a new session"
 
 	execs, err := getExecs(cmd.Context())
@@ -343,14 +343,16 @@ func sessionSelectSSHExecRef(cmd *cobra.Command, execRef string, allowNew bool) 
 		return "", false, err
 	}
 
-	opts, execIdByOpts := formatExecCobraOpts(execs)
+	var cobraOpts = make([]string, 0, len(execs))
+	var selectionIdByIdx = make(map[int]string, len(execs))
 
-	if !allowNew {
-		opts = append(opts, newSessionOpt)
-		execIdByOpts[len(opts)-1] = newSessionOpt
+	if allowNew {
+		cobraOpts, selectionIdByIdx = formatExecCobraOpts(execs)
+	} else {
+		cobraOpts, selectionIdByIdx = formatExecCobraOpts(execs, newSessionOpt)
 	}
 
-	execRef, err = selectExec(cmd.Context(), opts, execIdByOpts, "Select a session to connect to")
+	execRef, err = renderCobraSelection(cmd.Context(), cobraOpts, selectionIdByIdx, "Select a session to connect to")
 	if err != nil {
 		return "", false, err
 	}
@@ -364,32 +366,21 @@ func sessionSelectSSHExecRef(cmd *cobra.Command, execRef string, allowNew bool) 
 }
 
 // formatExecCobraOpts returns Cobra options per exec, and a map associating option idx to its Exec ID
-func formatExecCobraOpts(execs []types.Exec) ([]string, map[int]string) {
+// prepends any additional options in prepend
+func formatExecCobraOpts(execs []types.Exec, prepend ...string) ([]string, map[int]string) {
 	optionMap := make(map[int]string)
-	options := make([]string, len(execs))
+	options := make([]string, len(prepend)+len(execs))
+
+	for idx, opt := range prepend {
+		options[idx] = opt
+		optionMap[idx] = opt
+	}
 
 	for idx, s := range execs {
 		txt := fmt.Sprintf("%s - %s - %s - (%s)", s.Name, s.Provider, s.NodeTypeID, s.Status)
-		options[idx] = txt
-		optionMap[idx] = s.ID
+		options[len(prepend)+idx] = txt
+		optionMap[len(prepend)+idx] = s.ID
 	}
 
 	return options, optionMap
-}
-
-// getExecs invokes the UnweaveClient and returns all container executions. Does not list terminated sessions by default
-func getExecs(ctx context.Context) ([]types.Exec, error) {
-	uwc := config.InitUnweaveClient()
-	listTerminated := config.All
-	owner, projectName := config.GetProjectOwnerAndName()
-	return uwc.Exec.List(ctx, owner, projectName, listTerminated)
-}
-
-// selectExec invokes Cobra to select an exec with a prompt msg, returns the selected ID
-func selectExec(ctx context.Context, options []string, execIdByOptIdx map[int]string, msg string) (execID string, err error) {
-	selected, err := ui.Select(msg, options)
-	if err != nil {
-		return "", err
-	}
-	return execIdByOptIdx[selected], nil
 }
