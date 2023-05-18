@@ -316,3 +316,69 @@ func SessionTerminate(cmd *cobra.Command, args []string) error {
 	ui.Successf("Session terminated")
 	return nil
 }
+
+// sessionSelectSSHExecRef selects an exec id from all sessions in the Unweave environment or whether to create a new
+// provides an option to create a new Exec an error or exits if unrecoverable
+func sessionSelectSSHExecRef(cmd *cobra.Command, execRef string, allowNew bool) (string, bool, error) {
+	const newSessionOpt = "create a new session"
+
+	execs, err := getExecs(cmd.Context())
+	if err != nil {
+		if e, ok := err.(*types.Error); ok {
+			uie := &ui.Error{Error: e}
+			fmt.Println(uie.Verbose())
+			os.Exit(1)
+		}
+		return "", false, err
+	}
+
+	opts, execIdByOpts := formatExecCobraOpts(execs)
+
+	if !allowNew {
+		opts = append(opts, newSessionOpt)
+		execIdByOpts[len(opts)-1] = newSessionOpt
+	}
+
+	execRef, err = selectExec(cmd.Context(), opts, execIdByOpts, "Select a session to connect to")
+	if err != nil {
+		return "", false, err
+	}
+
+	if len(execs) == 0 {
+		ui.Errorf("❌ No active sessions found and no session name or ID provided. If " +
+			"you want to create a new session, use the --new flag.")
+		os.Exit(1)
+	}
+	return execRef, execRef == newSessionOpt, nil
+}
+
+// formatExecCobraOpts returns Cobra options per exec, and a map associating option idx to its Exec ID
+func formatExecCobraOpts(execs []types.Exec) ([]string, map[int]string) {
+	optionMap := make(map[int]string)
+	options := make([]string, len(execs))
+
+	for idx, s := range execs {
+		txt := fmt.Sprintf("%s - %s - %s - (%s)", s.Name, s.Provider, s.NodeTypeID, s.Status)
+		options[idx] = txt
+		optionMap[idx] = s.ID
+	}
+
+	return options, optionMap
+}
+
+// getExecs invokes the UnweaveClient and returns all container executions. Does not list terminated sessions by default
+func getExecs(ctx context.Context) ([]types.Exec, error) {
+	uwc := config.InitUnweaveClient()
+	listTerminated := config.All
+	owner, projectName := config.GetProjectOwnerAndName()
+	return uwc.Exec.List(ctx, owner, projectName, listTerminated)
+}
+
+// selectExec invokes Cobra to select an exec with a prompt, returns the selected ID
+func selectExec(ctx context.Context, options []string, idByOptionIdx map[int]string, msg string) (execID string, err error) {
+	selected, err := ui.Select(msg, options)
+	if err != nil {
+		return "", err
+	}
+	return idByOptionIdx[selected], nil
+}
