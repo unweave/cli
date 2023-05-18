@@ -278,44 +278,6 @@ func sessionTerminate(ctx context.Context, execID string) error {
 	return nil
 }
 
-func selectExec(ctx context.Context, msg string) (execID string, execs []types.Exec, err error) {
-	uwc := config.InitUnweaveClient()
-	listTerminated := config.All
-
-	owner, projectName := config.GetProjectOwnerAndName()
-	execs, err = uwc.Exec.List(ctx, owner, projectName, listTerminated)
-	if err != nil {
-		var e *types.Error
-		if errors.As(err, &e) {
-			uie := &ui.Error{Error: e}
-			fmt.Println(uie.Verbose())
-			os.Exit(1)
-		}
-		return "", nil, err
-	}
-
-	optionMap := make(map[int]string)
-	options := make([]string, len(execs))
-	if len(execs) == 0 {
-		return "", nil, nil
-	}
-
-	for idx, s := range execs {
-		txt := fmt.Sprintf("%s - %s - %s - (%s)", s.Name, s.Provider, s.NodeTypeID, s.Status)
-		options[idx] = txt
-		optionMap[idx] = s.ID
-	}
-
-	selected, err := ui.Select(msg, options)
-	if err != nil {
-		return "", nil, err
-	}
-
-	execID = optionMap[selected]
-
-	return execID, execs, nil
-}
-
 func SessionTerminate(cmd *cobra.Command, args []string) error {
 	cmd.SilenceUsage = true
 
@@ -326,8 +288,19 @@ func SessionTerminate(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(args) == 0 {
-		var execs []types.Exec
-		execID, execs, _ = selectExec(cmd.Context(), "Select session to terminate")
+		execs, err := getExecs(cmd.Context())
+		if err != nil {
+			var e *types.Error
+			if errors.As(err, &e) {
+				uie := &ui.Error{Error: e}
+				fmt.Println(uie.Verbose())
+				os.Exit(1)
+			}
+			return err
+		}
+
+		opts, execIdByOpts := formatExecCobraOpts(execs)
+		execID, _ = renderCobraSelection(cmd.Context(), opts, execIdByOpts, "Select session to terminate")
 
 		if len(execs) == 0 {
 			ui.Attentionf("No active sessions found")
@@ -353,4 +326,61 @@ func SessionTerminate(cmd *cobra.Command, args []string) error {
 
 	ui.Successf("Session terminated")
 	return nil
+}
+
+// sessionSelectSSHExecRef selects an exec id from all sessions in the Unweave environment or whether to create a new
+// provides an option to create a new Exec an error or exits if unrecoverable
+func sessionSelectSSHExecRef(cmd *cobra.Command, execRef string, allowNew bool) (execID string, isNewSession bool, err error) {
+	const newSessionOpt = "✨  Create a new session"
+
+	execs, err := getExecs(cmd.Context())
+	if err != nil {
+		if e, ok := err.(*types.Error); ok {
+			uie := &ui.Error{Error: e}
+			fmt.Println(uie.Verbose())
+			os.Exit(1)
+		}
+		return "", false, err
+	}
+
+	var cobraOpts = make([]string, 0, len(execs))
+	var selectionIdByIdx = make(map[int]string, len(execs))
+
+	if allowNew {
+		cobraOpts, selectionIdByIdx = formatExecCobraOpts(execs)
+	} else {
+		cobraOpts, selectionIdByIdx = formatExecCobraOpts(execs, newSessionOpt)
+	}
+
+	execRef, err = renderCobraSelection(cmd.Context(), cobraOpts, selectionIdByIdx, "Select a session to connect to")
+	if err != nil {
+		return "", false, err
+	}
+
+	if len(execs) == 0 {
+		ui.Errorf("❌ No active sessions found and no session name or ID provided. If " +
+			"you want to create a new session, use the --new flag.")
+		os.Exit(1)
+	}
+	return execRef, execRef == newSessionOpt, nil
+}
+
+// formatExecCobraOpts returns Cobra options per exec, and a map associating option idx to its Exec ID
+// prepends any additional options in prepend
+func formatExecCobraOpts(execs []types.Exec, prepend ...string) ([]string, map[int]string) {
+	optionMap := make(map[int]string)
+	options := make([]string, len(prepend)+len(execs))
+
+	for idx, opt := range prepend {
+		options[idx] = opt
+		optionMap[idx] = opt
+	}
+
+	for idx, s := range execs {
+		txt := fmt.Sprintf("%s - %s - %s - (%s)", s.Name, s.Provider, s.NodeTypeID, s.Status)
+		options[len(prepend)+idx] = txt
+		optionMap[len(prepend)+idx] = s.ID
+	}
+
+	return options, optionMap
 }

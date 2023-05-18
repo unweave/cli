@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -157,4 +158,12 @@ func Exec(cmd *cobra.Command, args []string) error {
 
 	// TODO: subscribe to logs
 	return nil
+}
+
+// getExecs invokes the UnweaveClient and returns all container executions. Does not list terminated sessions by default
+func getExecs(ctx context.Context) ([]types.Exec, error) {
+	uwc := config.InitUnweaveClient()
+	listTerminated := config.All
+	owner, projectName := config.GetProjectOwnerAndName()
+	return uwc.Exec.List(ctx, owner, projectName, listTerminated)
 }
