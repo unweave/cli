@@ -385,7 +385,7 @@ func getExecs(ctx context.Context) ([]types.Exec, error) {
 	return uwc.Exec.List(ctx, owner, projectName, listTerminated)
 }
 
-// selectExec invokes Cobra to select an exec with a prompt, returns the selected ID
+// selectExec invokes Cobra to select an exec with a prompt msg, returns the selected ID
 func selectExec(ctx context.Context, options []string, execIdByOptIdx map[int]string, msg string) (execID string, err error) {
 	selected, err := ui.Select(msg, options)
 	if err != nil {
