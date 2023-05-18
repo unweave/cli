@@ -278,44 +278,6 @@ func sessionTerminate(ctx context.Context, execID string) error {
 	return nil
 }
 
-func selectExec(ctx context.Context, msg string) (execID string, execs []types.Exec, err error) {
-	uwc := config.InitUnweaveClient()
-	listTerminated := config.All
-
-	owner, projectName := config.GetProjectOwnerAndName()
-	execs, err = uwc.Exec.List(ctx, owner, projectName, listTerminated)
-	if err != nil {
-		var e *types.Error
-		if errors.As(err, &e) {
-			uie := &ui.Error{Error: e}
-			fmt.Println(uie.Verbose())
-			os.Exit(1)
-		}
-		return "", nil, err
-	}
-
-	optionMap := make(map[int]string)
-	options := make([]string, len(execs))
-	if len(execs) == 0 {
-		return "", nil, nil
-	}
-
-	for idx, s := range execs {
-		txt := fmt.Sprintf("%s - %s - %s - (%s)", s.Name, s.Provider, s.NodeTypeID, s.Status)
-		options[idx] = txt
-		optionMap[idx] = s.ID
-	}
-
-	selected, err := ui.Select(msg, options)
-	if err != nil {
-		return "", nil, err
-	}
-
-	execID = optionMap[selected]
-
-	return execID, execs, nil
-}
-
 func SessionTerminate(cmd *cobra.Command, args []string) error {
 	cmd.SilenceUsage = true
 
