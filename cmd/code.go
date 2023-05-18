@@ -36,24 +36,26 @@ func Code(cmd *cobra.Command, args []string) error {
 		isNew = true
 
 	} else {
+		var createNew bool
 
 		if execRef == "" {
-			var execs []types.Exec
-
-			execRef, execs, err = selectExec(cmd.Context(), "Select a session to connect to")
+			execRef, createNew, err = sessionSelectSSHExecRef(cmd, execRef, false)
 			if err != nil {
 				return err
 			}
-			if len(execs) == 0 {
-				ui.Errorf("❌ No active sessions found and no session name or ID provided. If " +
-					"you want to create a new session, use the --new flag.")
-				os.Exit(1)
-			}
 		}
 
-		execCh, errCh, err = session.Wait(ctx, execRef)
-		if err != nil {
-			return err
+		if createNew {
+			execCh, errCh, err = execCreateAndWatch(ctx, types.ExecConfig{}, types.GitConfig{})
+			if err != nil {
+				return err
+			}
+			isNew = true
+		} else {
+			execCh, errCh, err = session.Wait(ctx, execRef)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	for {

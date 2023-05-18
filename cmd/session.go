@@ -288,8 +288,19 @@ func SessionTerminate(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(args) == 0 {
-		var execs []types.Exec
-		execID, execs, _ = selectExec(cmd.Context(), "Select session to terminate")
+		execs, err := getExecs(cmd.Context())
+		if err != nil {
+			var e *types.Error
+			if errors.As(err, &e) {
+				uie := &ui.Error{Error: e}
+				fmt.Println(uie.Verbose())
+				os.Exit(1)
+			}
+			return err
+		}
+
+		opts, execIdByOpts := formatExecCobraOpts(execs)
+		execID, _ = selectExec(cmd.Context(), opts, execIdByOpts, "Select session to terminate")
 
 		if len(execs) == 0 {
 			ui.Attentionf("No active sessions found")
