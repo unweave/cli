@@ -44,8 +44,51 @@ func setupSSHKey(ctx context.Context) (string, []byte, error) {
 		return name, pub, nil
 	}
 
-	// No key details provided, try using ~/.ssh/id_rsa.pub
+	// No key details provided, try using ~/.unweave_global/.ssh/
+	name, pub, err := useUnweaveGlobalSSHKeys(ctx)
+	if err == nil {
+		return name, pub, nil
+	}
 
+	// No SSH key found, generate a new one
+	return generateSSHKey(ctx)
+}
+
+func useUnweaveGlobalSSHKeys(ctx context.Context) (string, []byte, error) {
+	_, err := os.Stat(config.UnweaveSSHKeysDir)
+	if err != nil {
+		// ~/.unweave_global/.ssh/ directory does not exist
+		return "", nil, err
+	}
+
+	entries, err := os.ReadDir(config.UnweaveSSHKeysDir)
+	if err != nil {
+		return "", nil, err
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		filename := entry.Name()
+		if strings.HasSuffix(filename, ".pub") {
+			pubKeyPath := filepath.Join(config.UnweaveSSHKeysDir, filename)
+			pubKeyBytes, err := os.ReadFile(pubKeyPath)
+			if err != nil {
+				return "", nil, err
+			}
+
+			keyname := strings.TrimSuffix(filename, ".pub")
+			return keyname, pubKeyBytes, nil
+		}
+	}
+
+	return "", nil, fmt.Errorf("no public SSH key found in %s", config.UnweaveSSHKeysDir)
+}
+
+// Deprecated: we no longer use the idrsa key as default
+func useIdRsaSSHKey(ctx context.Context) (string, []byte, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", nil, err
@@ -68,12 +111,13 @@ func setupSSHKey(ctx context.Context) (string, []byte, error) {
 			return "", nil, err
 		}
 		ui.Infof("Using default key path ~/.ssh/id_rsa")
-
 		return name, pub, nil
 	}
 
-	// No id_rsa found, check in unweave ssh keys
+	return "", nil, fmt.Errorf("No SSH key found at %s", path)
+}
 
+func generateSSHKey(ctx context.Context) (string, []byte, error) {
 	dir := config.GetUnweaveSSHKeysFolder()
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -81,11 +125,7 @@ func setupSSHKey(ctx context.Context) (string, []byte, error) {
 	}
 
 	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-
-		if !strings.HasSuffix(entry.Name(), ".pub") {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".pub") {
 			continue
 		}
 
@@ -96,11 +136,10 @@ func setupSSHKey(ctx context.Context) (string, []byte, error) {
 			return "", nil, err
 		}
 		ui.Infof("Using default key path %s", config.SSHPublicKeyPath)
-
 		return keyname, nil, nil
 	}
 
-	ui.Attentionf("No SSH key found at %s", path)
+	ui.Attentionf("No SSH key found at %s", dir)
 	ui.Attentionf("Generating new SSH key")
 
 	name, keypath, pub, err := ssh.Generate(ctx, config.Config.Unweave.User.ID, nil)
