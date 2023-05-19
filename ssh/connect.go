@@ -12,29 +12,19 @@ import (
 	"github.com/unweave/unweave/api/types"
 )
 
-func Connect(ctx context.Context, connectionInfo types.ConnectionInfo, args []string) error {
-	overrideUserKnownHostsFile := false
-	overrideStrictHostKeyChecking := false
+func Connect(ctx context.Context, connectionInfo types.ConnectionInfo, privKeyPath string) error {
+	var sshArgs []string
 
-	for _, arg := range args {
-		if strings.Contains(arg, "UserKnownHostsFile") {
-			overrideUserKnownHostsFile = true
-		}
-		if strings.Contains(arg, "StrictHostKeyChecking") {
-			overrideStrictHostKeyChecking = true
-		}
-	}
-
-	if !overrideUserKnownHostsFile {
-		args = append(args, "-o", "UserKnownHostsFile=/dev/null")
-	}
-	if !overrideStrictHostKeyChecking {
-		args = append(args, "-o", "StrictHostKeyChecking=no")
+	// TODO, we want to allow options to override the UserKnownHostsFile and StrictHostKeyChecking
+	sshArgs = append(sshArgs, "-o", "UserKnownHostsFile=/dev/null")
+	sshArgs = append(sshArgs, "-o", "StrictHostKeyChecking=no")
+	if privKeyPath != "" {
+		sshArgs = append(sshArgs, "-i", privKeyPath)
 	}
 
 	sshCommand := exec.Command(
 		"ssh",
-		append(args, fmt.Sprintf("%s@%s", connectionInfo.User, connectionInfo.Host))...,
+		append(sshArgs, fmt.Sprintf("%s@%s", connectionInfo.User, connectionInfo.Host))...,
 	)
 
 	ui.Debugf("Running SSH command: %s", strings.Join(sshCommand.Args, " "))
