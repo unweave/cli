@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/charmbracelet/lipgloss v0.6.0
+	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
 	github.com/manifoldco/promptui v0.9.0
 	github.com/muesli/reflow v0.3.0
 	github.com/pelletier/go-toml/v2 v2.0.6
