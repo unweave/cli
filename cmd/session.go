@@ -357,11 +357,6 @@ func sessionSelectSSHExecRef(cmd *cobra.Command, execRef string, allowNew bool) 
 		return "", false, err
 	}
 
-	if len(execs) == 0 {
-		ui.Errorf("❌ No active sessions found and no session name or ID provided. If " +
-			"you want to create a new session, use the --new flag.")
-		os.Exit(1)
-	}
 	return execRef, execRef == newSessionOpt, nil
 }
 
