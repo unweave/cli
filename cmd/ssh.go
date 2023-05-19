@@ -178,3 +178,31 @@ func handleSSHConn(ctx context.Context, execCh chan types.Exec, isNew bool, sshA
 		}
 	}
 }
+// getPrivateKeyPathFromArgs returns the first best private key path from SSH arguments for an Exec
+func getPrivateKeyPathFromArgs(ctx context.Context, e types.Exec, sshArgsByKey map[string]string) string {
+	keysFolder := config.GetUnweaveSSHKeysFolder()
+
+	// Case where a local key can be parsed from the pub flag
+	if localKey, ok := sshArgsByKey["prv"]; ok {
+		return localKey
+	}
+
+	// Case where we know what the public key was when the session was created
+	dirEntries, err := os.ReadDir(keysFolder)
+	if err != nil {
+		ui.HandleError(err)
+		os.Exit(1)
+	}
+
+	list := filterPublicKeys(dirEntries)
+	for _, key := range list {
+		// Unweave private keys are represented by the public key name
+		name := strings.TrimSuffix(key.Name(), ".pub")
+		if e.SSHKey.Name == name {
+			privateKeyPath := filepath.Join(keysFolder, name)
+			return privateKeyPath
+		}
+	}
+
+	return ""
+}
