@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/spf13/cobra"
@@ -18,133 +19,40 @@ import (
 	"github.com/unweave/unweave/api/types"
 )
 
-func copySource(execID, rootDir, dstPath string, connectionInfo types.ConnectionInfo, keyPath string) error {
-	name := fmt.Sprintf("uw-context-%s.tar.gz", execID)
-	tmpFile, err := os.CreateTemp(os.TempDir(), name)
-	if err != nil {
-		return err
-	}
-
-	ui.Infof("🧳 Gathering context from %q", rootDir)
-
-	if err := gatherContext(rootDir, tmpFile, "tar"); err != nil {
-		return fmt.Errorf("failed to gather context: %v", err)
-	}
-
-	tmpDstPath := filepath.Join("/tmp", name)
-	scpCommand := exec.Command(
-		"scp",
-		"-r",
-		"-o", "StrictHostKeyChecking=no",
-		"-o", "UserKnownHostsFile=/dev/null",
-		tmpFile.Name(),
-		fmt.Sprintf("%s@%s:%s", connectionInfo.User, connectionInfo.Host, tmpDstPath),
-	)
-	if keyPath != "" {
-		scpCommand.Args = append(scpCommand.Args, "-i", keyPath)
-	}
-
-	stdout := &bytes.Buffer{}
-	stderr := &bytes.Buffer{}
-
-	scpCommand.Stdout = stdout
-	scpCommand.Stderr = stderr
-
-	ui.Infof("🔄 Copying source to %q", dstPath)
-
-	if err := scpCommand.Run(); err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
-			// Exited with non-zero exit code
-			if status, ok := exitError.Sys().(syscall.WaitStatus); ok {
-				if status.ExitStatus() == 255 {
-					ui.Infof("The remote host closed the connection.")
-					return fmt.Errorf("failed to copy source: %w", err)
-				}
-			}
-			ui.Infof("Failed to copy source directory to remote host: %s", stderr.String())
-			return err
-		}
-		return fmt.Errorf("scp command failed: %v", err)
-	}
-
-	// Unzip on remote host
-	sshCommand := exec.Command(
-		"ssh",
-		"-o", "StrictHostKeyChecking=no",
-		"-o", "UserKnownHostsFile=/dev/null",
-		"-i", keyPath,
-		fmt.Sprintf("%s@%s", connectionInfo.User, connectionInfo.Host),
-		fmt.Sprintf("tar -xzf %s -C %s && rm -rf %s", tmpDstPath, dstPath, tmpDstPath),
-	)
-
-	sshCommand.Stdout = stdout
-	sshCommand.Stderr = stderr
-
-	if err := sshCommand.Run(); err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
-			// Exited with non-zero exit code
-			if status, ok := exitError.Sys().(syscall.WaitStatus); ok {
-				if status.ExitStatus() == 255 {
-					ui.Infof("The remote host closed the connection.")
-					return fmt.Errorf("failed to copy source: %w", err)
-				}
-			}
-			ui.Infof("Failed to extract source directory on remote host: %s", stderr.String())
-			return err
-		}
-		return fmt.Errorf("failed to unzip on remote host: %v", err)
-	}
-
-	ui.Infof("✅  Successfully copied source directory to remote host")
-
-	return nil
+// SSH handles the Cobra command for SSH
+func SSH(cmd *cobra.Command, args []string) error {
+	return sessionConnect(cmd, false, args)
 }
 
-func SSH(cmd *cobra.Command, args []string) error {
+// sessionConnect handles the flow to spawn a new SSH connection to an exec.
+func sessionConnect(cmd *cobra.Command, withOpenVSCode bool, args []string) error {
 	cmd.SilenceUsage = true
 	ctx := cmd.Context()
 
-	// TODO: parse args and forward to ssh command
+	sshArgsByKey, err := parseSSHArgs(args)
+	if err != nil {
+		const errMsg = "❌ Invalid arguments. If you want to pass arguments to the ssh command, " +
+			"use the -- flag. See `unweave ssh --help` for more information"
+		ui.Errorf(errMsg)
+		os.Exit(1)
+	}
 
-	errMsg := "❌ Invalid arguments. If you want to pass arguments to the ssh command, " +
-		"use the -- flag. See `unweave ssh --help` for  more information."
+	// Lays the ground to fix the following:
+	// TODO Fix a bug where unweave ssh {exec name / exec id} was not implemented/working
+	execRef, err := getExecRefFromArgs(cmd.Context(), sshArgsByKey)
+	if err != nil {
+		ui.Errorf(err.Error())
+		os.Exit(1)
+	}
 
 	execCh := make(chan types.Exec)
 	errCh := make(chan error)
 	isNew := false
 
-	var err error
-	var sshArgs []string
-	var execRef string // Can be execID or name
-
-	// If the number of args is great than one, we always expect the first arg to be
-	// the separator flag "--". If the number of args is one, we expect it to be the
-	// execID or name
-	if len(args) > 1 {
-		sshArgs = args[1:]
-		if sshArgs[0] != "--" {
-			ui.Errorf(errMsg)
-			os.Exit(1)
-		}
-
-		if len(args) == 1 {
-			execRef = args[0]
-		} else {
-			execRef = args[0]
-		}
-	}
-
 	watchCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	if config.CreateExec {
-		// If the flag to create a new exec is passed, any arguments must be forwarded to
-		// the ssh command
-		if len(args) > 0 && args[0] != "--" {
-			ui.Errorf(errMsg)
-			os.Exit(1)
-		}
-
 		ui.Infof("Initializing node...")
 
 		execCh, errCh, err = execCreateAndWatch(watchCtx, types.ExecConfig{}, types.GitConfig{})
@@ -152,7 +60,6 @@ func SSH(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		isNew = true
-
 	} else {
 		var createNewExec bool
 		if execRef == "" {
@@ -176,47 +83,74 @@ func SSH(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	if withOpenVSCode {
+		return handleSSHConnWithOpenVSCode(ctx, execCh, isNew, sshArgsByKey, errCh)
+	} else {
+		return handleSSHConn(ctx, execCh, isNew, sshArgsByKey, errCh)
+	}
+}
+
+// parseSSHArgs dynamically parses the SSH connection arguments and returns them as a map.
+func parseSSHArgs(args []string) (map[string]string, error) {
+	sshArgs := make(map[string]string)
+
+	if len(args) < 1 {
+		return sshArgs, nil
+	}
+	if len(args) == 1 {
+		sshArgs["execRef"] = args[0]
+		return sshArgs, nil
+	}
+	if args[0] != "--" {
+		return nil, errors.New("invalid arguments format. Use '--' as the separator")
+	}
+
+	// Iterate over the arguments starting from the second one
+	for i := 1; i < len(args); i += 2 {
+		key := strings.TrimPrefix(args[i], "--")
+		if i+1 >= len(args) {
+			return nil, errors.New("invalid arguments format. Missing value for flag: " + key)
+		}
+		value := args[i+1]
+		sshArgs[key] = value
+	}
+
+	return sshArgs, nil
+}
+
+// getExecRefFromArgs returns the execRef from SSH Arguments, checks if it exists
+func getExecRefFromArgs(ctx context.Context, sshArgsByKey map[string]string) (execRef string, err error) {
+	execRef = sshArgsByKey["execRef"]
+	if execRef == "" {
+		return "", nil
+	}
+
+	e, err := getExecByNameOrID(ctx, execRef)
+	if err != nil {
+		return "", err
+	}
+	if e != nil {
+		return e.ID, nil
+	}
+
+	return "", fmt.Errorf("session ID %s does not exist", execRef)
+}
+
+func handleSSHConn(ctx context.Context, execCh chan types.Exec, isNew bool, sshArgsByKey map[string]string, errCh chan error) error {
 	for {
 		select {
 		case e := <-execCh:
 			if e.Status == types.StatusRunning {
-				if e.Connection == nil {
-					ui.Errorf("❌ Something unexpected happened. No connection info found for session %q", e.ID)
-					ui.Infof("Run `unweave ls` to see the status of your session and try connecting manually.")
-					os.Exit(1)
-				}
-				ui.Infof("🚀 Session %q up and running", e.ID)
+				ensureHosts(e)
+				defer cleanupHosts(e)
+				privKey := getPrivateKeyPathFromArgs(ctx, e, sshArgsByKey)
 
-				if err := ssh.RemoveKnownHostsEntry(e.Connection.Host); err != nil {
-					// Log and continue anyway. Most likely the entry is not there.
-					ui.Debugf("Failed to remove known_hosts entry: %v", err)
+				err := handleCopySourceDir(isNew, e, privKey)
+				if err != nil {
+					return err
 				}
 
-				if err := ssh.AddHost("uw:"+e.ID, e.Connection.Host, e.Connection.User, e.Connection.Port); err != nil {
-					ui.Debugf("Failed to add host to ssh config: %v", err)
-				}
-
-				defer func() {
-					if e := ssh.RemoveHost("uw:" + e.ID); e != nil {
-						ui.Debugf("Failed to remove host from ssh config: %v", e)
-					}
-				}()
-
-				if !config.NoCopySource && isNew {
-					dir, err := config.GetActiveProjectPath()
-					if err != nil {
-						ui.Errorf("Failed to get active project path. Skipping copying source directory")
-						return fmt.Errorf("failed to get active project path: %v", err)
-					}
-
-					if err := copySource(e.ID, dir, "/home/ubuntu", *e.Connection, ""); err != nil {
-						fmt.Println(err)
-					}
-				} else {
-					ui.Infof("Skipping copying source directory")
-				}
-
-				if err := ssh.Connect(ctx, *e.Connection, args); err != nil {
+				if err := ssh.Connect(ctx, *e.Connection, privKey); err != nil {
 					ui.Errorf("%s", err)
 					os.Exit(1)
 				}

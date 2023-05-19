@@ -167,3 +167,38 @@ func getExecs(ctx context.Context) ([]types.Exec, error) {
 	owner, projectName := config.GetProjectOwnerAndName()
 	return uwc.Exec.List(ctx, owner, projectName, listTerminated)
 }
+
+// getExecByNameOrID invokes the UnweaveClient and returns the container execution associated a name or ID that matches a given string
+func getExecByNameOrID(ctx context.Context, ref string) (*types.Exec, error) {
+	execs, err := getExecs(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, e := range execs {
+		// handle a case where the user accidentally input the execRef ID as the name
+		if ref == e.Name {
+			return &e, nil
+		}
+		if ref == e.ID {
+			return &e, nil
+		}
+	}
+
+	return nil, fmt.Errorf("session %s does not exist", ref)
+}
+
+// getExec invokes the UnweaveClient and returns the container execution associated with an ID
+func getExec(ctx context.Context, execID string) (*types.Exec, error) {
+	execs, err := getExecs(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, e := range execs {
+		if e.ID == execID {
+			return &e, nil
+		}
+	}
+
+	return nil, fmt.Errorf("session %s does not exist", execID)
+}
