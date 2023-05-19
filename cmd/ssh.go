@@ -116,10 +116,33 @@ func getOrCreateExec(cmd *cobra.Command, execRef string) (chan types.Exec, bool,
 		}
 	}
 
-		case <-ctx.Done():
-			return nil
+	return execCh, isNew, nil
+}
+
+func parseArgsToExecRefAndSSHArgs(args []string) (string, []string) {
+	var sshArgs []string
+	var execRef string // Can be execID or name
+
+	// If the number of args is great than one, we always expect the first arg to be
+	// the separator flag "--". If the number of args is one, we expect it to be the
+	// execID or name
+	if len(args) > 1 {
+		sshArgs = args[1:]
+		if sshArgs[0] != "--" {
+			const errMsg = "❌ Invalid arguments. If you want to pass arguments to the ssh command, " +
+				"use the -- flag. See `unweave ssh --help` for more information"
+			ui.Errorf(errMsg)
+			os.Exit(1)
+		}
+
+		if len(args) == 1 {
+			execRef = args[0]
+		} else {
+			execRef = args[0]
 		}
 	}
+
+	return execRef, sshArgs
 }
 
 func cleanupHosts(e types.Exec) {
@@ -166,24 +189,23 @@ func handleCopySourceDir(isNew bool, e types.Exec, privKey string) error {
 }
 
 func copySource(execID, rootDir, dstPath string, connectionInfo types.ConnectionInfo, privKeyPath string) error {
+	ui.Infof("🧳 Gathering context from %q", rootDir)
+
 	tmpFile, err := createTempContextFile(execID)
 	if err != nil {
 		return err
 	}
-
-	ui.Infof("🧳 Gathering context from %q", rootDir)
-
 	if err := gatherContext(rootDir, tmpFile, "tar"); err != nil {
 		return fmt.Errorf("failed to gather context: %v", err)
 	}
 
 	tmpDstPath := filepath.Join("/tmp", fmt.Sprintf("uw-context-%s.tar.gz", execID))
 
-	if err := executeSCP(tmpFile.Name(), tmpDstPath, dstPath, connectionInfo, privKeyPath); err != nil {
+	if err := copySourceSCP(tmpFile.Name(), tmpDstPath, dstPath, connectionInfo, privKeyPath); err != nil {
 		return fmt.Errorf("failed to copy source: %w", err)
 	}
 
-	if err := executeSSH(tmpDstPath, dstPath, connectionInfo, privKeyPath); err != nil {
+	if err := copySourceUnzip(tmpDstPath, dstPath, connectionInfo, privKeyPath); err != nil {
 		return fmt.Errorf("failed to extract source: %w", err)
 	}
 
@@ -201,7 +223,7 @@ func createTempContextFile(execID string) (*os.File, error) {
 	return tmpFile, nil
 }
 
-func executeSCP(srcPath, tmpDstPath, dstPath string, connectionInfo types.ConnectionInfo, privKeyPath string) error {
+func copySourceSCP(srcPath, tmpDstPath, dstPath string, connectionInfo types.ConnectionInfo, privKeyPath string) error {
 	scpCommandArgs := []string{"-r",
 		"-o", "StrictHostKeyChecking=no",
 		"-o", "UserKnownHostsFile=/dev/null",
@@ -239,7 +261,7 @@ func executeSCP(srcPath, tmpDstPath, dstPath string, connectionInfo types.Connec
 	return nil
 }
 
-func executeSSH(srcPath, dstPath string, connectionInfo types.ConnectionInfo, privKeyPath string) error {
+func copySourceUnzip(srcPath, dstPath string, connectionInfo types.ConnectionInfo, privKeyPath string) error {
 	sshCommand := exec.Command(
 		"ssh",
 		"-o", "StrictHostKeyChecking=no",
@@ -273,14 +295,9 @@ func executeSSH(srcPath, dstPath string, connectionInfo types.ConnectionInfo, pr
 	return nil
 }
 
-// getPrivateKeyPathFromArgs returns the first best private key path from SSH arguments for an Exec
-func getPrivateKeyPathFromArgs(ctx context.Context, e types.Exec, sshArgsByKey map[string]string) string {
+// getUnweavePrivateKeyOrDefault tries to find the private key for this Exec, or relies on a default key if it can't be found
+func getUnweavePrivateKeyOrDefault(ctx context.Context, e types.Exec, defaultKey string) string {
 	keysFolder := config.GetUnweaveSSHKeysFolder()
-
-	// Case where a local key can be parsed from the pub flag
-	if localKey, ok := sshArgsByKey["prv"]; ok {
-		return localKey
-	}
 
 	// Case where we know what the public key was when the session was created
 	dirEntries, err := os.ReadDir(keysFolder)
@@ -299,5 +316,5 @@ func getPrivateKeyPathFromArgs(ctx context.Context, e types.Exec, sshArgsByKey m
 		}
 	}
 
-	return ""
+	return defaultKey
 }
