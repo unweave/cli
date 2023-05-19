@@ -187,18 +187,3 @@ func getExecByNameOrID(ctx context.Context, ref string) (*types.Exec, error) {
 
 	return nil, fmt.Errorf("session %s does not exist", ref)
 }
-
-// getExec invokes the UnweaveClient and returns the container execution associated with an ID
-func getExec(ctx context.Context, execID string) (*types.Exec, error) {
-	execs, err := getExecs(ctx)
-	if err != nil {
-		return nil, err
-	}
-	for _, e := range execs {
-		if e.ID == execID {
-			return &e, nil
-		}
-	}
-
-	return nil, fmt.Errorf("session %s does not exist", execID)
-}
