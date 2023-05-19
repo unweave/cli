@@ -68,7 +68,7 @@ func SSH(cmd *cobra.Command, args []string) error {
 	}
 }
 
-// getOrCreateExec handles the flow to spawn a new Exec or get an existing one, passes it to a Channel
+// getOrCreateExec handles the flow to spawn a new Exec or get an existing one, returns whether to expect a new Exec
 func getOrCreateExec(cmd *cobra.Command, execRef string) (chan types.Exec, bool, chan error) {
 	cmd.SilenceUsage = true
 	ctx := cmd.Context()
