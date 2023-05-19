@@ -12,11 +12,11 @@ import (
 	"github.com/unweave/unweave/api/types"
 )
 
-func Connect(ctx context.Context, connectionInfo types.ConnectionInfo, prvKeyPath string, sshArgs []string) error {
+func Connect(ctx context.Context, connectionInfo types.ConnectionInfo, prvKeyPath string, args []string) error {
 	overrideUserKnownHostsFile := false
 	overrideStrictHostKeyChecking := false
 
-	for _, arg := range sshArgs {
+	for _, arg := range args {
 		if strings.Contains(arg, "UserKnownHostsFile") {
 			overrideUserKnownHostsFile = true
 		}
@@ -26,19 +26,19 @@ func Connect(ctx context.Context, connectionInfo types.ConnectionInfo, prvKeyPat
 	}
 
 	if prvKeyPath != "" {
-		sshArgs = append(sshArgs, "-i", prvKeyPath)
+		args = append(args, "-i", prvKeyPath)
 	}
 
 	if !overrideUserKnownHostsFile {
-		sshArgs = append(sshArgs, "-o", "UserKnownHostsFile=/dev/null")
+		args = append(args, "-o", "UserKnownHostsFile=/dev/null")
 	}
 	if !overrideStrictHostKeyChecking {
-		sshArgs = append(sshArgs, "-o", "StrictHostKeyChecking=no")
+		args = append(args, "-o", "StrictHostKeyChecking=no")
 	}
 
 	sshCommand := exec.Command(
 		"ssh",
-		append(sshArgs, fmt.Sprintf("%s@%s", connectionInfo.User, connectionInfo.Host))...,
+		append(args, fmt.Sprintf("%s@%s", connectionInfo.User, connectionInfo.Host))...,
 	)
 
 	ui.Debugf("Running SSH command: %s", strings.Join(sshCommand.Args, " "))
