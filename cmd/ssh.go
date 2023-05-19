@@ -68,42 +68,53 @@ func SSH(cmd *cobra.Command, args []string) error {
 	}
 }
 
-func handleSSHConnWithOpenVSCode(ctx context.Context, execCh chan types.Exec, isNew bool, sshArgsByKey map[string]string, errCh chan error) error {
-	for {
-		select {
-		case e := <-execCh:
-			if e.Status == types.StatusRunning {
-				ensureHosts(e)
-				defer cleanupHosts(e)
-				privKey := getPrivateKeyPathFromArgs(ctx, e, sshArgsByKey)
+// getOrCreateExec handles the flow to spawn a new Exec or get an existing one, passes it to a Channel
+func getOrCreateExec(cmd *cobra.Command, execRef string) (chan types.Exec, bool, chan error) {
+	cmd.SilenceUsage = true
+	ctx := cmd.Context()
 
-				err := handleCopySourceDir(isNew, e, privKey)
-				if err != nil {
-					return err
-				}
+	execCh := make(chan types.Exec)
+	errCh := make(chan error)
+	isNew := false
+	var err error
 
-				ui.Infof("🔧 Setting up VS Code ...")
-				arg := fmt.Sprintf("vscode-remote://ssh-remote+%s@%s/home/ubuntu", e.Connection.User, e.Connection.Host)
+	watchCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
-				codeCmd := exec.Command("code", "--folder-uri="+arg)
-				codeCmd.Stdout = os.Stdout
-				codeCmd.Stderr = os.Stderr
-				if e := codeCmd.Run(); e != nil {
-					ui.Errorf("Failed to start VS Code: %v", e)
-					os.Exit(1)
-				}
-				ui.Successf("✅ VS Code is ready!")
-				return nil
+	if config.CreateExec {
+		ui.Infof("Initializing node...")
+
+		_, errCh, err := execCreateAndWatch(watchCtx, types.ExecConfig{}, types.GitConfig{})
+		if err != nil {
+			errCh <- err
+			return nil, false, errCh
+		}
+		isNew = true
+	} else {
+		var createNewExec bool
+		if execRef == "" {
+			execRef, createNewExec, err = sessionSelectSSHExecRef(cmd, execRef, false)
+			if err != nil {
+				errCh <- err
+				return nil, false, errCh
 			}
+		}
 
-		case err := <-errCh:
-			var e *types.Error
-			if errors.As(err, &e) {
-				uie := &ui.Error{Error: e}
-				fmt.Println(uie.Verbose())
-				os.Exit(1)
+		if createNewExec {
+			execCh, errCh, err = execCreateAndWatch(ctx, types.ExecConfig{}, types.GitConfig{})
+			if err != nil {
+				errCh <- err
+				return nil, false, errCh
 			}
-			return err
+			isNew = true
+		} else {
+			execCh, errCh, err = session.Wait(ctx, execRef)
+			if err != nil {
+				errCh <- err
+				return nil, false, errCh
+			}
+		}
+	}
 
 		case <-ctx.Done():
 			return nil
