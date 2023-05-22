@@ -160,7 +160,12 @@ func ensureHosts(e types.Exec) {
 		ui.Debugf("Failed to remove known_hosts entry: %v", err)
 	}
 
-	if err := ssh.AddHost("uw:"+e.ID, e.Connection.Host, e.Connection.User, e.Connection.Port); err != nil {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		ui.Errorf("Failed to get user home directory: %v", err)
+		os.Exit(1)
+	}
+	if err := ssh.AddHost("uw:"+e.ID, e.Connection.Host, e.Connection.User, e.Connection.Port, filepath.Join(homeDir, ".ssh", "config")); err != nil {
 		ui.Debugf("Failed to add host to ssh config: %v", err)
 	}
 }
