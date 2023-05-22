@@ -10,7 +10,7 @@ import (
 	. "github.com/franela/goblin"
 )
 
-func TestAddHost(t *testing.T) {
+func TestConfig(t *testing.T) {
 	g := Goblin(t)
 
 	g.Describe("AddHost", func() {
