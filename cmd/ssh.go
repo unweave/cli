@@ -265,7 +265,7 @@ func copySourceUnTar(srcPath, dstPath string, connectionInfo types.ConnectionInf
 		"-o", "UserKnownHostsFile=/dev/null",
 		"-i", prvKeyPath,
 		fmt.Sprintf("%s@%s", connectionInfo.User, connectionInfo.Host),
-		// ensure root logs into the source dir
+		// ensure dstPath exist and root logs into that path
 		fmt.Sprintf("mkdir -p %s && echo 'cd %s' > /root/.bashrc &&", dstPath, dstPath),
 		fmt.Sprintf("tar -xzf %s -C %s && rm -rf %s", srcPath, dstPath, srcPath),
 	)
