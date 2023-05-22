@@ -8,106 +8,39 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/unweave/cli/config"
-	"github.com/unweave/cli/session"
-	"github.com/unweave/cli/ssh"
 	"github.com/unweave/cli/ui"
 	"github.com/unweave/unweave/api/types"
 )
 
 func Code(cmd *cobra.Command, args []string) error {
-	cmd.SilenceUsage = true
+	execRef := ""
+	if len(args) == 1 {
+		execRef = args[0]
+	}
+
+	prvKey := config.SSHPrivateKeyPath
+	execCh, isNew, errCh := getOrCreateExec(cmd, execRef)
 	ctx := cmd.Context()
 
-	execCh := make(chan types.Exec)
-	errCh := make(chan error)
-	isNew := false
-
-	var err error
-	var execRef string // Can be execID or name
-
-	if config.CreateExec {
-
-		ui.Infof("Initializing node...")
-
-		execCh, errCh, err = execCreateAndWatch(ctx, types.ExecConfig{}, types.GitConfig{})
-		if err != nil {
-			return err
-		}
-		isNew = true
-
-	} else {
-		var createNew bool
-
-		if execRef == "" {
-			execRef, createNew, err = sessionSelectSSHExecRef(cmd, execRef, false)
-			if err != nil {
-				return err
-			}
-		}
-
-		if createNew {
-			execCh, errCh, err = execCreateAndWatch(ctx, types.ExecConfig{}, types.GitConfig{})
-			if err != nil {
-				return err
-			}
-			isNew = true
-		} else {
-			execCh, errCh, err = session.Wait(ctx, execRef)
-			if err != nil {
-				return err
-			}
-		}
-	}
 	for {
 		select {
 		case e := <-execCh:
 			if e.Status == types.StatusRunning {
+				ensureHosts(e)
+				defer cleanupHosts(e)
+				prvKey := getDefaultKey(ctx, e, prvKey)
 
-				if e.Connection == nil {
-					ui.Errorf("❌ Something unexpected happened. No connection info found for session %q", e.ID)
-					ui.Infof("Run `unweave ls` to see the status of your session and try connecting manually.")
-					os.Exit(1)
+				err := handleCopySourceDir(isNew, e, prvKey)
+				if err != nil {
+					return err
 				}
-				ui.Infof("🚀 Session %q up and running", e.ID)
+
 				ui.Infof("🔧 Setting up VS Code ...")
-
-				if err := ssh.RemoveKnownHostsEntry(e.Connection.Host); err != nil {
-					// Log and continue anyway. Most likely the entry is not there.
-					ui.Debugf("Failed to remove known_hosts entry: %v", err)
-				}
-
-				if err := ssh.AddHost("uw:"+e.ID, e.Connection.Host, e.Connection.User, e.Connection.Port); err != nil {
-					ui.Debugf("Failed to add host to ssh config: %v", err)
-				}
-
-				defer func() {
-					if e := ssh.RemoveHost("uw:" + e.ID); e != nil {
-						ui.Debugf("Failed to remove host from ssh config: %v", e)
-					}
-				}()
-
-				// TODO we should wait until port is open
-
-				if !config.NoCopySource && isNew {
-					dir, err := config.GetActiveProjectPath()
-					if err != nil {
-						ui.Errorf("Failed to get active project path. Skipping copying source directory")
-						return fmt.Errorf("failed to get active project path: %v", err)
-					}
-
-					if err := copySource(e.ID, dir, "/home/ubuntu", *e.Connection, ""); err != nil {
-						fmt.Println(err)
-					}
-				} else {
-					ui.Infof("Skipping copying source directory")
-				}
-
 				arg := fmt.Sprintf("vscode-remote://ssh-remote+%s@%s/home/ubuntu", e.Connection.User, e.Connection.Host)
 
 				codeCmd := exec.Command("code", "--folder-uri="+arg)
 				codeCmd.Stdout = os.Stdout
 				codeCmd.Stderr = os.Stderr
-
 				if e := codeCmd.Run(); e != nil {
 					ui.Errorf("Failed to start VS Code: %v", e)
 					os.Exit(1)
@@ -129,5 +62,4 @@ func Code(cmd *cobra.Command, args []string) error {
 			return nil
 		}
 	}
-
 }

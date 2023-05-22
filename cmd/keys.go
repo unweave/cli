@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/unweave/cli/config"
@@ -114,4 +115,48 @@ func SSHKeyList(cmd *cobra.Command, args []string) error {
 	}
 	ui.Table("SSH Keys", cols, rows)
 	return nil
+}
+
+func getFirstPublicKeyInPath(ctx context.Context, dirPath string) (name string, pubKey []byte, err error) {
+	_, err = os.Stat(dirPath)
+	if err != nil {
+		return "", nil, fmt.Errorf("directory %s cannot be read", dirPath)
+	}
+
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return "", nil, err
+	}
+
+	keys := filterPublicKeys(entries)
+
+	if len(keys) == 0 {
+		return "", nil, fmt.Errorf("no public SSH key found in %s", dirPath)
+	}
+
+	filename := keys[0].Name()
+	pubKeyPath := filepath.Join(dirPath, filename)
+	pubKeyBytes, err := os.ReadFile(pubKeyPath)
+	if err != nil {
+		return "", nil, err
+	}
+
+	keyname := strings.TrimSuffix(filename, ".pub")
+	return keyname, pubKeyBytes, nil
+}
+
+func filterPublicKeys(entries []os.DirEntry) []os.DirEntry {
+	var keys []os.DirEntry
+
+	for _, entry := range entries {
+		if !entry.IsDir() && isPublicKey(entry.Name()) {
+			keys = append(keys, entry)
+		}
+	}
+
+	return keys
+}
+
+func isPublicKey(filename string) bool {
+	return strings.HasSuffix(filename, ".pub")
 }

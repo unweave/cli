@@ -37,7 +37,7 @@ func gatherContext(rootDir string, w io.Writer, archiveType string) error {
 	} else {
 		gi, err = ignore.CompileIgnoreFileAndLines(giPath, lines...)
 		if err != nil {
-			ui.Errorf("Error compiling .gitignore file:", err)
+			ui.Errorf("Error compiling .gitignore file %s:", err)
 			ui.Errorf("Ignoring .gitignore file")
 		}
 	}
