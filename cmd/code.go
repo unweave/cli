@@ -3,16 +3,21 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"os"
+	"os/exec"
+
 	"github.com/spf13/cobra"
 	"github.com/unweave/cli/config"
 	"github.com/unweave/cli/ui"
 	"github.com/unweave/unweave/api/types"
-	"os"
-	"os/exec"
 )
 
 func Code(cmd *cobra.Command, args []string) error {
-	execRef, _ := parseArgsToExecRefAndSSHArgs(args)
+	execRef := ""
+	if len(args) == 1 {
+		execRef = args[0]
+	}
+
 	prvKey := config.SSHPrivateKeyPath
 	execCh, isNew, errCh := getOrCreateExec(cmd, execRef)
 	ctx := cmd.Context()
@@ -23,7 +28,7 @@ func Code(cmd *cobra.Command, args []string) error {
 			if e.Status == types.StatusRunning {
 				ensureHosts(e)
 				defer cleanupHosts(e)
-				prvKey := getUnweavePrivateKeyOrDefault(ctx, e, prvKey)
+				prvKey := getDefaultKey(ctx, e, prvKey)
 
 				err := handleCopySourceDir(isNew, e, prvKey)
 				if err != nil {

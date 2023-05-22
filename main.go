@@ -129,6 +129,7 @@ func init() {
 		Use:     "code",
 		Short:   "Create a new session and open it in VS Code",
 		GroupID: groupDev,
+		Args:    cobra.RangeArgs(0, 1),
 		RunE:    withValidProjectURI(cmd.Code),
 	}
 	codeCmd.Flags().BoolVar(&config.CreateExec, "new", false, "Create a new")

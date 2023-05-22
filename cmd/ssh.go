@@ -21,7 +21,28 @@ import (
 
 // SSH handles the Cobra command for SSH
 func SSH(cmd *cobra.Command, args []string) error {
-	execRef, sshArgs := parseArgsToExecRefAndSSHArgs(args)
+	var sshArgs []string
+	var execRef string // Can be execID or name
+
+	if len(args) == 1 {
+		execRef = args[0]
+	}
+
+	// If the number of args is great than one, we always expect the first arg to be
+	// the separator flag "--". If the number of args is one, we expect it to be the
+	// execID or name
+	if len(args) > 1 {
+		execRef = args[0]
+		sshArgs = args[1:]
+
+		if sshArgs[0] != "--" {
+			const errMsg = "❌ Invalid arguments. If you want to pass arguments to the ssh command, " +
+				"use the -- flag. See `unweave ssh --help` for more information"
+			ui.Errorf(errMsg)
+			os.Exit(1)
+		}
+	}
+
 	prvKey := config.SSHPrivateKeyPath
 	execCh, isNew, errCh := getOrCreateExec(cmd, execRef)
 	ctx := cmd.Context()
@@ -32,7 +53,7 @@ func SSH(cmd *cobra.Command, args []string) error {
 			if e.Status == types.StatusRunning {
 				ensureHosts(e)
 				defer cleanupHosts(e)
-				prvKey := getUnweavePrivateKeyOrDefault(ctx, e, prvKey)
+				prvKey := getDefaultKey(ctx, e, prvKey)
 
 				err := handleCopySourceDir(isNew, e, prvKey)
 				if err != nil {
@@ -119,32 +140,6 @@ func getOrCreateExec(cmd *cobra.Command, execRef string) (chan types.Exec, bool,
 	return execCh, isNew, nil
 }
 
-func parseArgsToExecRefAndSSHArgs(args []string) (string, []string) {
-	var sshArgs []string
-	var execRef string // Can be execID or name
-
-	// If the number of args is great than one, we always expect the first arg to be
-	// the separator flag "--". If the number of args is one, we expect it to be the
-	// execID or name
-	if len(args) > 1 {
-		sshArgs = args[1:]
-		if sshArgs[0] != "--" {
-			const errMsg = "❌ Invalid arguments. If you want to pass arguments to the ssh command, " +
-				"use the -- flag. See `unweave ssh --help` for more information"
-			ui.Errorf(errMsg)
-			os.Exit(1)
-		}
-
-		if len(args) == 1 {
-			execRef = args[0]
-		} else {
-			execRef = args[0]
-		}
-	}
-
-	return execRef, sshArgs
-}
-
 func cleanupHosts(e types.Exec) {
 	if err := ssh.RemoveHost("uw:" + e.ID); err != nil {
 		ui.Debugf("Failed to remove host from ssh config: %v", err)
@@ -205,7 +200,7 @@ func copySource(execID, rootDir, dstPath string, connectionInfo types.Connection
 		return fmt.Errorf("failed to copy source: %w", err)
 	}
 
-	if err := copySourceUnzip(tmpDstPath, dstPath, connectionInfo, privKeyPath); err != nil {
+	if err := copySourceUnTar(tmpDstPath, dstPath, connectionInfo, privKeyPath); err != nil {
 		return fmt.Errorf("failed to extract source: %w", err)
 	}
 
@@ -224,7 +219,8 @@ func createTempContextFile(execID string) (*os.File, error) {
 }
 
 func copySourceSCP(srcPath, tmpDstPath, dstPath string, connectionInfo types.ConnectionInfo, privKeyPath string) error {
-	scpCommandArgs := []string{"-r",
+	scpCommandArgs := []string{
+		"-r",
 		"-o", "StrictHostKeyChecking=no",
 		"-o", "UserKnownHostsFile=/dev/null",
 	}
@@ -261,12 +257,12 @@ func copySourceSCP(srcPath, tmpDstPath, dstPath string, connectionInfo types.Con
 	return nil
 }
 
-func copySourceUnzip(srcPath, dstPath string, connectionInfo types.ConnectionInfo, privKeyPath string) error {
+func copySourceUnTar(srcPath, dstPath string, connectionInfo types.ConnectionInfo, prvKeyPath string) error {
 	sshCommand := exec.Command(
 		"ssh",
 		"-o", "StrictHostKeyChecking=no",
 		"-o", "UserKnownHostsFile=/dev/null",
-		"-i", privKeyPath,
+		"-i", prvKeyPath,
 		fmt.Sprintf("%s@%s", connectionInfo.User, connectionInfo.Host),
 		fmt.Sprintf("tar -xzf %s -C %s && rm -rf %s", srcPath, dstPath, srcPath),
 	)
@@ -295,8 +291,9 @@ func copySourceUnzip(srcPath, dstPath string, connectionInfo types.ConnectionInf
 	return nil
 }
 
-// getUnweavePrivateKeyOrDefault tries to find the private key for this Exec, or relies on a default key if it can't be found
-func getUnweavePrivateKeyOrDefault(ctx context.Context, e types.Exec, defaultKey string) string {
+// getDefaultKey tries to find the private key for this Exec, or relies on
+// a default key if it can't be found
+func getDefaultKey(ctx context.Context, e types.Exec, defaultKey string) string {
 	keysFolder := config.GetUnweaveSSHKeysFolder()
 
 	// Case where we know what the public key was when the session was created
