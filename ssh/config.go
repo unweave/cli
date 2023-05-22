@@ -16,7 +16,7 @@ func getUnweaveSSHConfigPath() string {
 	return filepath.Join(config.GetGlobalConfigPath(), "ssh_config")
 }
 
-func AddHost(alias, host, user string, port int) error {
+func AddHost(alias, host, user string, port int, identityFile string) error {
 	configEntry := fmt.Sprintf(`Host %s
     HostName %s
     User %s
@@ -24,8 +24,9 @@ func AddHost(alias, host, user string, port int) error {
     StrictHostKeyChecking no
     UserKnownHostsFile /dev/null
     RequestTTY yes
-	ForwardAgent yes
-`, alias, host, user, port)
+    ForwardAgent yes
+    IdentityFile %s
+`, host, host, user, port, identityFile)
 
 	file, err := os.OpenFile(getUnweaveSSHConfigPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
