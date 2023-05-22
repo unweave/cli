@@ -14,7 +14,7 @@ func TestConfig(t *testing.T) {
 	g := Goblin(t)
 
 	g.Describe("AddHost", func() {
-		testCfgPath := filepath.Join(homeDirPath, ".ssh", "test_config")
+		testCfgPath := filepath.Join(sshDirPath, "test_config")
 		unweaveConfigPath := getUnweaveSSHConfigPath()
 
 		g.BeforeEach(func() {
