@@ -16,6 +16,9 @@ var CreateExec = true
 // NodeTypeID is the ID of the provider specific node type to use when creating a new session
 var NodeTypeID = ""
 
+// NodeGPUCount is the number of GPUs to use when creating a new session
+var NodeGPUCount = 0
+
 // NodeRegion is the region to use when creating a new session
 var NodeRegion = ""
 

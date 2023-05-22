@@ -121,6 +121,7 @@ func init() {
 	}
 	boxCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
 	boxCmd.Flags().StringVar(&config.NodeTypeID, "type", "", "Node type to use, eg. `gpu_1x_a100`")
+	boxCmd.Flags().IntVar(&config.NodeGPUCount, "gpus", 1, "Number of GPUs to use")
 	boxCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
 
 	rootCmd.AddCommand(boxCmd)
@@ -136,6 +137,7 @@ func init() {
 	codeCmd.Flags().StringVarP(&config.BuildID, "image", "i", "", "Build ID of the container image to use")
 	codeCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
 	codeCmd.Flags().StringVar(&config.NodeTypeID, "type", "", "Node type to use, eg. `gpu_1x_a100`")
+	codeCmd.Flags().IntVar(&config.NodeGPUCount, "gpus", 1, "Number of GPUs to use")
 	codeCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
 	codeCmd.Flags().StringVar(&config.SSHPrivateKeyPath, "prv", "", "Absolute Path to the private key to use")
 	rootCmd.AddCommand(codeCmd)
@@ -219,6 +221,7 @@ func init() {
 	newCmd.Flags().StringVarP(&config.BuildID, "image", "i", "", "Build ID of the container image to use")
 	newCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
 	newCmd.Flags().StringVar(&config.NodeTypeID, "type", "", "Node type to use, eg. `gpu_1x_a100`")
+	newCmd.Flags().IntVar(&config.NodeGPUCount, "gpus", 1, "Number of GPUs to use")
 	newCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
 	rootCmd.AddCommand(newCmd)
 
@@ -258,6 +261,7 @@ func init() {
 	sshCmd.Flags().StringVarP(&config.BuildID, "image", "i", "", "Build ID of the container image to use")
 	sshCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
 	sshCmd.Flags().StringVar(&config.NodeTypeID, "type", "", "Node type to use, eg. `gpu_1x_a100`")
+	sshCmd.Flags().IntVar(&config.NodeGPUCount, "gpus", 1, "Number of GPUs to use")
 	sshCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
 	sshCmd.Flags().StringVar(&config.SSHPrivateKeyPath, "prv", "", "Absolute Path to the private key to use")
 	rootCmd.AddCommand(sshCmd)

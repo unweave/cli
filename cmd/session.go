@@ -150,6 +150,16 @@ func sessionCreate(ctx context.Context, execConfig types.ExecConfig, gitConfig t
 		return "", fmt.Errorf("no node types specified")
 	}
 
+	// TODO this is a temporary fix to allow for multiple GPUs (while we fix backend)
+	if config.NodeGPUCount != 1 {
+		ui.Attentionf("Multiple GPU support will be coming soon! Check our discord for updates! - Using a single GPU for now")
+	}
+
+	if config.NodeGPUCount >= 4 {
+		ui.Errorf("We currently only support up to 4 GPUs per node")
+		return "", fmt.Errorf("we currently only support up to 4 GPUs per node")
+	}
+
 	if config.BuildID != "" {
 		image = &config.BuildID
 	}
