@@ -51,9 +51,9 @@ func SSH(cmd *cobra.Command, args []string) error {
 		select {
 		case e := <-execCh:
 			if e.Status == types.StatusRunning {
-				ensureHosts(e)
 				defer cleanupHosts(e)
 				prvKey := getDefaultKey(ctx, e, prvKey)
+				ensureHosts(e, prvKey)
 
 				err := handleCopySourceDir(isNew, e, prvKey)
 				if err != nil {
@@ -146,7 +146,7 @@ func cleanupHosts(e types.Exec) {
 	}
 }
 
-func ensureHosts(e types.Exec) {
+func ensureHosts(e types.Exec, identityFile string) {
 	if e.Connection == nil {
 		ui.Errorf("❌ Something unexpected happened. No connection info found for session %q", e.ID)
 		ui.Infof("Run `unweave ls` to see the status of your session and try connecting manually.")
@@ -160,12 +160,7 @@ func ensureHosts(e types.Exec) {
 		ui.Debugf("Failed to remove known_hosts entry: %v", err)
 	}
 
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		ui.Errorf("Failed to get user home directory: %v", err)
-		os.Exit(1)
-	}
-	if err := ssh.AddHost("uw:"+e.ID, e.Connection.Host, e.Connection.User, e.Connection.Port, filepath.Join(homeDir, ".ssh", "config")); err != nil {
+	if err := ssh.AddHost("uw:"+e.ID, e.Connection.Host, e.Connection.User, e.Connection.Port, identityFile); err != nil {
 		ui.Debugf("Failed to add host to ssh config: %v", err)
 	}
 }
