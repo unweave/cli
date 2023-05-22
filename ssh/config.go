@@ -24,9 +24,9 @@ func AddHost(alias, host, user string, port int, identityFile string) error {
     StrictHostKeyChecking no
     UserKnownHostsFile /dev/null
     RequestTTY yes
-	ForwardAgent yes
-	IdentityFile %s
-`, alias, host, user, port, identityFile)
+    ForwardAgent yes
+    IdentityFile %s
+`, host, host, user, port, identityFile)
 
 	file, err := os.OpenFile(getUnweaveSSHConfigPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {

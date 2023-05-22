@@ -26,7 +26,6 @@ func Code(cmd *cobra.Command, args []string) error {
 		select {
 		case e := <-execCh:
 			if e.Status == types.StatusRunning {
-				defer cleanupHosts(e)
 				prvKey := getDefaultKey(ctx, e, prvKey)
 				ensureHosts(e, prvKey)
 
