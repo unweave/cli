@@ -16,6 +16,17 @@ func getUnweaveSSHConfigPath() string {
 	return filepath.Join(config.GetGlobalConfigPath(), "ssh_config")
 }
 
+var homeDirPath = func() string {
+	path, err := os.UserHomeDir()
+	if err != nil {
+		ui.Errorf("Failed to get user home directory: %v", err)
+		os.Exit(1)
+	}
+	return path
+}()
+
+var sshConfigPath = filepath.Join(homeDirPath, ".ssh", "config")
+
 func AddHost(alias, host, user string, port int, identityFile string) error {
 	configEntry := fmt.Sprintf(`Host %s
     HostName %s
@@ -43,14 +54,16 @@ func AddHost(alias, host, user string, port int, identityFile string) error {
 		return err
 	}
 
-	// Add an Include directive to the user's ssh config to unweave_global SSH configs - used for vscode-remote.
-	// Create one it if it does not exist.
+	// Add an Include directive to the user's ssh config to unweave_global SSH configs - used for vscode-remote:
+	err = os.MkdirAll(filepath.Join(homeDirPath, ".ssh"), 0700)
+	if err != nil {
+		fmt.Println("Failed to create .ssh folder:", err)
+	}
 	if _, err := os.Stat(sshConfigPath); os.IsNotExist(err) {
 		if _, err = os.Create(sshConfigPath); err != nil {
 			return err
 		}
 	}
-
 	lines, err := readLines(sshConfigPath)
 	if err != nil {
 		return err

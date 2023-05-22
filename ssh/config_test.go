@@ -14,22 +14,31 @@ func TestConfig(t *testing.T) {
 	g := Goblin(t)
 
 	g.Describe("AddHost", func() {
-		homeDir, _ := os.UserHomeDir()
-		sshConfigPath := filepath.Join(homeDir, ".ssh", "test_config")
+		testCfgPath := filepath.Join(homeDirPath, ".ssh", "test_config")
 		unweaveConfigPath := getUnweaveSSHConfigPath()
 
 		g.BeforeEach(func() {
-			// Remove any existing config files
-			os.Remove(sshConfigPath)
+			if _, err := os.Stat(testCfgPath); os.IsNotExist(err) {
+				initialConfig := "# Test SSH Config\n"
+				err = ioutil.WriteFile(testCfgPath, []byte(initialConfig), 0600)
+				g.Assert(err).Equal(nil)
+			}
+
+			sshConfigPath = testCfgPath
 		})
 
 		g.AfterEach(func() {
-			// Remove the created config files
-			os.Remove(sshConfigPath)
+			// Only perform create and destroy operations on the test config file
+			if testCfgPath != sshConfigPath {
+				return
+			}
+
+			err := os.Remove(testCfgPath)
+			g.Assert(err).Equal(nil)
 		})
 
 		g.It("should add the Include directive to the .ssh/config file", func() {
-			err := AddHost("example", "example.com", "user", 22, sshConfigPath)
+			err := AddHost("example", "example.com", "user", 22, "")
 			g.Assert(err).Equal(nil)
 
 			configData, err := ioutil.ReadFile(sshConfigPath)
