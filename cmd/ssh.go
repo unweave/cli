@@ -52,10 +52,18 @@ func SSH(cmd *cobra.Command, args []string) error {
 		case e := <-execCh:
 			if e.Status == types.StatusRunning {
 				defer cleanupHosts(e)
-				prvKey := getDefaultKey(ctx, e, prvKey)
-				ensureHosts(e, prvKey)
+				prvKey, err := getDefaultKey(ctx, e, prvKey)
+				if prvKey == "" {
+					ui.Errorf("expected private key to be none empty string")
+					os.Exit(1)
+				}
+				if err != nil {
+					ui.Errorf("failed to get private key: %s", err)
+					os.Exit(1)
+				}
 
-				err := handleCopySourceDir(isNew, e, prvKey)
+				ensureHosts(e, prvKey)
+				err = handleCopySourceDir(isNew, e, prvKey)
 				if err != nil {
 					return err
 				}
