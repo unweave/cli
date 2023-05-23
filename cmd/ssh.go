@@ -168,13 +168,14 @@ func ensureHosts(e types.Exec, identityFile string) {
 func handleCopySourceDir(isNew bool, e types.Exec, privKey string) error {
 	// TODO: Wait until port is open before cleaning up the source code
 
+	const dstPath = "/home/unweave"
 	if !config.NoCopySource && isNew {
 		dir, err := config.GetActiveProjectPath()
 		if err != nil {
 			ui.Errorf("Failed to get active project path. Skipping copying source directory")
 			return fmt.Errorf("failed to get active project path: %v", err)
 		}
-		if err := copySource(e.ID, dir, "/home/ubuntu", *e.Connection, privKey); err != nil {
+		if err := copySource(e.ID, dir, dstPath, *e.Connection, privKey); err != nil {
 			fmt.Println(err)
 		}
 	} else {
@@ -264,6 +265,8 @@ func copySourceUnTar(srcPath, dstPath string, connectionInfo types.ConnectionInf
 		"-o", "UserKnownHostsFile=/dev/null",
 		"-i", prvKeyPath,
 		fmt.Sprintf("%s@%s", connectionInfo.User, connectionInfo.Host),
+		// ensure dstPath exist and root logs into that path
+		fmt.Sprintf("mkdir -p %s && echo 'cd %s' > /root/.bashrc &&", dstPath, dstPath),
 		fmt.Sprintf("tar -xzf %s -C %s && rm -rf %s", srcPath, dstPath, srcPath),
 	)
 
