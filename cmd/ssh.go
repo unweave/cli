@@ -52,10 +52,18 @@ func SSH(cmd *cobra.Command, args []string) error {
 		case e := <-execCh:
 			if e.Status == types.StatusRunning {
 				defer cleanupHosts(e)
-				prvKey := getDefaultKey(ctx, e, prvKey)
-				ensureHosts(e, prvKey)
+				prvKey, err := getDefaultKey(ctx, e, prvKey)
+				if prvKey == "" {
+					ui.Errorf("Expected private key to be none empty string")
+					os.Exit(1)
+				}
+				if err != nil {
+					ui.Errorf("Failed to get private key: %s", err)
+					os.Exit(1)
+				}
 
-				err := handleCopySourceDir(isNew, e, prvKey)
+				ensureHosts(e, prvKey)
+				err = handleCopySourceDir(isNew, e, prvKey)
 				if err != nil {
 					return err
 				}
@@ -296,25 +304,37 @@ func copySourceUnTar(srcPath, dstPath string, connectionInfo types.ConnectionInf
 
 // getDefaultKey tries to find the private key for this Exec, or relies on
 // a default key if it can't be found
-func getDefaultKey(ctx context.Context, e types.Exec, defaultKey string) string {
-	keysFolder := config.GetUnweaveSSHKeysFolder()
-
-	// Case where we know what the public key was when the session was created
-	dirEntries, err := os.ReadDir(keysFolder)
-	if err != nil {
-		ui.HandleError(err)
-		os.Exit(1)
+func getDefaultKey(ctx context.Context, e types.Exec, defaultKey string) (string, error) {
+	// if the user has specified their own private key location
+	if defaultKey != "" {
+		return defaultKey, nil
 	}
 
-	list := filterPublicKeys(dirEntries)
-	for _, key := range list {
-		// Unweave private keys are represented by the public key name
+	keysFolder := config.GetUnweaveSSHKeysFolder()
+	dirEntries, err := os.ReadDir(keysFolder)
+	if err != nil {
+		return "", fmt.Errorf("failed to read SSH keys folder: %w", err)
+	}
+
+	publicKeys := filterPublicKeys(dirEntries)
+
+	// Ensure default key is never ""
+	// Unweave private keys are trimmed public ones
+	for _, key := range publicKeys {
 		name := strings.TrimSuffix(key.Name(), ".pub")
+		defaultKey = filepath.Join(keysFolder, name)
 		if e.SSHKey.Name == name {
-			privateKeyPath := filepath.Join(keysFolder, name)
-			return privateKeyPath
+			return defaultKey, nil
 		}
 	}
 
-	return defaultKey
+	if defaultKey == "" {
+		privKeyPath, _, err := generateSSHKey(ctx)
+		if err != nil {
+			return "", fmt.Errorf("failed to generate SSH key: %w", err)
+		}
+		return privKeyPath, nil
+	}
+
+	return defaultKey, nil
 }

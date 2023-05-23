@@ -38,6 +38,9 @@ func AddHost(alias, host, user string, port int, identityFile string) error {
     ForwardAgent yes
     IdentityFile %s
 `, host, host, user, port, identityFile)
+	if identityFile == "" {
+		return fmt.Errorf("expected identity file, got an empty string")
+	}
 
 	file, err := os.OpenFile(getUnweaveSSHConfigPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
