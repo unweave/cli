@@ -54,11 +54,11 @@ func SSH(cmd *cobra.Command, args []string) error {
 				defer cleanupHosts(e)
 				prvKey, err := getDefaultKey(ctx, e, prvKey)
 				if prvKey == "" {
-					ui.Errorf("expected private key to be none empty string")
+					ui.Errorf("Expected private key to be none empty string")
 					os.Exit(1)
 				}
 				if err != nil {
-					ui.Errorf("failed to get private key: %s", err)
+					ui.Errorf("Failed to get private key: %s", err)
 					os.Exit(1)
 				}
 

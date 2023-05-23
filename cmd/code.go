@@ -32,7 +32,7 @@ func Code(cmd *cobra.Command, args []string) error {
 					os.Exit(1)
 				}
 				if err != nil {
-					ui.Errorf("failed to get private key: %s", err)
+					ui.Errorf("Failed to get private key: %s", err)
 					os.Exit(1)
 				}
 
