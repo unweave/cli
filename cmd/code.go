@@ -28,7 +28,7 @@ func Code(cmd *cobra.Command, args []string) error {
 			if e.Status == types.StatusRunning {
 				prvKey, err := getDefaultKey(ctx, e, prvKey)
 				if prvKey == "" {
-					ui.Errorf("expected private key to be none empty string")
+					ui.Errorf("Expected private key to be none empty string")
 					os.Exit(1)
 				}
 				if err != nil {
