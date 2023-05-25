@@ -122,39 +122,31 @@ func generateSSHKey(ctx context.Context) (string, []byte, error) {
 	return name, pub, nil
 }
 
-func sessionCreate(ctx context.Context, execConfig types.ExecConfig, gitConfig types.GitConfig) (string, error) {
+func sessionCreate(cmd *cobra.Command, execConfig types.ExecConfig, gitConfig types.GitConfig) (string, error) {
 	var region, image *string
-	var nodeTypeIDs []string
 
 	if config.Config.Project.DefaultProvider == "" && config.Provider == "" {
 		ui.Errorf("No provider specified. Either set a default provider in you project config or specify a provider with the --provider flag")
 		os.Exit(1)
 	}
-
 	provider := config.Config.Project.DefaultProvider
 	if config.Provider != "" {
 		provider = config.Provider
 	}
 
-	if p, ok := config.Config.Project.Providers[provider]; ok {
-		nodeTypeIDs = p.NodeTypes
-	}
-	if len(config.NodeTypeID) != 0 {
-		nodeTypeIDs = []string{config.NodeTypeID}
+	spec, err := parseHardwareSpec(cmd)
+	if err != nil {
+		return "", err
 	}
 	if config.NodeRegion != "" {
 		region = &config.NodeRegion
-	}
-	if len(nodeTypeIDs) == 0 {
-		ui.Errorf("No node types specified")
-		return "", fmt.Errorf("no node types specified")
 	}
 
 	if config.BuildID != "" {
 		image = &config.BuildID
 	}
 
-	name, pub, err := setupSSHKey(ctx)
+	name, pub, err := setupSSHKey(cmd.Context())
 	if err != nil {
 		return "", err
 	}
@@ -164,6 +156,7 @@ func sessionCreate(ctx context.Context, execConfig types.ExecConfig, gitConfig t
 
 	params := types.ExecCreateParams{
 		Provider:     types.Provider(provider),
+		HardwareSpec: spec,
 		Region:       region,
 		SSHKeyName:   sshKeyName,
 		SSHPublicKey: sshPublicKey,
@@ -174,7 +167,7 @@ func sessionCreate(ctx context.Context, execConfig types.ExecConfig, gitConfig t
 		Source:       execConfig.Src,
 	}
 
-	sessionID, err := session.Create(ctx, params, nodeTypeIDs)
+	sessionID, err := session.Create(cmd.Context(), params)
 	if err != nil {
 		var e *types.Error
 		if errors.As(err, &e) {
@@ -201,8 +194,8 @@ func sessionCreate(ctx context.Context, execConfig types.ExecConfig, gitConfig t
 	return sessionID, nil
 }
 
-func execCreateAndWatch(ctx context.Context, execConfig types.ExecConfig, gitConfig types.GitConfig) (exech chan types.Exec, errch chan error, err error) {
-	execID, err := sessionCreate(ctx, execConfig, gitConfig)
+func execCreateAndWatch(cmd *cobra.Command, ctx context.Context, execConfig types.ExecConfig, gitConfig types.GitConfig) (exech chan types.Exec, errch chan error, err error) {
+	execID, err := sessionCreate(cmd, execConfig, gitConfig)
 	if err != nil {
 		ui.Errorf("Failed to create session: %v", err)
 		os.Exit(1)
@@ -214,7 +207,7 @@ func execCreateAndWatch(ctx context.Context, execConfig types.ExecConfig, gitCon
 func SessionCreateCmd(cmd *cobra.Command, args []string) error {
 	cmd.SilenceUsage = true
 
-	if _, err := sessionCreate(cmd.Context(), types.ExecConfig{}, types.GitConfig{}); err != nil {
+	if _, err := sessionCreate(cmd, types.ExecConfig{}, types.GitConfig{}); err != nil {
 		os.Exit(1)
 		return nil
 	}
@@ -383,4 +376,57 @@ func formatExecCobraOpts(execs []types.Exec, prepend ...string) ([]string, map[i
 	}
 
 	return options, optionMap
+}
+
+func parseHardwareSpec(cmd *cobra.Command) (types.HardwareSpec, error) {
+	gpuCountMin, err := cmd.Flags().GetInt("gpus")
+	if err != nil {
+		return types.HardwareSpec{}, err
+	}
+	gpuMemMin, err := cmd.Flags().GetInt("gpuMem")
+	if err != nil {
+		return types.HardwareSpec{}, err
+	}
+	gpuType, err := cmd.Flags().GetString("gpuType")
+	if err != nil {
+		return types.HardwareSpec{}, err
+	}
+	cpuMin, err := cmd.Flags().GetInt("cpus")
+	if err != nil {
+		return types.HardwareSpec{}, err
+	}
+	ramMin, err := cmd.Flags().GetInt("mem")
+	if err != nil {
+		return types.HardwareSpec{}, err
+	}
+	storageMin, err := cmd.Flags().GetInt("storage")
+	if err != nil {
+		return types.HardwareSpec{}, err
+	}
+
+	return types.HardwareSpec{
+		GPU: types.GPU{
+			Count: types.HardwareRequestRange{
+				Min: gpuCountMin,
+				Max: gpuCountMin,
+			},
+			Type: gpuType,
+			RAM: types.HardwareRequestRange{
+				Min: gpuMemMin,
+				Max: gpuMemMin,
+			},
+		},
+		CPU: types.HardwareRequestRange{
+			Min: cpuMin,
+			Max: cpuMin,
+		},
+		RAM: types.HardwareRequestRange{
+			Min: ramMin,
+			Max: ramMin,
+		},
+		Storage: types.HardwareRequestRange{
+			Min: storageMin,
+			Max: storageMin,
+		},
+	}, nil
 }
