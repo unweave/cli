@@ -120,7 +120,6 @@ func init() {
 		Hidden:  true,
 	}
 	boxCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
-	boxCmd.Flags().StringVar(&config.NodeTypeID, "type", "", "Node type to use, eg. `gpu_1x_a100`")
 	boxCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
 
 	rootCmd.AddCommand(boxCmd)
@@ -135,7 +134,6 @@ func init() {
 	codeCmd.Flags().BoolVar(&config.CreateExec, "new", false, "Create a new")
 	codeCmd.Flags().StringVarP(&config.BuildID, "image", "i", "", "Build ID of the container image to use")
 	codeCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
-	codeCmd.Flags().StringVar(&config.NodeTypeID, "type", "", "Node type to use, eg. `gpu_1x_a100`")
 	codeCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
 	codeCmd.Flags().StringVar(&config.SSHPrivateKeyPath, "prv", "", "Absolute Path to the private key to use")
 	rootCmd.AddCommand(codeCmd)
@@ -216,10 +214,19 @@ func init() {
 		GroupID: groupDev,
 		RunE:    withValidProjectURI(cmd.SessionCreateCmd),
 	}
+
 	newCmd.Flags().StringVarP(&config.BuildID, "image", "i", "", "Build ID of the container image to use")
 	newCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
-	newCmd.Flags().StringVar(&config.NodeTypeID, "type", "", "Node type to use, eg. `gpu_1x_a100`")
+
+	newCmd.Flags().IntVar(&config.GPUs, "gpus", 0, "Number of GPUs to allocate for a gpuType, e.g., 2")
+	newCmd.Flags().IntVar(&config.GPUMemory, "gpuMem", 0, "Memory of GPU if applicable for a gpuType, e.g., 12")
+	newCmd.Flags().StringVar(&config.GPUType, "gpuType", "", "Type of GPU to use, e.g., rtx_5000")
+	newCmd.Flags().IntVar(&config.CPUs, "cpus", 0, "Number of VCPUs to allocate, e.g., 4")
+	newCmd.Flags().IntVar(&config.Memory, "mem", 0, "Amount of RAM to allocate in GB, e.g., 16")
+	newCmd.Flags().IntVar(&config.Storage, "storage", 0, "Amount of storage to allocate in GB")
+
 	newCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
+
 	rootCmd.AddCommand(newCmd)
 
 	lsCmd := &cobra.Command{
@@ -257,7 +264,6 @@ func init() {
 	sshCmd.Flags().BoolVar(&config.NoCopySource, "no-copy", false, "Do not copy source code to the session")
 	sshCmd.Flags().StringVarP(&config.BuildID, "image", "i", "", "Build ID of the container image to use")
 	sshCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
-	sshCmd.Flags().StringVar(&config.NodeTypeID, "type", "", "Node type to use, eg. `gpu_1x_a100`")
 	sshCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
 	sshCmd.Flags().StringVar(&config.SSHPrivateKeyPath, "prv", "", "Absolute Path to the private key to use")
 	rootCmd.AddCommand(sshCmd)
