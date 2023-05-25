@@ -113,7 +113,7 @@ func getOrCreateExec(cmd *cobra.Command, execRef string) (chan types.Exec, bool,
 	if config.CreateExec {
 		ui.Infof("Initializing node...")
 
-		_, errCh, err := execCreateAndWatch(watchCtx, types.ExecConfig{}, types.GitConfig{})
+		_, errCh, err := execCreateAndWatch(cmd, watchCtx, types.ExecConfig{}, types.GitConfig{})
 		if err != nil {
 			errCh <- err
 			return nil, false, errCh
@@ -130,7 +130,7 @@ func getOrCreateExec(cmd *cobra.Command, execRef string) (chan types.Exec, bool,
 		}
 
 		if createNewExec {
-			execCh, errCh, err = execCreateAndWatch(ctx, types.ExecConfig{}, types.GitConfig{})
+			execCh, errCh, err = execCreateAndWatch(cmd, ctx, types.ExecConfig{}, types.GitConfig{})
 			if err != nil {
 				errCh <- err
 				return nil, false, errCh
