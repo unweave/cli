@@ -164,7 +164,6 @@ func sessionCreate(ctx context.Context, execConfig types.ExecConfig, gitConfig t
 
 	params := types.ExecCreateParams{
 		Provider:     types.Provider(provider),
-		NodeTypeID:   "",
 		Region:       region,
 		SSHKeyName:   sshKeyName,
 		SSHPublicKey: sshPublicKey,

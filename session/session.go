@@ -13,15 +13,15 @@ import (
 // Create attempts to create a session using the node types provided
 // until the first successful creation. If none of the node types are successful, it
 // returns 503 out of capacity error.
-func Create(ctx context.Context, params types.ExecCreateParams, nodeTypeIDs []string) (string, error) {
+func Create(ctx context.Context, params types.ExecCreateParams, gpuTypes []string) (string, error) {
 	uwc := config.InitUnweaveClient()
 
 	var err error
 	var exec *types.Exec
 
-	for _, nodeTypeID := range nodeTypeIDs {
-		params.NodeTypeID = nodeTypeID
-
+	for _, gpuType := range gpuTypes {
+		// right now all NodeTypes _are_ GPU types
+		params.HardwareSpec.GPU.Type = gpuType
 		owner, projectName := config.GetProjectOwnerAndName()
 		exec, err = uwc.Exec.Create(ctx, owner, projectName, params)
 		if err == nil {
