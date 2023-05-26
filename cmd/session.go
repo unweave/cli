@@ -124,30 +124,22 @@ func generateSSHKey(ctx context.Context) (string, []byte, error) {
 
 func sessionCreate(ctx context.Context, execConfig types.ExecConfig, gitConfig types.GitConfig) (string, error) {
 	var region, image *string
-	var nodeTypeIDs []string
 
 	if config.Config.Project.DefaultProvider == "" && config.Provider == "" {
 		ui.Errorf("No provider specified. Either set a default provider in you project config or specify a provider with the --provider flag")
 		os.Exit(1)
 	}
-
 	provider := config.Config.Project.DefaultProvider
 	if config.Provider != "" {
 		provider = config.Provider
 	}
 
-	if p, ok := config.Config.Project.Providers[provider]; ok {
-		nodeTypeIDs = p.NodeTypes
-	}
-	if len(config.NodeTypeID) != 0 {
-		nodeTypeIDs = []string{config.NodeTypeID}
+	spec, err := parseHardwareSpec()
+	if err != nil {
+		return "", err
 	}
 	if config.NodeRegion != "" {
 		region = &config.NodeRegion
-	}
-	if len(nodeTypeIDs) == 0 {
-		ui.Errorf("No node types specified")
-		return "", fmt.Errorf("no node types specified")
 	}
 
 	if config.BuildID != "" {
@@ -164,7 +156,7 @@ func sessionCreate(ctx context.Context, execConfig types.ExecConfig, gitConfig t
 
 	params := types.ExecCreateParams{
 		Provider:     types.Provider(provider),
-		NodeTypeID:   "",
+		HardwareSpec: spec,
 		Region:       region,
 		SSHKeyName:   sshKeyName,
 		SSHPublicKey: sshPublicKey,
@@ -175,7 +167,7 @@ func sessionCreate(ctx context.Context, execConfig types.ExecConfig, gitConfig t
 		Source:       execConfig.Src,
 	}
 
-	sessionID, err := session.Create(ctx, params, nodeTypeIDs)
+	sessionID, err := session.Create(ctx, params)
 	if err != nil {
 		var e *types.Error
 		if errors.As(err, &e) {
@@ -384,4 +376,32 @@ func formatExecCobraOpts(execs []types.Exec, prepend ...string) ([]string, map[i
 	}
 
 	return options, optionMap
+}
+
+func parseHardwareSpec() (types.HardwareSpec, error) {
+	return types.HardwareSpec{
+		GPU: types.GPU{
+			Count: types.HardwareRequestRange{
+				Min: config.GPUs,
+				Max: config.GPUs,
+			},
+			Type: config.GPUType,
+			RAM: types.HardwareRequestRange{
+				Min: config.GPUMemory,
+				Max: config.GPUMemory,
+			},
+		},
+		CPU: types.HardwareRequestRange{
+			Min: config.CPUs,
+			Max: config.CPUs,
+		},
+		RAM: types.HardwareRequestRange{
+			Min: config.Memory,
+			Max: config.Memory,
+		},
+		Storage: types.HardwareRequestRange{
+			Min: config.HDD,
+			Max: config.HDD,
+		},
+	}, nil
 }

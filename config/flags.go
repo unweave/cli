@@ -13,8 +13,23 @@ var BuildID = ""
 // CreateExec is used to denote whether to create a new exec when running commands that require a exec.
 var CreateExec = true
 
-// NodeTypeID is the ID of the provider specific node type to use when creating a new session
-var NodeTypeID = ""
+// GPUs is the number of GPUs to allocate for a gpuType.
+var GPUs int
+
+// GPUMemory is the memory of GPU if applicable for a gpuType.
+var GPUMemory int
+
+// GPUType is the type of GPU to use.
+var GPUType string
+
+// CPUs is the number of VCPUs to allocate.
+var CPUs int
+
+// Memory is the amount of RAM to allocate in GB.
+var Memory int
+
+// HDD is the amount of storage to allocate in GB.
+var HDD int
 
 // NodeRegion is the region to use when creating a new session
 var NodeRegion = ""
