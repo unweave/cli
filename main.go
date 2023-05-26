@@ -219,11 +219,11 @@ func init() {
 	newCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
 
 	newCmd.Flags().IntVar(&config.GPUs, "gpus", 0, "Number of GPUs to allocate for a gpuType, e.g., 2")
-	newCmd.Flags().IntVar(&config.GPUMemory, "gpuMem", 0, "Memory of GPU if applicable for a gpuType, e.g., 12")
-	newCmd.Flags().StringVar(&config.GPUType, "gpuType", "", "Type of GPU to use, e.g., rtx_5000")
+	newCmd.Flags().IntVar(&config.GPUMemory, "gpu-mem", 0, "Memory of GPU if applicable for a gpuType, e.g., 12")
+	newCmd.Flags().StringVar(&config.GPUType, "gpu-type", "", "Type of GPU to use, e.g., rtx_5000")
 	newCmd.Flags().IntVar(&config.CPUs, "cpus", 0, "Number of VCPUs to allocate, e.g., 4")
 	newCmd.Flags().IntVar(&config.Memory, "mem", 0, "Amount of RAM to allocate in GB, e.g., 16")
-	newCmd.Flags().IntVar(&config.Storage, "storage", 0, "Amount of storage to allocate in GB")
+	newCmd.Flags().IntVar(&config.Storage, "hdd", 0, "Amount of storage to allocate in GB")
 
 	newCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
 

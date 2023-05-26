@@ -151,7 +151,7 @@ func Exec(cmd *cobra.Command, args []string) error {
 		GitURL:   &gitRemote,
 	}
 
-	_, err = sessionCreate(cmd, execConfig, gitConfig)
+	_, err = sessionCreate(cmd.Context(), execConfig, gitConfig)
 	if err != nil {
 		return err
 	}

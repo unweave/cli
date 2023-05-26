@@ -122,7 +122,7 @@ func generateSSHKey(ctx context.Context) (string, []byte, error) {
 	return name, pub, nil
 }
 
-func sessionCreate(cmd *cobra.Command, execConfig types.ExecConfig, gitConfig types.GitConfig) (string, error) {
+func sessionCreate(ctx context.Context, execConfig types.ExecConfig, gitConfig types.GitConfig) (string, error) {
 	var region, image *string
 
 	if config.Config.Project.DefaultProvider == "" && config.Provider == "" {
@@ -134,7 +134,7 @@ func sessionCreate(cmd *cobra.Command, execConfig types.ExecConfig, gitConfig ty
 		provider = config.Provider
 	}
 
-	spec, err := parseHardwareSpec(cmd)
+	spec, err := parseHardwareSpec()
 	if err != nil {
 		return "", err
 	}
@@ -146,7 +146,7 @@ func sessionCreate(cmd *cobra.Command, execConfig types.ExecConfig, gitConfig ty
 		image = &config.BuildID
 	}
 
-	name, pub, err := setupSSHKey(cmd.Context())
+	name, pub, err := setupSSHKey(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -167,7 +167,7 @@ func sessionCreate(cmd *cobra.Command, execConfig types.ExecConfig, gitConfig ty
 		Source:       execConfig.Src,
 	}
 
-	sessionID, err := session.Create(cmd.Context(), params)
+	sessionID, err := session.Create(ctx, params)
 	if err != nil {
 		var e *types.Error
 		if errors.As(err, &e) {
@@ -194,8 +194,8 @@ func sessionCreate(cmd *cobra.Command, execConfig types.ExecConfig, gitConfig ty
 	return sessionID, nil
 }
 
-func execCreateAndWatch(cmd *cobra.Command, ctx context.Context, execConfig types.ExecConfig, gitConfig types.GitConfig) (exech chan types.Exec, errch chan error, err error) {
-	execID, err := sessionCreate(cmd, execConfig, gitConfig)
+func execCreateAndWatch(ctx context.Context, execConfig types.ExecConfig, gitConfig types.GitConfig) (exech chan types.Exec, errch chan error, err error) {
+	execID, err := sessionCreate(ctx, execConfig, gitConfig)
 	if err != nil {
 		ui.Errorf("Failed to create session: %v", err)
 		os.Exit(1)
@@ -207,7 +207,7 @@ func execCreateAndWatch(cmd *cobra.Command, ctx context.Context, execConfig type
 func SessionCreateCmd(cmd *cobra.Command, args []string) error {
 	cmd.SilenceUsage = true
 
-	if _, err := sessionCreate(cmd, types.ExecConfig{}, types.GitConfig{}); err != nil {
+	if _, err := sessionCreate(cmd.Context(), types.ExecConfig{}, types.GitConfig{}); err != nil {
 		os.Exit(1)
 		return nil
 	}
@@ -378,55 +378,30 @@ func formatExecCobraOpts(execs []types.Exec, prepend ...string) ([]string, map[i
 	return options, optionMap
 }
 
-func parseHardwareSpec(cmd *cobra.Command) (types.HardwareSpec, error) {
-	gpuCountMin, err := cmd.Flags().GetInt("gpus")
-	if err != nil {
-		return types.HardwareSpec{}, err
-	}
-	gpuMemMin, err := cmd.Flags().GetInt("gpuMem")
-	if err != nil {
-		return types.HardwareSpec{}, err
-	}
-	gpuType, err := cmd.Flags().GetString("gpuType")
-	if err != nil {
-		return types.HardwareSpec{}, err
-	}
-	cpuMin, err := cmd.Flags().GetInt("cpus")
-	if err != nil {
-		return types.HardwareSpec{}, err
-	}
-	ramMin, err := cmd.Flags().GetInt("mem")
-	if err != nil {
-		return types.HardwareSpec{}, err
-	}
-	storageMin, err := cmd.Flags().GetInt("storage")
-	if err != nil {
-		return types.HardwareSpec{}, err
-	}
-
+func parseHardwareSpec() (types.HardwareSpec, error) {
 	return types.HardwareSpec{
 		GPU: types.GPU{
 			Count: types.HardwareRequestRange{
-				Min: gpuCountMin,
-				Max: gpuCountMin,
+				Min: config.GPUs,
+				Max: config.GPUs,
 			},
-			Type: gpuType,
+			Type: config.GPUType,
 			RAM: types.HardwareRequestRange{
-				Min: gpuMemMin,
-				Max: gpuMemMin,
+				Min: config.GPUMemory,
+				Max: config.GPUMemory,
 			},
 		},
 		CPU: types.HardwareRequestRange{
-			Min: cpuMin,
-			Max: cpuMin,
+			Min: config.CPUs,
+			Max: config.CPUs,
 		},
 		RAM: types.HardwareRequestRange{
-			Min: ramMin,
-			Max: ramMin,
+			Min: config.Memory,
+			Max: config.Memory,
 		},
 		Storage: types.HardwareRequestRange{
-			Min: storageMin,
-			Max: storageMin,
+			Min: config.Storage,
+			Max: config.Storage,
 		},
 	}, nil
 }
