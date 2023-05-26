@@ -400,8 +400,8 @@ func parseHardwareSpec() (types.HardwareSpec, error) {
 			Max: config.Memory,
 		},
 		Storage: types.HardwareRequestRange{
-			Min: config.Storage,
-			Max: config.Storage,
+			Min: config.HDD,
+			Max: config.HDD,
 		},
 	}, nil
 }

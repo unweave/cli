@@ -136,6 +136,12 @@ func init() {
 	codeCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
 	codeCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
 	codeCmd.Flags().StringVar(&config.SSHPrivateKeyPath, "prv", "", "Absolute Path to the private key to use")
+	codeCmd.Flags().IntVar(&config.GPUs, "gpus", 0, "Number of GPUs to allocate for a gpuType, e.g., 2")
+	codeCmd.Flags().IntVar(&config.GPUMemory, "gpu-mem", 0, "Memory of GPU if applicable for a gpuType, e.g., 12")
+	codeCmd.Flags().StringVar(&config.GPUType, "gpu-type", "", "Type of GPU to use, e.g., rtx_5000")
+	codeCmd.Flags().IntVar(&config.CPUs, "cpus", 0, "Number of VCPUs to allocate, e.g., 4")
+	codeCmd.Flags().IntVar(&config.Memory, "mem", 0, "Amount of RAM to allocate in GB, e.g., 16")
+	codeCmd.Flags().IntVar(&config.HDD, "hdd", 0, "Amount of hard-disk space to allocate in GB")
 	rootCmd.AddCommand(codeCmd)
 
 	rootCmd.AddCommand(&cobra.Command{
@@ -214,19 +220,15 @@ func init() {
 		GroupID: groupDev,
 		RunE:    withValidProjectURI(cmd.SessionCreateCmd),
 	}
-
 	newCmd.Flags().StringVarP(&config.BuildID, "image", "i", "", "Build ID of the container image to use")
 	newCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
-
+	newCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
 	newCmd.Flags().IntVar(&config.GPUs, "gpus", 0, "Number of GPUs to allocate for a gpuType, e.g., 2")
 	newCmd.Flags().IntVar(&config.GPUMemory, "gpu-mem", 0, "Memory of GPU if applicable for a gpuType, e.g., 12")
 	newCmd.Flags().StringVar(&config.GPUType, "gpu-type", "", "Type of GPU to use, e.g., rtx_5000")
 	newCmd.Flags().IntVar(&config.CPUs, "cpus", 0, "Number of VCPUs to allocate, e.g., 4")
 	newCmd.Flags().IntVar(&config.Memory, "mem", 0, "Amount of RAM to allocate in GB, e.g., 16")
-	newCmd.Flags().IntVar(&config.Storage, "hdd", 0, "Amount of storage to allocate in GB")
-
-	newCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
-
+	newCmd.Flags().IntVar(&config.HDD, "hdd", 0, "Amount of hard-disk space to allocate in GB")
 	rootCmd.AddCommand(newCmd)
 
 	lsCmd := &cobra.Command{
@@ -266,6 +268,12 @@ func init() {
 	sshCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
 	sshCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
 	sshCmd.Flags().StringVar(&config.SSHPrivateKeyPath, "prv", "", "Absolute Path to the private key to use")
+	sshCmd.Flags().IntVar(&config.GPUs, "gpus", 0, "Number of GPUs to allocate for a gpuType, e.g., 2")
+	sshCmd.Flags().IntVar(&config.GPUMemory, "gpu-mem", 0, "Memory of GPU if applicable for a gpuType, e.g., 12")
+	sshCmd.Flags().StringVar(&config.GPUType, "gpu-type", "", "Type of GPU to use, e.g., rtx_5000")
+	sshCmd.Flags().IntVar(&config.CPUs, "cpus", 0, "Number of VCPUs to allocate, e.g., 4")
+	sshCmd.Flags().IntVar(&config.Memory, "mem", 0, "Amount of RAM to allocate in GB, e.g., 16")
+	sshCmd.Flags().IntVar(&config.HDD, "hdd", 0, "Amount of hard-disk space to allocate in GB")
 	rootCmd.AddCommand(sshCmd)
 
 	// SSH Key commands

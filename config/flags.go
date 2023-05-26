@@ -28,8 +28,8 @@ var CPUs int
 // Memory is the amount of RAM to allocate in GB.
 var Memory int
 
-// Storage is the amount of storage to allocate in GB.
-var Storage int
+// HDD is the amount of storage to allocate in GB.
+var HDD int
 
 // NodeRegion is the region to use when creating a new session
 var NodeRegion = ""
