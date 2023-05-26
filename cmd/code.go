@@ -43,7 +43,7 @@ func Code(cmd *cobra.Command, args []string) error {
 				}
 
 				ui.Infof("🔧 Setting up VS Code ...")
-				arg := fmt.Sprintf("vscode-remote://ssh-remote+%s@%s/home/ubuntu", e.Connection.User, e.Connection.Host)
+				arg := fmt.Sprintf("vscode-remote://ssh-remote+%s@%s/home/unweave", e.Connection.User, e.Connection.Host)
 
 				codeCmd := exec.Command("code", "--folder-uri="+arg)
 				codeCmd.Stdout = os.Stdout
