@@ -182,7 +182,7 @@ func handleCopySourceDir(isNew bool, e types.Exec, privKey string) error {
 			ui.Errorf("Failed to get active project path. Skipping copying source directory")
 			return fmt.Errorf("failed to get active project path: %v", err)
 		}
-		if err := copySource(e.ID, dir, config.UnweaveHostDir, *e.Connection, privKey); err != nil {
+		if err := copySource(e.ID, dir, config.ProjectHostDir(), *e.Connection, privKey); err != nil {
 			fmt.Println(err)
 		}
 	} else {

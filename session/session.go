@@ -104,9 +104,10 @@ func renderSessionCreated(exec *types.Exec) {
 		{Key: "Status", Value: fmt.Sprintf("%s", exec.Status)},
 		{Key: "SSHKey", Value: fmt.Sprintf("%s", exec.SSHKey.Name)},
 		{Key: "CPUs", Value: fmt.Sprintf("%v", exec.Specs.CPU.Min)},
-		{Key: "RAM", Value: fmt.Sprintf("%v", exec.Specs.RAM.Min)},
-		{Key: "HDD", Value: fmt.Sprintf("%v", exec.Specs.HDD.Min)},
-		{Key: "GPU Type", Value: fmt.Sprintf("%v", exec.Specs.GPU.Type)},
+		// Uncomment when issues setting RAM are resolved
+		// {Key: "RAM", Value: fmt.Sprintf("%vGB", exec.Specs.RAM.Min)},
+		{Key: "HDD", Value: fmt.Sprintf("%vGB", exec.Specs.HDD.Min)},
+		{Key: "GPU Type", Value: fmt.Sprintf("%s", exec.Specs.GPU.Type)},
 		{Key: "NumGPUs", Value: fmt.Sprintf("%v", exec.Specs.GPU.Count.Min)},
 	}
 

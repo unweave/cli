@@ -47,7 +47,7 @@ type (
 func (c *config) String() string {
 	buf, err := toml.Marshal(c)
 	if err != nil {
-		ui.Errorf("Failed to marshal config: ", err)
+		ui.Errorf("Failed to marshal config: %s", err)
 	}
 	return string(buf)
 }
@@ -59,7 +59,7 @@ func (c *unweave) Save() error {
 func (c *project) String() string {
 	buf, err := toml.Marshal(c)
 	if err != nil {
-		ui.Errorf("Failed to marshal config: ", err)
+		ui.Errorf("Failed to marshal config: %s", err)
 	}
 	return string(buf)
 }
