@@ -2,10 +2,6 @@ module github.com/unweave/cli
 
 go 1.19
 
-replace (
-	github.com/unweave/unweave => ../infra/unweave
-)
-
 require (
 	github.com/charmbracelet/lipgloss v0.6.0
 	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
