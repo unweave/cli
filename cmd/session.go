@@ -54,36 +54,6 @@ func setupSSHKey(ctx context.Context) (string, []byte, error) {
 	return generateSSHKey(ctx)
 }
 
-// Deprecated: we no longer use the idrsa key as default
-func useIdRsaSSHKey(ctx context.Context) (string, []byte, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", nil, err
-	}
-	path := filepath.Join(home, ".ssh", "id_rsa")
-
-	idrsaExists := false
-	idrsaPubExists := false
-
-	if _, err := os.Stat(path); err == nil {
-		idrsaPubExists = true
-	}
-	if _, err := os.Stat(path + ".pub"); err == nil {
-		idrsaExists = true
-	}
-
-	if idrsaExists && idrsaPubExists {
-		name, pub, err := sshKeyAddIDRSA(ctx, path, nil)
-		if err != nil {
-			return "", nil, err
-		}
-		ui.Infof("Using default key path ~/.ssh/id_rsa")
-		return name, pub, nil
-	}
-
-	return "", nil, fmt.Errorf("No SSH key found at %s", path)
-}
-
 func generateSSHKey(ctx context.Context) (string, []byte, error) {
 	dir := config.GetUnweaveSSHKeysFolder()
 	entries, err := os.ReadDir(dir)
@@ -399,7 +369,7 @@ func parseHardwareSpec() (types.HardwareSpec, error) {
 			Min: config.Memory,
 			Max: config.Memory,
 		},
-		Storage: types.HardwareRequestRange{
+		HDD: types.HardwareRequestRange{
 			Min: config.HDD,
 			Max: config.HDD,
 		},
