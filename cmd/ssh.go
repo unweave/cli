@@ -65,7 +65,8 @@ func SSH(cmd *cobra.Command, args []string) error {
 				ensureHosts(e, prvKey)
 				err = handleCopySourceDir(isNew, e, prvKey)
 				if err != nil {
-					return err
+					ui.HandleError(err)
+					os.Exit(1)
 				}
 
 				if err := ssh.Connect(ctx, *e.Connection, prvKey, sshArgs); err != nil {
@@ -182,8 +183,8 @@ func handleCopySourceDir(isNew bool, e types.Exec, privKey string) error {
 			ui.Errorf("Failed to get active project path. Skipping copying source directory")
 			return fmt.Errorf("failed to get active project path: %v", err)
 		}
-		if err := copySource(e.ID, dir, config.ProjectHostDir(), *e.Connection, privKey); err != nil {
-			fmt.Println(err)
+		if err := copySourceAndUnzip(e.ID, dir, config.ProjectHostDir(), *e.Connection, privKey); err != nil {
+			return err
 		}
 	} else {
 		ui.Infof("Skipping copying source directory")
@@ -191,7 +192,7 @@ func handleCopySourceDir(isNew bool, e types.Exec, privKey string) error {
 	return nil
 }
 
-func copySource(execID, rootDir, dstPath string, connectionInfo types.ConnectionInfo, privKeyPath string) error {
+func copySourceAndUnzip(execID, rootDir, dstPath string, connectionInfo types.ConnectionInfo, privKeyPath string) error {
 	ui.Infof("🧳 Gathering context from %q", rootDir)
 
 	tmpFile, err := createTempContextFile(execID)
@@ -204,7 +205,11 @@ func copySource(execID, rootDir, dstPath string, connectionInfo types.Connection
 
 	tmpDstPath := filepath.Join("/tmp", fmt.Sprintf("uw-context-%s.tar.gz", execID))
 
-	if err := copySourceSCP(tmpFile.Name(), tmpDstPath, dstPath, connectionInfo, privKeyPath); err != nil {
+	ui.Infof("🔄 Copying source to %q", dstPath)
+
+	// target to copy to i.e. /home/user/Desktop/ user@your.server.example.com:/path/to/foo
+	remoteTarget := fmt.Sprintf("%s@%s:%s", connectionInfo.User, connectionInfo.Host, tmpDstPath)
+	if err := copySourceSCP(tmpFile.Name(), remoteTarget, privKeyPath); err != nil {
 		return fmt.Errorf("failed to copy source: %w", err)
 	}
 
@@ -226,7 +231,7 @@ func createTempContextFile(execID string) (*os.File, error) {
 	return tmpFile, nil
 }
 
-func copySourceSCP(srcPath, tmpDstPath, dstPath string, connectionInfo types.ConnectionInfo, privKeyPath string) error {
+func copySourceSCP(from, to string, privKeyPath string) error {
 	scpCommandArgs := []string{
 		"-r",
 		"-o", "StrictHostKeyChecking=no",
@@ -235,7 +240,8 @@ func copySourceSCP(srcPath, tmpDstPath, dstPath string, connectionInfo types.Con
 	if privKeyPath != "" {
 		scpCommandArgs = append(scpCommandArgs, "-i", privKeyPath)
 	}
-	scpCommandArgs = append(scpCommandArgs, srcPath, fmt.Sprintf("%s@%s:%s", connectionInfo.User, connectionInfo.Host, tmpDstPath))
+
+	scpCommandArgs = append(scpCommandArgs, []string{from, to}...)
 
 	scpCommand := exec.Command("scp", scpCommandArgs...)
 
@@ -244,8 +250,6 @@ func copySourceSCP(srcPath, tmpDstPath, dstPath string, connectionInfo types.Con
 
 	scpCommand.Stdout = stdout
 	scpCommand.Stderr = stderr
-
-	ui.Infof("🔄 Copying source to %q", dstPath)
 
 	if err := scpCommand.Run(); err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {

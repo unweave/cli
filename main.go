@@ -144,6 +144,29 @@ func init() {
 	codeCmd.Flags().IntVar(&config.HDD, "hdd", 0, "Amount of hard-disk space to allocate in GB")
 	rootCmd.AddCommand(codeCmd)
 
+	cpCmd := &cobra.Command{
+		Use:   "cp <source-path> <destination-path>",
+		Short: "Copy files and folders to or from a remote host",
+		Long: wordwrap.String("Copy files and folders to or from a remote host \n\n"+
+			"To copy to a remote session, you must prefix the remote path with the session "+
+			"name `sess:<session-name>`. The `sess:` prefix is necessary.\n\n"+
+			"The full syntax for this command is:\n\n"+
+			"Local to remote:\n"+
+			"unweave cp <local-path> sess:<session-name><remote-path>\n\n"+
+			"Remote to local:\n"+
+			"unweave cp sess:<session-name><remote-path> <local-path> \n\n"+
+			"Current directory to remote:\n"+
+			"unweave cp . sess:<session-name><remote-path>\n\n"+
+			"Example: \n"+
+			"\tunweave cp /home/data sess:session-name/home/ml-data\n"+
+			"\tunweave cp sess:session-name/home/ml-data /home/data\n", ui.MaxOutputLineLength),
+		Args:    cobra.ExactArgs(2),
+		Aliases: []string{"cp", "copy"},
+		GroupID: groupDev,
+		RunE:    withValidProjectURI(cmd.Copy),
+	}
+	rootCmd.AddCommand(cpCmd)
+
 	rootCmd.AddCommand(&cobra.Command{
 		Use:     "config",
 		Short:   "Show the current config",
