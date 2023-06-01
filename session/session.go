@@ -17,7 +17,10 @@ func Create(ctx context.Context, params types.ExecCreateParams) (string, error) 
 		exec, err := createSessionFromConfigGPUTypes(ctx, params)
 		renderSessionCreated(exec)
 
-		return exec.ID, err
+		if err != nil {
+			return "", err
+		}
+		return exec.ID, nil
 	}
 
 	exec, err := createSession(ctx, params, params.HardwareSpec.GPU.Type)
