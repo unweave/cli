@@ -55,9 +55,9 @@ func Copy(cmd *cobra.Command, args []string) error {
 		publicKeyPath = *targetExec.SSHKey.PublicKey
 	}
 
-	ui.Infof(fmt.Sprintf("🔄 Copying %s to %s", scpArgs[0], scpArgs[1]))
+	ui.Infof(fmt.Sprintf("🔄 Copying %s => %s", scpArgs[0], scpArgs[1]))
 	err := copySourceSCP(scpArgs[0], scpArgs[1], publicKeyPath)
-	ui.Infof("✅  Copied %s to %s", scpArgs[0], scpArgs[1])
+	ui.Infof("✅  Copied %s => %s", scpArgs[0], scpArgs[1])
 	return err
 }
 
