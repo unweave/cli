@@ -148,7 +148,6 @@ func init() {
 		Use:   "cp <source-path> <destination-path>",
 		Short: "Copy files and folders to or from a remote host",
 		Long: wordwrap.String("Copy files and folders to or from a remote host \n\n"+
-			"cp <source-path> <destination-path>\n\n"+
 			"To copy to a remote session, you must prefix the remote path with the session "+
 			"name `sess:<session-name>`. The `sess:` prefix is necessary.\n\n"+
 			"The full syntax for this command is:\n\n"+
