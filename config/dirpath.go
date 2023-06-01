@@ -11,12 +11,12 @@ const UnweaveHostDir = "/home/unweave"
 
 // ProjectHostDir is the location where project files get copied to
 func ProjectHostDir() string {
-	absPath, err := filepath.Abs(".")
+	projectPath, err := GetActiveProjectPath()
 	if err != nil {
 		ui.HandleError(err)
 	}
 
-	_, rootDir := filepath.Split(absPath)
+	_, rootDir := filepath.Split(projectPath)
 
 	return filepath.Join(UnweaveHostDir, rootDir)
 }
