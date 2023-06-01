@@ -176,14 +176,13 @@ func ensureHosts(e types.Exec, identityFile string) {
 func handleCopySourceDir(isNew bool, e types.Exec, privKey string) error {
 	// TODO: Wait until port is open before cleaning up the source code
 
-	const dstPath = "/home/unweave"
 	if !config.NoCopySource && isNew {
 		dir, err := config.GetActiveProjectPath()
 		if err != nil {
 			ui.Errorf("Failed to get active project path. Skipping copying source directory")
 			return fmt.Errorf("failed to get active project path: %v", err)
 		}
-		if err := copySource(e.ID, dir, dstPath, *e.Connection, privKey); err != nil {
+		if err := copySource(e.ID, dir, config.ProjectHostDir(), *e.Connection, privKey); err != nil {
 			fmt.Println(err)
 		}
 	} else {

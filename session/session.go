@@ -99,10 +99,16 @@ func renderSessionCreated(exec *types.Exec) {
 		{Key: "Name", Value: exec.Name},
 		{Key: "ID", Value: exec.ID},
 		{Key: "Provider", Value: exec.Provider.DisplayName()},
-		{Key: "Type", Value: exec.NodeTypeID},
+		{Key: "Instance Type", Value: exec.NodeTypeID},
 		{Key: "Region", Value: exec.Region},
 		{Key: "Status", Value: fmt.Sprintf("%s", exec.Status)},
 		{Key: "SSHKey", Value: fmt.Sprintf("%s", exec.SSHKey.Name)},
+		{Key: "CPUs", Value: fmt.Sprintf("%v", exec.Specs.CPU.Min)},
+		// Uncomment when issues setting RAM are resolved
+		// {Key: "RAM", Value: fmt.Sprintf("%vGB", exec.Specs.RAM.Min)},
+		{Key: "HDD", Value: fmt.Sprintf("%vGB", exec.Specs.HDD.Min)},
+		{Key: "GPU Type", Value: fmt.Sprintf("%s", exec.Specs.GPU.Type)},
+		{Key: "NumGPUs", Value: fmt.Sprintf("%v", exec.Specs.GPU.Count.Min)},
 	}
 
 	ui.ResultTitle("Session Created:")
