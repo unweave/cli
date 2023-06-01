@@ -1,6 +1,6 @@
 package ui
 
 const (
-	MaxOutputLineLength = 100
+	MaxOutputLineLength = 80
 	IndentWidth         = 2
 )
