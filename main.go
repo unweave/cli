@@ -144,6 +144,17 @@ func init() {
 	codeCmd.Flags().IntVar(&config.HDD, "hdd", 0, "Amount of hard-disk space to allocate in GB")
 	rootCmd.AddCommand(codeCmd)
 
+	cpCmd := &cobra.Command{
+		Use:     "cp",
+		Short:   "Copy files and folders to or from a remote host",
+		Long:    "Example: unweave cp local/path sess:<exec-name/id>/absolute/path/on/remote",
+		Args:    cobra.ExactArgs(2),
+		Aliases: []string{"copy"},
+		GroupID: groupDev,
+		RunE:    withValidProjectURI(cmd.Copy),
+	}
+	rootCmd.AddCommand(cpCmd)
+
 	rootCmd.AddCommand(&cobra.Command{
 		Use:     "config",
 		Short:   "Show the current config",
