@@ -23,7 +23,8 @@ func Copy(cmd *cobra.Command, args []string) error {
 	for _, arg := range args {
 		argExecID, err := getExecIDFromCopyArgs(arg)
 		if err != nil {
-			return err
+			ui.HandleError(err)
+			os.Exit(1)
 		}
 
 		if argExecID != "" && targetExec != nil {
@@ -39,7 +40,8 @@ func Copy(cmd *cobra.Command, args []string) error {
 
 		formattedArg, err := formatCopyArgToScpArgs(cmd.Context(), argExecID, targetExec, arg)
 		if err != nil {
-			return err
+			ui.HandleError(err)
+			os.Exit(1)
 		}
 
 		scpArgs = append(scpArgs, formattedArg)

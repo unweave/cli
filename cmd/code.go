@@ -39,7 +39,8 @@ func Code(cmd *cobra.Command, args []string) error {
 				ensureHosts(e, prvKey)
 				err = handleCopySourceDir(isNew, e, prvKey)
 				if err != nil {
-					return err
+					ui.HandleError(err)
+					os.Exit(1)
 				}
 
 				ui.Infof("🔧 Setting up VS Code ...")

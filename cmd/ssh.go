@@ -65,7 +65,8 @@ func SSH(cmd *cobra.Command, args []string) error {
 				ensureHosts(e, prvKey)
 				err = handleCopySourceDir(isNew, e, prvKey)
 				if err != nil {
-					return err
+					ui.HandleError(err)
+					os.Exit(1)
 				}
 
 				if err := ssh.Connect(ctx, *e.Connection, prvKey, sshArgs); err != nil {
@@ -183,7 +184,7 @@ func handleCopySourceDir(isNew bool, e types.Exec, privKey string) error {
 			return fmt.Errorf("failed to get active project path: %v", err)
 		}
 		if err := copySourceAndUnzip(e.ID, dir, config.ProjectHostDir(), *e.Connection, privKey); err != nil {
-			fmt.Println(err)
+			return err
 		}
 	} else {
 		ui.Infof("Skipping copying source directory")
