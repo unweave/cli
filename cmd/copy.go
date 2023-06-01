@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -43,6 +44,9 @@ func Copy(cmd *cobra.Command, args []string) error {
 
 		scpArgs = append(scpArgs, formattedArg)
 	}
+	if targetExec == nil {
+		return fmt.Errorf("At least one remote host must be specified")
+	}
 
 	if targetExec.SSHKey.PublicKey == nil && config.SSHPublicKeyPath == "" {
 		return fmt.Errorf("Failed to identify public key, check your Unweave config file or specify it manually")
@@ -63,6 +67,10 @@ func Copy(cmd *cobra.Command, args []string) error {
 
 func formatCopyArgToScpArgs(ctx context.Context, argExecID string, exec *types.Exec, arg string) (string, error) {
 	if argExecID == "" {
+		if arg == "." {
+			return os.Getwd()
+		}
+
 		return arg, nil
 	}
 

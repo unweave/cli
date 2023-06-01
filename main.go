@@ -146,8 +146,8 @@ func init() {
 
 	cpCmd := &cobra.Command{
 		Use:     "cp",
-		Short:   "Copy files and folders to or from a remote host",
-		Long:    "Example: unweave cp local/path sess:<exec-name/id>/absolute/path/on/remote",
+		Short:   "Copy files and folders to or from a remote host, use . for current directory",
+		Long:    "Example: unweave cp . sess:<exec-name/id>/absolute/path/on/remote",
 		Args:    cobra.ExactArgs(2),
 		Aliases: []string{"copy"},
 		GroupID: groupDev,
