@@ -207,8 +207,8 @@ func copySourceAndUnzip(execID, rootDir, dstPath string, connectionInfo types.Co
 	ui.Infof("🔄 Copying source to %q", dstPath)
 
 	// target to copy to i.e. /home/user/Desktop/ user@your.server.example.com:/path/to/foo
-	sourceTarget := fmt.Sprintf("%s@%s:%s", connectionInfo.User, connectionInfo.Host, tmpDstPath)
-	if err := copySourceSCP([]string{tmpFile.Name(), sourceTarget}, privKeyPath); err != nil {
+	remoteTarget := fmt.Sprintf("%s@%s:%s", connectionInfo.User, connectionInfo.Host, tmpDstPath)
+	if err := copySourceSCP(tmpFile.Name(), remoteTarget, privKeyPath); err != nil {
 		return fmt.Errorf("failed to copy source: %w", err)
 	}
 
@@ -230,7 +230,7 @@ func createTempContextFile(execID string) (*os.File, error) {
 	return tmpFile, nil
 }
 
-func copySourceSCP(fromTo []string, privKeyPath string) error {
+func copySourceSCP(from, to string, privKeyPath string) error {
 	scpCommandArgs := []string{
 		"-r",
 		"-o", "StrictHostKeyChecking=no",
@@ -240,7 +240,7 @@ func copySourceSCP(fromTo []string, privKeyPath string) error {
 		scpCommandArgs = append(scpCommandArgs, "-i", privKeyPath)
 	}
 
-	scpCommandArgs = append(scpCommandArgs, fromTo...)
+	scpCommandArgs = append(scpCommandArgs, []string{from, to}...)
 
 	scpCommand := exec.Command("scp", scpCommandArgs...)
 
