@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/unweave/cli/config"
 	"github.com/unweave/cli/ui"
@@ -55,8 +56,12 @@ func createSession(ctx context.Context, params types.ExecCreateParams, gpuType s
 }
 
 func createSessionFromConfigGPUTypes(ctx context.Context, params types.ExecCreateParams) (*types.Exec, error) {
-	gpuTypesFromConfig := gpuTypesFromConfig()
-	var err error
+	gpuTypesFromConfig, err := gpuTypesFromConfig()
+	if err != nil {
+		ui.Errorf(err.Error())
+		os.Exit(1)
+	}
+
 	var exec *types.Exec
 	for _, gpuType := range gpuTypesFromConfig {
 		exec, err = createSession(ctx, params, gpuType)
@@ -81,7 +86,8 @@ func isOutOfCapacityError(err error) bool {
 	return false
 }
 
-func gpuTypesFromConfig() []string {
+// gpuTypesFromConfig returns the GPU types in config.toml or a set of defaults, never nil
+func gpuTypesFromConfig() ([]string, error) {
 	var gpuTypeIDs []string
 	provider := config.Config.Project.DefaultProvider
 	if config.Provider != "" {
@@ -90,7 +96,14 @@ func gpuTypesFromConfig() []string {
 	if p, ok := config.Config.Project.Providers[provider]; ok {
 		gpuTypeIDs = p.NodeTypes
 	}
-	return gpuTypeIDs
+	if len(gpuTypeIDs) == 0 {
+		gpuTypeIDs = config.DefaultGPUTypes
+	}
+	if len(gpuTypeIDs) == 0 {
+		return nil, fmt.Errorf("GPU type config should be provided or default, never nil")
+	}
+
+	return gpuTypeIDs, nil
 }
 
 func renderSessionCreated(exec *types.Exec) {

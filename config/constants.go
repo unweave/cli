@@ -5,3 +5,5 @@ const (
 	ProjectConfigDirName = ".unweave"
 	UnweaveSSHKeysDir    = ".unweave_global/.ssh"
 )
+
+var DefaultGPUTypes = []string{""}
