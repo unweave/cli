@@ -64,9 +64,21 @@ func Copy(cmd *cobra.Command, args []string) error {
 	}
 
 	ui.Infof(fmt.Sprintf("🔄 Copying %s => %s", scpArgs[0], scpArgs[1]))
-	err := copySourceSCP(scpArgs[0], scpArgs[1], publicKeyPath)
+
+	// If the first argument of the SCP args points towards a logical directory assume local => remote
+	pathInfo, _ := os.Stat(scpArgs[0])
+	if pathInfo.IsDir() {
+		return copySourceAndUnzip(targetExec.ID, scpArgs[0], splitSessFromDirpath(args[1]), *targetExec.Connection, publicKeyPath)
+	} else {
+		err := copySourceSCP(scpArgs[0], scpArgs[1], publicKeyPath)
+		if err != nil {
+			ui.Infof("❎ Unsuccessful copy %s => %s", scpArgs[0], scpArgs[1])
+			return nil
+		}
+	}
+
 	ui.Infof("✅  Copied %s => %s", scpArgs[0], scpArgs[1])
-	return err
+	return nil
 }
 
 func formatCopyArgToScpArgs(ctx context.Context, argExecID string, exec *types.Exec, arg string) (string, error) {
@@ -88,10 +100,13 @@ func formatCopyArgToScpArgs(ctx context.Context, argExecID string, exec *types.E
 		return "", fmt.Errorf("Could not get connection from session")
 	}
 
-	parts := strings.SplitN(arg, "/", 2)
-	dir := filepath.Clean(parts[1])
+	return fmt.Sprintf("%s@%s:%s", connectionInfo.User, connectionInfo.Host, splitSessFromDirpath(arg)), nil
+}
 
-	return fmt.Sprintf("%s@%s:/%s", connectionInfo.User, connectionInfo.Host, dir), nil
+// splitSessFromDirpath takes a qualified cp argument e.g. sess:<execId>/path and returns /path
+func splitSessFromDirpath(arg string) string {
+	parts := strings.SplitN(arg, "/", 2)
+	return fmt.Sprintf("/%s", filepath.Clean(parts[1]))
 }
 
 func getExecIDFromCopyArgs(input string) (string, error) {
