@@ -49,7 +49,9 @@ func Copy(cmd *cobra.Command, args []string) error {
 	if targetExec == nil {
 		return fmt.Errorf("At least one remote host must be specified")
 	}
-
+	if targetExec.Connection == nil {
+		return fmt.Errorf("Target session must have an active connection")
+	}
 	if targetExec.SSHKey.PublicKey == nil && config.SSHPublicKeyPath == "" {
 		return fmt.Errorf("Failed to identify public key, check your Unweave config file or specify it manually")
 	}
