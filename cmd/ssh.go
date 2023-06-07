@@ -226,7 +226,7 @@ func copyDirFromLocalAndUnzip(execID, rootDir, dstPath string, connectionInfo ty
 func copyDirFromRemoteAndUnzip(sshTarget, localDirectory, privateKey string) error {
 	ui.Infof("🧳 Gathering context from %q", sshTarget)
 
-	remotePath, err := zipRemoteDirectory(sshTarget, privateKey)
+	remotePath, err := tarRemoteDirectory(sshTarget, privateKey)
 	if err != nil {
 		return fmt.Errorf("Failed to zip the remote directory. Expected both a remote target and directory in %s", sshTarget)
 	}
@@ -263,8 +263,8 @@ func copyDirFromRemoteAndUnzip(sshTarget, localDirectory, privateKey string) err
 	return nil
 }
 
-// zipRemoteDirectory takes an ssh target, and zips up the contents of that target to a returned in the remote /tmp
-func zipRemoteDirectory(sshTarget, privateKeyPath string) (remoteArchiveLoc string, err error) {
+// tarRemoteDirectory takes an ssh target, and zips up the contents of that target to a returned in the remote /tmp
+func tarRemoteDirectory(sshTarget, privateKeyPath string) (remoteArchiveLoc string, err error) {
 	sshTargetAndDir := strings.Split(sshTarget, ":")
 	if len(sshTargetAndDir) != 2 {
 		return "", fmt.Errorf("Failed to zip remote directory, expected both a remote target and directory in %s", sshTarget)

@@ -65,12 +65,12 @@ func Copy(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func shouldCopyLocalDirToRemote(localPath string) bool {
-	if strings.Contains(localPath, "sess:") {
+func shouldCopyLocalDirToRemote(from string) bool {
+	if strings.Contains(from, "sess:") {
 		return false
 	}
 
-	pathInfo, err := os.Stat(localPath)
+	pathInfo, err := os.Stat(from)
 	if err != nil || pathInfo == nil {
 		return false
 	}
@@ -78,12 +78,12 @@ func shouldCopyLocalDirToRemote(localPath string) bool {
 	return pathInfo.IsDir()
 }
 
-func shouldCopyRemoteDirToLocal(remotePath string) bool {
-	if !strings.Contains(remotePath, "sess:") {
+func shouldCopyRemoteDirToLocal(from string) bool {
+	if !strings.Contains(from, "sess:") {
 		return false
 	}
 
-	sessFromDirpath := splitSessFromDirpath(remotePath)
+	sessFromDirpath := splitSessFromDirpath(from)
 	return regExValidDirpath.MatchString(sessFromDirpath)
 }
 
