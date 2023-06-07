@@ -41,14 +41,23 @@ func Copy(cmd *cobra.Command, args []string) error {
 	}
 	ui.Infof(fmt.Sprintf("🔄 Copying %s => %s", scpArgs[0], scpArgs[1]))
 
+	privateKey, err := getDefaultKey(cmd.Context(), *exec, config.SSHPrivateKeyPath)
+	if err != nil {
+		ui.Infof("❌ Unsuccessful copy, failed to get private key")
+	}
+
 	switch {
-	case isLocalDirToRemoteCopy(args[0], args[1]):
-		err = copySourceAndUnzip(exec.ID, scpArgs[0], splitSessFromDirpath(args[1]), *exec.Connection, *exec.SSHKey.PublicKey)
+	case shouldCopyLocalDirToRemote(args[0], args[1]):
+		// Eventually simplify this to talk in terms of scpArgs, too many dependants for now
+		err = copyDirFromLocalAndUnzip(exec.ID, scpArgs[0], splitSessFromDirpath(args[1]), *exec.Connection, privateKey)
+	case shouldCopyRemoteDirToLocal(args[0], args[1]):
+		err = copyDirFromRemoteAndUnzip(scpArgs[0], scpArgs[1], privateKey)
 	default:
-		err = copySourceSCP(scpArgs[0], scpArgs[1], *exec.SSHKey.PublicKey)
+		err = copySourceSCP(scpArgs[0], scpArgs[1], privateKey)
 	}
 
 	if err != nil {
+		fmt.Println(err.Error())
 		ui.Infof("❌ Unsuccessful copy %s => %s", scpArgs[0], scpArgs[1])
 		return nil
 	}
@@ -57,12 +66,12 @@ func Copy(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func isLocalDirToRemoteCopy(path1, path2 string) bool {
-	if strings.Contains(path1, "sess:") {
+func shouldCopyLocalDirToRemote(localPath1, remotePath2 string) bool {
+	if strings.Contains(localPath1, "sess:") {
 		return false
 	}
 
-	pathInfo, err := os.Stat(path1)
+	pathInfo, err := os.Stat(localPath1)
 	if err != nil || pathInfo == nil {
 		return false
 	}
@@ -70,8 +79,19 @@ func isLocalDirToRemoteCopy(path1, path2 string) bool {
 	return pathInfo.IsDir()
 }
 
-func isRemoteDirToLocalCopy(path1, path2 string) bool {
-	return false
+func shouldCopyRemoteDirToLocal(remotePath1, localPath2 string) bool {
+	if !strings.Contains(remotePath1, "sess:") {
+		return false
+	}
+
+	sessFromDirpath := splitSessFromDirpath(remotePath1)
+	return isValidDirPath(sessFromDirpath)
+}
+
+var regExValidDirpath = regexp.MustCompile(`^\/(?:[^\/]+\/)*[^\/]+$`)
+
+func isValidDirPath(path string) bool {
+	return regExValidDirpath.MatchString(path)
 }
 
 func getTargetExec(cmd *cobra.Command, args []string) (*types.Exec, error) {
