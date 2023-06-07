@@ -13,7 +13,10 @@ import (
 	"github.com/unweave/unweave/api/types"
 )
 
-var getSessionIDRegex = regexp.MustCompile(`^sess:([^/]+)`)
+var (
+	getSessionIDRegex = regexp.MustCompile(`^sess:([^/]+)`)
+	regExValidDirpath = regexp.MustCompile(`^\/(?:[^\/]+\/)*[^\/]+$`)
+)
 
 func Copy(cmd *cobra.Command, args []string) error {
 	exec, err := getTargetExec(cmd, args)
@@ -81,13 +84,7 @@ func shouldCopyRemoteDirToLocal(remotePath1, localPath2 string) bool {
 	}
 
 	sessFromDirpath := splitSessFromDirpath(remotePath1)
-	return isValidDirPath(sessFromDirpath)
-}
-
-var regExValidDirpath = regexp.MustCompile(`^\/(?:[^\/]+\/)*[^\/]+$`)
-
-func isValidDirPath(path string) bool {
-	return regExValidDirpath.MatchString(path)
+	return regExValidDirpath.MatchString(sessFromDirpath)
 }
 
 func getTargetExec(cmd *cobra.Command, args []string) (*types.Exec, error) {
