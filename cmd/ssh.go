@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/unweave/cli/config"
@@ -183,7 +184,7 @@ func handleCopySourceDir(isNew bool, e types.Exec, privKey string) error {
 			ui.Errorf("Failed to get active project path. Skipping copying source directory")
 			return fmt.Errorf("failed to get active project path: %v", err)
 		}
-		if err := copySourceAndUnzip(e.ID, dir, config.ProjectHostDir(), *e.Connection, privKey); err != nil {
+		if err := copyDirFromLocalAndUnzip(e.ID, dir, config.ProjectHostDir(), *e.Connection, privKey); err != nil {
 			return err
 		}
 	} else {
@@ -192,7 +193,7 @@ func handleCopySourceDir(isNew bool, e types.Exec, privKey string) error {
 	return nil
 }
 
-func copySourceAndUnzip(execID, rootDir, dstPath string, connectionInfo types.ConnectionInfo, privKeyPath string) error {
+func copyDirFromLocalAndUnzip(execID, rootDir, dstPath string, connectionInfo types.ConnectionInfo, privKeyPath string) error {
 	ui.Infof("🧳 Gathering context from %q", rootDir)
 
 	tmpFile, err := createTempContextFile(execID)
