@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -202,12 +203,50 @@ func SessionList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	cols := []ui.Column{
-		{Title: "ID", Width: -1},
-		{Title: "Provider", Width: -1},
-		{Title: "Status", Width: 15},
-		{Title: "Connection String", Width: -1},
+	if len(sessions) > 0 {
+		renderSessionListWithSessions(sessions)
+	} else {
+		renderSessionListNoSessions()
 	}
+
+	return nil
+}
+
+func renderSessionListNoSessions() {
+	ui.Attentionf("No sessions active")
+}
+
+func renderSessionListWithSessions(sessions []types.Exec) {
+	sort.Slice(sessions, func(i, j int) bool {
+		return sessions[i].Name < sessions[j].Name
+	})
+
+	// EITHER min length of title + 5 for padding OR the max field length + 5 for padding
+	cols := []ui.Column{
+		{Title: "Name", Width: 5 + MaxFieldLength(sessions, func(exec types.Exec) string {
+			return exec.Name
+		})},
+		{Title: "vCPUs", Width: 5},
+		{Title: "GPU", Width: 5 + MaxFieldLength(sessions, func(exec types.Exec) string {
+			return exec.Specs.GPU.Type
+		})},
+		{Title: "NumGPUs", Width: 12},
+		{Title: "HDD (GB)", Width: 10},
+		// {Title: "RAM (GB)", Width: 10},
+		{Title: "Provider", Width: 5 + MaxFieldLength(sessions, func(exec types.Exec) string {
+			return exec.Provider.String()
+		})},
+		{Title: "Status", Width: 5 + MaxFieldLength(sessions, func(exec types.Exec) string {
+			return string(exec.Status)
+		})},
+		{Title: "Connection String", Width: 2 + MaxFieldLength(sessions, func(exec types.Exec) string {
+			if exec.Connection == nil || exec.Connection.Host == "" {
+				return "Connection String"
+			}
+			return fmt.Sprintf("%s@%s", exec.Connection.User, exec.Connection.Host)
+		})},
+	}
+
 	rows := make([]ui.Row, len(sessions))
 
 	for idx, s := range sessions {
@@ -216,7 +255,12 @@ func SessionList(cmd *cobra.Command, args []string) error {
 			conn = fmt.Sprintf("%s@%s", s.Connection.User, s.Connection.Host)
 		}
 		row := ui.Row{
-			fmt.Sprintf("%s", s.ID),
+			fmt.Sprintf("%s", s.Name),
+			fmt.Sprintf("%v", s.Specs.CPU.Min),
+			fmt.Sprintf("%s", s.Specs.GPU.Type),
+			fmt.Sprintf("%v", s.Specs.GPU.Count.Min),
+			fmt.Sprintf("%v", s.Specs.HDD.Min),
+			// fmt.Sprintf("%v", s.Specs.RAM.Min),
 			fmt.Sprintf("%s", s.Provider),
 			fmt.Sprintf("%s", s.Status),
 			conn,
@@ -225,8 +269,19 @@ func SessionList(cmd *cobra.Command, args []string) error {
 	}
 
 	ui.Table("Sessions", cols, rows)
+}
 
-	return nil
+func MaxFieldLength[T any](data []T, getField func(T) string) int {
+	maxLength := 0
+
+	for _, item := range data {
+		fieldValue := getField(item)
+		if len(fieldValue) > maxLength {
+			maxLength = len(fieldValue)
+		}
+	}
+
+	return maxLength
 }
 
 func sessionTerminate(ctx context.Context, execID string) error {
