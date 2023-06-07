@@ -16,10 +16,6 @@ import (
 var getSessionIDRegex = regexp.MustCompile(`^sess:([^/]+)`)
 
 func Copy(cmd *cobra.Command, args []string) error {
-	if len(args) < 2 {
-		return fmt.Errorf("At least two path arguments are required for the Copy command")
-	}
-
 	exec, err := getTargetExec(cmd, args)
 	if err != nil {
 		return err
