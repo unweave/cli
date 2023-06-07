@@ -264,15 +264,15 @@ func copyDirFromRemoteAndUnzip(sshTarget, localDirectory, privateKey string) err
 }
 
 // zipRemoteDirectory takes an ssh target, and zips up the contents of that target to a returned in the remote /tmp
-func zipRemoteDirectory(sshTarget, privateKeyPath string) (string, error) {
+func zipRemoteDirectory(sshTarget, privateKeyPath string) (remoteArchiveLoc string, err error) {
 	sshTargetAndDir := strings.Split(sshTarget, ":")
 	if len(sshTargetAndDir) != 2 {
 		return "", fmt.Errorf("Failed to zip remote directory, expected both a remote target and directory in %s", sshTarget)
 	}
 
 	timestamp := time.Now().Unix()
-	outputFileName := fmt.Sprintf("/tmp/uw-context-%d.tar.gz", timestamp)
-	tarCmd := fmt.Sprintf("tar -czf %s -C %s .", outputFileName, sshTargetAndDir[1])
+	remoteArchiveLoc = fmt.Sprintf("/tmp/uw-context-%d.tar.gz", timestamp)
+	tarCmd := fmt.Sprintf("tar -czf %s -C %s .", remoteArchiveLoc, sshTargetAndDir[1])
 
 	sshCommand := exec.Command(
 		"ssh",
@@ -304,7 +304,7 @@ func zipRemoteDirectory(sshTarget, privateKeyPath string) (string, error) {
 		return "", fmt.Errorf("failed to unzip on remote host: %v", err)
 	}
 
-	return outputFileName, nil
+	return remoteArchiveLoc, nil
 }
 
 func createTempContextFile(execID string) (*os.File, error) {
