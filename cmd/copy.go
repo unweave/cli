@@ -16,6 +16,10 @@ import (
 var getSessionIDRegex = regexp.MustCompile(`^sess:([^/]+)`)
 
 func Copy(cmd *cobra.Command, args []string) error {
+	if len(args) < 2 {
+		return fmt.Errorf("At least two path arguments are required for the Copy command")
+	}
+
 	exec, err := getTargetExec(cmd, args)
 	if err != nil {
 		return err
@@ -38,7 +42,7 @@ func Copy(cmd *cobra.Command, args []string) error {
 	ui.Infof(fmt.Sprintf("🔄 Copying %s => %s", scpArgs[0], scpArgs[1]))
 
 	switch {
-	case isLocalDirToRemoteCopy(args):
+	case isLocalDirToRemoteCopy(args[0], args[1]):
 		err = copySourceAndUnzip(exec.ID, scpArgs[0], splitSessFromDirpath(args[1]), *exec.Connection, *exec.SSHKey.PublicKey)
 	default:
 		err = copySourceSCP(scpArgs[0], scpArgs[1], *exec.SSHKey.PublicKey)
@@ -53,12 +57,12 @@ func Copy(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func isLocalDirToRemoteCopy(args []string) bool {
-	if strings.Contains(args[0], "sess:") {
+func isLocalDirToRemoteCopy(path1, path2 string) bool {
+	if strings.Contains(path1, "sess:") {
 		return false
 	}
 
-	pathInfo, err := os.Stat(args[0])
+	pathInfo, err := os.Stat(path1)
 	if err != nil || pathInfo == nil {
 		return false
 	}
@@ -66,17 +70,8 @@ func isLocalDirToRemoteCopy(args []string) bool {
 	return pathInfo.IsDir()
 }
 
-func isRemoteDirToLocalCopy(args []string) bool {
-	if strings.Contains(args[1], "sess:") {
-		return false
-	}
-
-	pathInfo, err := os.Stat(args[1])
-	if err != nil || pathInfo == nil {
-		return false
-	}
-
-	return pathInfo.IsDir()
+func isRemoteDirToLocalCopy(path1, path2 string) bool {
+	return false
 }
 
 func getTargetExec(cmd *cobra.Command, args []string) (*types.Exec, error) {
