@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/unweave/cli/config"
@@ -183,7 +184,7 @@ func handleCopySourceDir(isNew bool, e types.Exec, privKey string) error {
 			ui.Errorf("Failed to get active project path. Skipping copying source directory")
 			return fmt.Errorf("failed to get active project path: %v", err)
 		}
-		if err := copySourceAndUnzip(e.ID, dir, config.ProjectHostDir(), *e.Connection, privKey); err != nil {
+		if err := copyDirFromLocalAndUnzip(e.ID, dir, config.ProjectHostDir(), *e.Connection, privKey); err != nil {
 			return err
 		}
 	} else {
@@ -192,7 +193,7 @@ func handleCopySourceDir(isNew bool, e types.Exec, privKey string) error {
 	return nil
 }
 
-func copySourceAndUnzip(execID, rootDir, dstPath string, connectionInfo types.ConnectionInfo, privKeyPath string) error {
+func copyDirFromLocalAndUnzip(execID, rootDir, dstPath string, connectionInfo types.ConnectionInfo, privKeyPath string) error {
 	ui.Infof("🧳 Gathering context from %q", rootDir)
 
 	tmpFile, err := createTempContextFile(execID)
@@ -220,6 +221,90 @@ func copySourceAndUnzip(execID, rootDir, dstPath string, connectionInfo types.Co
 	ui.Infof("✅  Successfully copied source directory to remote host")
 
 	return nil
+}
+
+func copyDirFromRemoteAndUnzip(sshTarget, localDirectory, privateKey string) error {
+	ui.Infof("🧳 Gathering context from %q", sshTarget)
+
+	remotePath, err := tarRemoteDirectory(sshTarget, privateKey)
+	if err != nil {
+		return fmt.Errorf("Failed to zip the remote directory. Expected both a remote target and directory in %s", sshTarget)
+	}
+
+	ui.Infof("📦 Copying the archive of the remote path to the host...")
+
+	sshTargetAndDir := strings.Split(sshTarget, ":")
+	if len(sshTargetAndDir) != 2 {
+		return fmt.Errorf("Expected target to be in the format 'user@host:directory'")
+	}
+	sshTargetDirectory := sshTargetAndDir[0] + ":" + remotePath
+	remoteFilename := filepath.Base(remotePath)
+	archiveLocalTargetDir := config.GetGlobalConfigPath()
+	archiveLocalTarget := filepath.Join(archiveLocalTargetDir, remoteFilename)
+
+	err = copySourceSCP(sshTargetDirectory, config.GetGlobalConfigPath(), privateKey)
+	if err != nil {
+		return fmt.Errorf("Failed to copy the archive of your remote path to the host. "+
+			"Please check if %s exists on the remote and ensure Unweave has the necessary permissions to access %s",
+			sshTargetDirectory, archiveLocalTargetDir)
+	}
+
+	ui.Infof("🗜️ Unzipping the copied archive to the local directory...")
+
+	cmd := exec.Command("tar", "-xf", archiveLocalTarget, "-C", localDirectory, "--strip-components=1")
+
+	err = cmd.Run()
+	if err != nil {
+		return fmt.Errorf("Failed to unzip the copied archive of your code from %s to %s. "+
+			"Please ensure that Unweave has the necessary permissions to access %s and perform this operation manually",
+			archiveLocalTarget, localDirectory, archiveLocalTarget)
+	}
+
+	return nil
+}
+
+// tarRemoteDirectory takes an ssh target, and zips up the contents of that target to a returned in the remote /tmp
+func tarRemoteDirectory(sshTarget, privateKeyPath string) (remoteArchiveLoc string, err error) {
+	sshTargetAndDir := strings.Split(sshTarget, ":")
+	if len(sshTargetAndDir) != 2 {
+		return "", fmt.Errorf("Failed to zip remote directory, expected both a remote target and directory in %s", sshTarget)
+	}
+
+	timestamp := time.Now().Unix()
+	remoteArchiveLoc = fmt.Sprintf("/tmp/uw-context-%d.tar.gz", timestamp)
+	tarCmd := fmt.Sprintf("tar -czf %s -C %s .", remoteArchiveLoc, sshTargetAndDir[1])
+
+	sshCommand := exec.Command(
+		"ssh",
+		"-o", "StrictHostKeyChecking=no",
+		"-o", "UserKnownHostsFile=/dev/null",
+		"-i", privateKeyPath,
+		sshTargetAndDir[0],
+		tarCmd,
+	)
+
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+
+	sshCommand.Stdout = stdout
+	sshCommand.Stderr = stderr
+
+	if err := sshCommand.Run(); err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			// Exited with non-zero exit code
+			if status, ok := exitError.Sys().(syscall.WaitStatus); ok {
+				if status.ExitStatus() == 255 {
+					ui.Infof("The remote host closed the connection.")
+					return "", fmt.Errorf("failed to copy source: %w", err)
+				}
+			}
+			ui.Infof("Failed to extract source directory on remote host: %s", stderr.String())
+			return "", err
+		}
+		return "", fmt.Errorf("failed to unzip on remote host: %v", err)
+	}
+
+	return remoteArchiveLoc, nil
 }
 
 func createTempContextFile(execID string) (*os.File, error) {

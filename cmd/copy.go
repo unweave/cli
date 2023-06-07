@@ -13,7 +13,10 @@ import (
 	"github.com/unweave/unweave/api/types"
 )
 
-var getSessionIDRegex = regexp.MustCompile(`^sess:([^/]+)`)
+var (
+	getSessionIDRegex = regexp.MustCompile(`^sess:([^/]+)`)
+	regExValidDirpath = regexp.MustCompile(`^\/(?:[^\/]+\/)*[^\/]+$`)
+)
 
 func Copy(cmd *cobra.Command, args []string) error {
 	exec, err := getTargetExec(cmd, args)
@@ -37,14 +40,23 @@ func Copy(cmd *cobra.Command, args []string) error {
 	}
 	ui.Infof(fmt.Sprintf("🔄 Copying %s => %s", scpArgs[0], scpArgs[1]))
 
+	privateKey, err := getDefaultKey(cmd.Context(), *exec, config.SSHPrivateKeyPath)
+	if err != nil {
+		ui.Infof("❌ Unsuccessful copy, failed to get private key")
+	}
+
 	switch {
-	case isLocalDirToRemoteCopy(args):
-		err = copySourceAndUnzip(exec.ID, scpArgs[0], splitSessFromDirpath(args[1]), *exec.Connection, *exec.SSHKey.PublicKey)
+	case shouldCopyLocalDirToRemote(args[0]):
+		// Eventually simplify this to talk in terms of scpArgs, too many dependants for now
+		err = copyDirFromLocalAndUnzip(exec.ID, scpArgs[0], splitSessFromDirpath(args[1]), *exec.Connection, privateKey)
+	case shouldCopyRemoteDirToLocal(args[0]):
+		err = copyDirFromRemoteAndUnzip(scpArgs[0], scpArgs[1], privateKey)
 	default:
-		err = copySourceSCP(scpArgs[0], scpArgs[1], *exec.SSHKey.PublicKey)
+		err = copySourceSCP(scpArgs[0], scpArgs[1], privateKey)
 	}
 
 	if err != nil {
+		fmt.Println(err.Error())
 		ui.Infof("❌ Unsuccessful copy %s => %s", scpArgs[0], scpArgs[1])
 		return nil
 	}
@@ -53,12 +65,12 @@ func Copy(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func isLocalDirToRemoteCopy(args []string) bool {
-	if strings.Contains(args[0], "sess:") {
+func shouldCopyLocalDirToRemote(from string) bool {
+	if strings.Contains(from, "sess:") {
 		return false
 	}
 
-	pathInfo, err := os.Stat(args[0])
+	pathInfo, err := os.Stat(from)
 	if err != nil || pathInfo == nil {
 		return false
 	}
@@ -66,17 +78,13 @@ func isLocalDirToRemoteCopy(args []string) bool {
 	return pathInfo.IsDir()
 }
 
-func isRemoteDirToLocalCopy(args []string) bool {
-	if strings.Contains(args[1], "sess:") {
+func shouldCopyRemoteDirToLocal(from string) bool {
+	if !strings.Contains(from, "sess:") {
 		return false
 	}
 
-	pathInfo, err := os.Stat(args[1])
-	if err != nil || pathInfo == nil {
-		return false
-	}
-
-	return pathInfo.IsDir()
+	sessFromDirpath := splitSessFromDirpath(from)
+	return regExValidDirpath.MatchString(sessFromDirpath)
 }
 
 func getTargetExec(cmd *cobra.Command, args []string) (*types.Exec, error) {
