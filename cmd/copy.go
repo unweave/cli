@@ -46,10 +46,10 @@ func Copy(cmd *cobra.Command, args []string) error {
 	}
 
 	switch {
-	case shouldCopyLocalDirToRemote(args[0], args[1]):
+	case shouldCopyLocalDirToRemote(args[0]):
 		// Eventually simplify this to talk in terms of scpArgs, too many dependants for now
 		err = copyDirFromLocalAndUnzip(exec.ID, scpArgs[0], splitSessFromDirpath(args[1]), *exec.Connection, privateKey)
-	case shouldCopyRemoteDirToLocal(args[0], args[1]):
+	case shouldCopyRemoteDirToLocal(args[0]):
 		err = copyDirFromRemoteAndUnzip(scpArgs[0], scpArgs[1], privateKey)
 	default:
 		err = copySourceSCP(scpArgs[0], scpArgs[1], privateKey)
@@ -65,12 +65,12 @@ func Copy(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func shouldCopyLocalDirToRemote(localPath1, remotePath2 string) bool {
-	if strings.Contains(localPath1, "sess:") {
+func shouldCopyLocalDirToRemote(localPath string) bool {
+	if strings.Contains(localPath, "sess:") {
 		return false
 	}
 
-	pathInfo, err := os.Stat(localPath1)
+	pathInfo, err := os.Stat(localPath)
 	if err != nil || pathInfo == nil {
 		return false
 	}
@@ -78,12 +78,12 @@ func shouldCopyLocalDirToRemote(localPath1, remotePath2 string) bool {
 	return pathInfo.IsDir()
 }
 
-func shouldCopyRemoteDirToLocal(remotePath1, localPath2 string) bool {
-	if !strings.Contains(remotePath1, "sess:") {
+func shouldCopyRemoteDirToLocal(remotePath string) bool {
+	if !strings.Contains(remotePath, "sess:") {
 		return false
 	}
 
-	sessFromDirpath := splitSessFromDirpath(remotePath1)
+	sessFromDirpath := splitSessFromDirpath(remotePath)
 	return regExValidDirpath.MatchString(sessFromDirpath)
 }
 
