@@ -12,7 +12,7 @@ import (
 	"github.com/unweave/unweave/api/types"
 )
 
-func Connect(ctx context.Context, connectionInfo types.ConnectionInfo, prvKeyPath string, args []string) error {
+func Connect(ctx context.Context, connectionInfo types.ExecNetwork, prvKeyPath string, args []string) error {
 	overrideUserKnownHostsFile := false
 	overrideStrictHostKeyChecking := false
 
