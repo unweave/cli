@@ -27,10 +27,11 @@ func Copy(cmd *cobra.Command, args []string) error {
 	if exec == nil {
 		return fmt.Errorf("At least one remote host must be specified")
 	}
-	if exec.Connection == nil {
+	if exec.Network.Host == "" {
 		return fmt.Errorf("Target session must have an active connection")
 	}
-	if exec.SSHKey.PublicKey == nil && config.SSHPublicKeyPath == "" {
+
+	if getFirstExecPublicKey(exec) == nil && config.SSHPublicKeyPath == "" {
 		return fmt.Errorf("Failed to identify public key, check your Unweave config file or specify it manually")
 	}
 
@@ -48,7 +49,7 @@ func Copy(cmd *cobra.Command, args []string) error {
 	switch {
 	case shouldCopyLocalDirToRemote(args[0]):
 		// Eventually simplify this to talk in terms of scpArgs, too many dependants for now
-		err = copyDirFromLocalAndUnzip(exec.ID, scpArgs[0], splitSessFromDirpath(args[1]), *exec.Connection, privateKey)
+		err = copyDirFromLocalAndUnzip(exec.ID, scpArgs[0], splitSessFromDirpath(args[1]), exec.Network, privateKey)
 	case shouldCopyRemoteDirToLocal(args[0]):
 		err = copyDirFromRemoteAndUnzip(scpArgs[0], scpArgs[1], privateKey)
 	default:
@@ -125,8 +126,8 @@ func formatRemotePath(exec *types.Exec, arg string) (string, error) {
 		return "", fmt.Errorf("Assertion failed, please file an issue with the Unweave team. Please provide steps to reproduce")
 	}
 
-	connectionInfo := exec.Connection
-	if connectionInfo == nil {
+	connectionInfo := exec.Network
+	if connectionInfo.Host == "" {
 		return "", fmt.Errorf("Could not get connection from session")
 	}
 

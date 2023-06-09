@@ -17,7 +17,6 @@ import (
 	"github.com/unweave/cli/ssh"
 	"github.com/unweave/cli/ui"
 	"github.com/unweave/unweave/api/types"
-	"github.com/unweave/unweave/tools"
 )
 
 func dashIfZeroValue(v interface{}) interface{} {
@@ -122,15 +121,12 @@ func sessionCreate(ctx context.Context, execConfig types.ExecConfig, gitConfig t
 		return "", err
 	}
 
-	sshKeyName := &name
-	sshPublicKey := tools.Stringy(string(pub))
-
 	params := types.ExecCreateParams{
 		Provider:     types.Provider(provider),
-		HardwareSpec: spec,
+		Spec:         spec,
 		Region:       region,
-		SSHKeyName:   sshKeyName,
-		SSHPublicKey: sshPublicKey,
+		SSHKeyName:   name,
+		SSHPublicKey: string(pub),
 		Image:        image,
 		Command:      execConfig.Command,
 		CommitID:     gitConfig.CommitID,
@@ -228,7 +224,7 @@ func renderSessionListWithSessions(sessions []types.Exec) {
 		})},
 		{Title: "vCPUs", Width: 5},
 		{Title: "GPU", Width: 5 + MaxFieldLength(sessions, func(exec types.Exec) string {
-			return exec.Specs.GPU.Type
+			return exec.Spec.GPU.Type
 		})},
 		{Title: "NumGPUs", Width: 12},
 		{Title: "HDD (GB)", Width: 10},
@@ -240,10 +236,10 @@ func renderSessionListWithSessions(sessions []types.Exec) {
 			return string(exec.Status)
 		})},
 		{Title: "Connection String", Width: 2 + MaxFieldLength(sessions, func(exec types.Exec) string {
-			if exec.Connection == nil || exec.Connection.Host == "" {
+			if exec.Network.Host == "" {
 				return "Connection String"
 			}
-			return fmt.Sprintf("%s@%s", exec.Connection.User, exec.Connection.Host)
+			return fmt.Sprintf("%s@%s", exec.Network.User, exec.Network.Host)
 		})},
 	}
 
@@ -251,15 +247,15 @@ func renderSessionListWithSessions(sessions []types.Exec) {
 
 	for idx, s := range sessions {
 		conn := "-"
-		if s.Connection != nil && s.Connection.Host != "" {
-			conn = fmt.Sprintf("%s@%s", s.Connection.User, s.Connection.Host)
+		if s.Network.Host != "" {
+			conn = fmt.Sprintf("%s@%s", s.Network.User, s.Network.Host)
 		}
 		row := ui.Row{
 			fmt.Sprintf("%s", s.Name),
-			fmt.Sprintf("%v", s.Specs.CPU.Min),
-			fmt.Sprintf("%s", s.Specs.GPU.Type),
-			fmt.Sprintf("%v", s.Specs.GPU.Count.Min),
-			fmt.Sprintf("%v", s.Specs.HDD.Min),
+			fmt.Sprintf("%v", s.Spec.CPU.Min),
+			fmt.Sprintf("%s", s.Spec.GPU.Type),
+			fmt.Sprintf("%v", s.Spec.GPU.Count.Min),
+			fmt.Sprintf("%v", s.Spec.HDD.Min),
 			// fmt.Sprintf("%v", s.Specs.RAM.Min),
 			fmt.Sprintf("%s", s.Provider),
 			fmt.Sprintf("%s", s.Status),
@@ -395,7 +391,7 @@ func formatExecCobraOpts(execs []types.Exec, prepend ...string) ([]string, map[i
 	}
 
 	for idx, s := range execs {
-		txt := fmt.Sprintf("%s - %s - %s - (%s)", s.Name, s.Provider, s.NodeTypeID, s.Status)
+		txt := fmt.Sprintf("%s - %s - %s - (%s)", s.Name, s.Provider, s.ID, s.Status)
 		options[len(prepend)+idx] = txt
 		optionMap[len(prepend)+idx] = s.ID
 	}

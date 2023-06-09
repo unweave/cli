@@ -70,7 +70,7 @@ func SSH(cmd *cobra.Command, args []string) error {
 					os.Exit(1)
 				}
 
-				if err := ssh.Connect(ctx, *e.Connection, prvKey, sshArgs); err != nil {
+				if err := ssh.Connect(ctx, e.Network, prvKey, sshArgs); err != nil {
 					ui.Errorf("%s", err)
 					os.Exit(1)
 				}
@@ -157,20 +157,25 @@ func cleanupHosts(e types.Exec) {
 }
 
 func ensureHosts(e types.Exec, identityFile string) {
-	if e.Connection == nil {
+	if e.Network.Host == "" {
 		ui.Errorf("❌ Something unexpected happened. No connection info found for session %q", e.ID)
 		ui.Infof("Run `unweave ls` to see the status of your session and try connecting manually.")
+		os.Exit(1)
+	}
+	if len(e.Network.Ports) == 0 {
+		ui.Errorf("❌ Something unexpected happened. No port info found for session %q", e.ID)
+		ui.Infof("Run `unweave ls` to see the status of your session. If this problem persists please contact an administrator.")
 		os.Exit(1)
 	}
 
 	ui.Infof("🚀 Session %q up and running", e.ID)
 
-	if err := ssh.RemoveKnownHostsEntry(e.Connection.Host); err != nil {
+	if err := ssh.RemoveKnownHostsEntry(e.Network.Host); err != nil {
 		// Log and continue anyway. Most likely the entry is not there.
 		ui.Debugf("Failed to remove known_hosts entry: %v", err)
 	}
 
-	if err := ssh.AddHost("uw:"+e.ID, e.Connection.Host, e.Connection.User, e.Connection.Port, identityFile); err != nil {
+	if err := ssh.AddHost("uw:"+e.ID, e.Network.Host, e.Network.User, e.Network.Ports[0], identityFile); err != nil {
 		ui.Debugf("Failed to add host to ssh config: %v", err)
 	}
 }
@@ -184,7 +189,7 @@ func handleCopySourceDir(isNew bool, e types.Exec, privKey string) error {
 			ui.Errorf("Failed to get active project path. Skipping copying source directory")
 			return fmt.Errorf("failed to get active project path: %v", err)
 		}
-		if err := copyDirFromLocalAndUnzip(e.ID, dir, config.ProjectHostDir(), *e.Connection, privKey); err != nil {
+		if err := copyDirFromLocalAndUnzip(e.ID, dir, config.ProjectHostDir(), e.Network, privKey); err != nil {
 			return err
 		}
 	} else {
@@ -193,7 +198,7 @@ func handleCopySourceDir(isNew bool, e types.Exec, privKey string) error {
 	return nil
 }
 
-func copyDirFromLocalAndUnzip(execID, rootDir, dstPath string, connectionInfo types.ConnectionInfo, privKeyPath string) error {
+func copyDirFromLocalAndUnzip(execID, rootDir, dstPath string, connectionInfo types.ExecNetwork, privKeyPath string) error {
 	ui.Infof("🧳 Gathering context from %q", rootDir)
 
 	tmpFile, err := createTempContextFile(execID)
@@ -354,7 +359,7 @@ func copySourceSCP(from, to string, privKeyPath string) error {
 	return nil
 }
 
-func copySourceUnTar(srcPath, dstPath string, connectionInfo types.ConnectionInfo, prvKeyPath string) error {
+func copySourceUnTar(srcPath, dstPath string, connectionInfo types.ExecNetwork, prvKeyPath string) error {
 	sshCommand := exec.Command(
 		"ssh",
 		"-o", "StrictHostKeyChecking=no",
@@ -397,6 +402,10 @@ func getDefaultKey(ctx context.Context, e types.Exec, defaultKey string) (string
 	if defaultKey != "" {
 		return defaultKey, nil
 	}
+	if len(e.Keys) == 0 {
+		return defaultKey, fmt.Errorf("There are no SSH keys for exec ID %s, please contact an administrator if this is an error", e.ID)
+	}
+	execKeyName := e.Keys[0].Name
 
 	keysFolder := config.GetUnweaveSSHKeysFolder()
 	dirEntries, err := os.ReadDir(keysFolder)
@@ -411,7 +420,7 @@ func getDefaultKey(ctx context.Context, e types.Exec, defaultKey string) (string
 	for _, key := range publicKeys {
 		name := strings.TrimSuffix(key.Name(), ".pub")
 		defaultKey = filepath.Join(keysFolder, name)
-		if e.SSHKey.Name == name {
+		if execKeyName == name {
 			return defaultKey, nil
 		}
 	}

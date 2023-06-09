@@ -160,3 +160,10 @@ func filterPublicKeys(entries []os.DirEntry) []os.DirEntry {
 func isPublicKey(filename string) bool {
 	return strings.HasSuffix(filename, ".pub")
 }
+
+func getFirstExecPublicKey(exec *types.Exec) *string {
+	if exec == nil || len(exec.Keys) == 0 {
+		return nil
+	}
+	return exec.Keys[0].PublicKey
+}
