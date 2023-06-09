@@ -137,7 +137,7 @@ func (c *Client) ExecuteRest(ctx context.Context, req *RestRequest, resp interfa
 	if err = json.NewDecoder(&buf).Decode(&resp); err == io.EOF {
 		return nil
 	} else if err != nil {
-		return fmt.Errorf("failed to decode response body")
+		return fmt.Errorf("failed to decode response body, %w", err)
 	}
 	return nil
 }

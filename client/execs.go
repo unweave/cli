@@ -94,7 +94,7 @@ func (s *ExecService) List(ctx context.Context, owner, project string, listTermi
 	if err != nil {
 		return nil, err
 	}
-	res := &types.SessionsListResponse{}
+	res := &types.ExecsListResponse{}
 	if err = s.client.ExecuteRest(ctx, req, res); err != nil {
 		return nil, err
 	}
@@ -107,6 +107,6 @@ func (s *ExecService) Terminate(ctx context.Context, owner, project, sessionID s
 	if err != nil {
 		return err
 	}
-	res := &types.SessionTerminateResponse{}
+	res := &types.ExecTerminateResponse{}
 	return s.client.ExecuteRest(ctx, req, res)
 }
