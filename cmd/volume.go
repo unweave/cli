@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -35,6 +36,51 @@ func VolumeCreate(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+func VolumeDelete(cmd *cobra.Command, args []string) error {
+	var name string
+
+	if len(args) > 0 {
+		name = args[0]
+	}
+
+	if name == "" {
+		ui.Errorf("Invalid volume name")
+		os.Exit(1)
+	}
+
+	msg := fmt.Sprintf("Are you sure you want to delete volume %q? "+
+		"This will permanently delete any data in the volume", name)
+
+	confirm := ui.Confirm(msg, "n")
+	if !confirm {
+		return nil
+	}
+
+	err := volume.Delete(cmd.Context(), name)
+	if err != nil {
+		ui.Debugf("Failed to delete volume: %s", err.Error())
+		ui.Errorf("Failed to delete volume")
+		os.Exit(1)
+	}
+
+	ui.Successf("✅ Volume deleted successfully")
+
+	return nil
+}
+
+func VolumeList(cmd *cobra.Command, args []string) error {
+	volumes, err := volume.List(cmd.Context())
+	if err != nil {
+		ui.Debugf("Failed to list volumes: %s", err.Error())
+		ui.Errorf("Failed to list volumes")
+		os.Exit(1)
+	}
+
+	volume.RenderVolumesList(volumes)
+
+	return nil
+}
+
 func VolumeResize(cmd *cobra.Command, args []string) error {
 	var name string
 
@@ -58,19 +104,6 @@ func VolumeResize(cmd *cobra.Command, args []string) error {
 	}
 
 	ui.Successf("✅ Volume updated successfully")
-
-	return nil
-}
-
-func VolumeList(cmd *cobra.Command, args []string) error {
-	volumes, err := volume.List(cmd.Context())
-	if err != nil {
-		ui.Debugf("Failed to list volumes: %s", err.Error())
-		ui.Errorf("Failed to list volumes")
-		os.Exit(1)
-	}
-
-	volume.RenderVolumesList(volumes)
 
 	return nil
 }

@@ -50,12 +50,12 @@ func (s *VolumeService) List(ctx context.Context, userID string, projectID strin
 		return nil, err
 	}
 
-	var res []types.Volume
+	res := &types.VolumesListResponse{}
 	if err = s.client.ExecuteRest(ctx, req, res); err != nil {
 		return nil, err
 	}
 
-	return res, err
+	return res.Volumes, err
 }
 
 func (s *VolumeService) Update(ctx context.Context, userID, projectID, volumeIDOrName string, update types.VolumeResizeRequest) error {

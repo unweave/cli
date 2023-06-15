@@ -40,22 +40,21 @@ func RenderVolumesList(volumes []types.Volume) {
 		},
 	}
 
-	rows := make([]ui.Row, 0, len(volumes))
+	rows := make([]ui.Row, len(volumes))
 
 	if len(volumes) == 0 {
 		ui.Infof("No existing volumes")
 		return
 	}
 
-	for _, volume := range volumes {
-		row := []string{
+	for idx, volume := range volumes {
+		rows[idx] = []string{
 			volume.ID,
 			volume.Name,
 			fmt.Sprintf("%d GB", volume.Size),
 			volume.State.CreatedAt.Format(time.RFC3339),
 			volume.Provider.DisplayName(),
 		}
-		rows = append(rows, row)
 	}
 
 	ui.Table("Volumes", cols, rows)

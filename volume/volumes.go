@@ -3,10 +3,8 @@ package volume
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/unweave/cli/config"
-	"github.com/unweave/cli/ui"
 	"github.com/unweave/unweave/api/types"
 )
 
@@ -33,25 +31,15 @@ func Create(ctx context.Context, name string, size int) (types.Volume, error) {
 }
 
 // Delete deletes a volume
-func Delete(ctx context.Context, name string) {
-	defer os.Exit(1)
-
-	if name == "" {
-		ui.Attentionf("❌ Please provide a valid volume name")
-		os.Exit(1)
-	}
-
+func Delete(ctx context.Context, name string) error {
 	client := config.InitUnweaveClient()
 	projectOwner, projectName := config.GetProjectOwnerAndName()
 
 	err := client.Volume.Delete(ctx, projectOwner, projectName, name)
-
 	if err != nil {
-		ui.Attentionf("❌ Failed to delete the volume: " + err.Error())
-		os.Exit(1)
+		return fmt.Errorf("failed to delete volume: %s", err)
 	}
-
-	ui.Successf("✅ Volume deleted successfully")
+	return nil
 }
 
 // List lists all volumes for a given project or default project if none is specified
