@@ -1,7 +1,8 @@
-package volumes
+package volume
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/unweave/cli/config"
@@ -10,14 +11,7 @@ import (
 )
 
 // Add creates a new volume, size in GB
-func Add(ctx context.Context, name string, size int) {
-	defer os.Exit(1)
-
-	if name == "" {
-		ui.Attentionf("❌ Please provide a valid volume name")
-		os.Exit(1)
-	}
-
+func Add(ctx context.Context, name string, size int) (types.Volume, error) {
 	if size <= 0 {
 		size = config.DefaultVolumeSize
 	}
@@ -26,19 +20,16 @@ func Add(ctx context.Context, name string, size int) {
 	projectOwner, projectName := config.GetProjectOwnerAndName()
 	projectProvider := config.Provider
 
-	created, err := client.Volume.Create(ctx, projectOwner, projectName, types.VolumeCreateRequest{
+	volume, err := client.Volume.Create(ctx, projectOwner, projectName, types.VolumeCreateRequest{
 		Size:     size,
 		Name:     name,
 		Provider: types.Provider(projectProvider),
 	})
 
 	if err != nil {
-		ui.Attentionf("❌ Failed to create the volume: " + err.Error())
-		os.Exit(1)
+		return types.Volume{}, fmt.Errorf("failed to create volume: %s", err)
 	}
-
-	ui.Successf("✅ Volume created successfully")
-	renderVolumes([]types.Volume{created})
+	return volume, nil
 }
 
 // Delete deletes a volume
@@ -64,9 +55,7 @@ func Delete(ctx context.Context, name string) {
 }
 
 // List lists all volumes for a given project or default project if none is specified
-func List(ctx context.Context) {
-	defer os.Exit(1)
-
+func List(ctx context.Context) ([]types.Volume, error) {
 	ownerID, projectID := config.GetProjectOwnerAndName()
 
 	var project string
@@ -76,34 +65,15 @@ func List(ctx context.Context) {
 
 	client := config.InitUnweaveClient()
 	volumes, err := client.Volume.List(ctx, ownerID, project)
-
 	if err != nil {
-		ui.Attentionf("❌ Failed to list the volumes: " + err.Error())
-		os.Exit(1)
+		return nil, fmt.Errorf("failed to list volumes: %s", err)
 	}
-
-	renderVolumes(volumes)
+	return volumes, nil
 }
 
 // Update updates an existing volume
-func Update(ctx context.Context, name string, newSize int) {
-	defer os.Exit(1)
-
-	if name == "" {
-		ui.Attentionf("❌ Please provide a valid volume name")
-		os.Exit(1)
-	}
-
-	if newSize <= 0 {
-		ui.Attentionf("❌ Please provide a valid volume size")
-		os.Exit(1)
-	}
-
+func Update(ctx context.Context, name string, newSize int) error {
 	userID, projectID := config.GetProjectOwnerAndName()
-	if name == "" {
-		ui.Attentionf("❌ Please provide a valid volume name")
-		os.Exit(1)
-	}
 
 	client := config.InitUnweaveClient()
 	err := client.Volume.Update(ctx, userID, projectID, name, types.VolumeResizeRequest{
@@ -112,9 +82,7 @@ func Update(ctx context.Context, name string, newSize int) {
 	})
 
 	if err != nil {
-		ui.Attentionf("❌ Failed to update the volume: " + err.Error())
-		os.Exit(1)
+		return fmt.Errorf("failed to update volume: %s", err)
 	}
-
-	ui.Successf("✅ Volume updated successfully")
+	return nil
 }

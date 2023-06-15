@@ -1,4 +1,4 @@
-package volumes
+package volume
 
 import (
 	"fmt"
@@ -8,12 +8,14 @@ import (
 	"github.com/unweave/unweave/api/types"
 )
 
-func renderVolumes(volumes []types.Volume) {
-	cols := []ui.Column{ui.Column{
-		Title: "ID",
-		Width: 5 + ui.MaxFieldLength(volumes, func(volume types.Volume) string {
-			return volume.ID
-		})},
+func RenderVolumesList(volumes []types.Volume) {
+	cols := []ui.Column{
+		ui.Column{
+			Title: "ID",
+			Width: 5 + ui.MaxFieldLength(volumes, func(volume types.Volume) string {
+				return volume.ID
+			}),
+		},
 		{
 			Title: "Name",
 			Width: 5 + ui.MaxFieldLength(volumes, func(volume types.Volume) string {
@@ -35,7 +37,8 @@ func renderVolumes(volumes []types.Volume) {
 			Width: 5 + ui.MaxFieldLength(volumes, func(volume types.Volume) string {
 				return volume.Provider.DisplayName()
 			}),
-		}}
+		},
+	}
 
 	rows := make([]ui.Row, 0, len(volumes))
 
