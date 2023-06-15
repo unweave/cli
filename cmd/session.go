@@ -219,23 +219,23 @@ func renderSessionListWithSessions(sessions []types.Exec) {
 
 	// EITHER min length of title + 5 for padding OR the max field length + 5 for padding
 	cols := []ui.Column{
-		{Title: "Name", Width: 5 + MaxFieldLength(sessions, func(exec types.Exec) string {
+		{Title: "Name", Width: 5 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
 			return exec.Name
 		})},
 		{Title: "vCPUs", Width: 5},
-		{Title: "GPU", Width: 5 + MaxFieldLength(sessions, func(exec types.Exec) string {
+		{Title: "GPU", Width: 5 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
 			return exec.Spec.GPU.Type
 		})},
 		{Title: "NumGPUs", Width: 12},
 		{Title: "HDD (GB)", Width: 10},
 		// {Title: "RAM (GB)", Width: 10},
-		{Title: "Provider", Width: 5 + MaxFieldLength(sessions, func(exec types.Exec) string {
+		{Title: "Provider", Width: 5 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
 			return exec.Provider.String()
 		})},
-		{Title: "Status", Width: 5 + MaxFieldLength(sessions, func(exec types.Exec) string {
+		{Title: "Status", Width: 5 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
 			return string(exec.Status)
 		})},
-		{Title: "Connection String", Width: 2 + MaxFieldLength(sessions, func(exec types.Exec) string {
+		{Title: "Connection String", Width: 2 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
 			if exec.Network.Host == "" {
 				return "Connection String"
 			}
@@ -265,19 +265,6 @@ func renderSessionListWithSessions(sessions []types.Exec) {
 	}
 
 	ui.Table("Sessions", cols, rows)
-}
-
-func MaxFieldLength[T any](data []T, getField func(T) string) int {
-	maxLength := 0
-
-	for _, item := range data {
-		fieldValue := getField(item)
-		if len(fieldValue) > maxLength {
-			maxLength = len(fieldValue)
-		}
-	}
-
-	return maxLength
 }
 
 func sessionTerminate(ctx context.Context, execID string) error {

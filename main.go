@@ -252,6 +252,7 @@ func init() {
 	newCmd.Flags().IntVar(&config.CPUs, "cpus", 0, "Number of VCPUs to allocate, e.g., 4")
 	newCmd.Flags().IntVar(&config.Memory, "mem", 0, "Amount of RAM to allocate in GB, e.g., 16")
 	newCmd.Flags().IntVar(&config.HDD, "hdd", 0, "Amount of hard-disk space to allocate in GB")
+
 	rootCmd.AddCommand(newCmd)
 
 	lsCmd := &cobra.Command{
@@ -298,6 +299,7 @@ func init() {
 	// Setting RAM causes issues right now
 	sshCmd.Flags().IntVar(&config.Memory, "mem", 0, "Amount of RAM to allocate in GB, e.g., 16")
 	sshCmd.Flags().IntVar(&config.HDD, "hdd", 0, "Amount of hard-disk space to allocate in GB")
+
 	rootCmd.AddCommand(sshCmd)
 
 	// SSH Key commands
@@ -327,6 +329,52 @@ func init() {
 		RunE:  cmd.SSHKeyList,
 	})
 	rootCmd.AddCommand(sshKeyCmd)
+
+	// Volume commands
+	volumeCmd := &cobra.Command{
+		Use:     "volume",
+		Short:   "Manage volumes in Unweave",
+		GroupID: groupDev,
+		Aliases: []string{"volume", "vol", "v"},
+		Long: wordwrap.String("Create a new volume in Unweave.\n\n"+
+			"Usage:\n\n"+
+			"unweave volume new <volume-name> --project <project-name> --size <size-in-gb>\n\n"+
+			"If in a linked project directory, you don't need to specify the project-name.\n"+
+			"A volume name must be unique per project. \n",
+			ui.MaxOutputLineLength),
+		Args: cobra.NoArgs,
+	}
+
+	volumeCmd.AddCommand(&cobra.Command{
+		Use:   "new <volume-name> --project <project-name>",
+		Short: "Create a new volume in Unweave",
+		Long: wordwrap.String("Create a new volume in Unweave.\n\n"+
+			"Usage:\n\n"+
+			"unweave volume new <volume-name> --project <project-name> --size <size-in-gb>\n\n"+
+			"If in a linked project directory, you don't need to specify the project-name.\n"+
+			"A volume name must be unique per project. \n",
+			ui.MaxOutputLineLength),
+		Args:    cobra.MaximumNArgs(1),
+		Aliases: []string{"new", "n", "create", "c"},
+		RunE:    cmd.VolumeAdd,
+	})
+
+	volumeCmd.AddCommand(&cobra.Command{
+		Use:   "ls",
+		Short: "List Unweave Volumes",
+		Args:  cobra.NoArgs,
+		RunE:  cmd.VolumeList,
+	})
+
+	volumeCmd.AddCommand(&cobra.Command{
+		Use:   "update <volume-name> <size-in-gb>",
+		Short: "Update an Unweave Volume",
+		Args:  cobra.MinimumNArgs(1),
+		RunE:  cmd.VolumeUpdate,
+	})
+	volumeCmd.Flags().IntVar(&config.VolumeSize, "size", 0, "Size of a volume to allocate allocate in GB")
+
+	rootCmd.AddCommand(volumeCmd)
 }
 
 func main() {
