@@ -10,7 +10,7 @@ import (
 
 func RenderVolumesList(volumes []types.Volume) {
 	cols := []ui.Column{
-		ui.Column{
+		{
 			Title: "ID",
 			Width: 5 + ui.MaxFieldLength(volumes, func(volume types.Volume) string {
 				return volume.ID
@@ -41,6 +41,11 @@ func RenderVolumesList(volumes []types.Volume) {
 	}
 
 	rows := make([]ui.Row, 0, len(volumes))
+
+	if len(volumes) == 0 {
+		ui.Infof("No existing volumes")
+		return
+	}
 
 	for _, volume := range volumes {
 		row := []string{

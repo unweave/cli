@@ -10,8 +10,8 @@ import (
 	"github.com/unweave/unweave/api/types"
 )
 
-// Add creates a new volume, size in GB
-func Add(ctx context.Context, name string, size int) (types.Volume, error) {
+// Create creates a new volume, size in GB
+func Create(ctx context.Context, name string, size int) (types.Volume, error) {
 	if size <= 0 {
 		size = config.DefaultVolumeSize
 	}

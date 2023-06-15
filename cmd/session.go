@@ -209,7 +209,7 @@ func SessionList(cmd *cobra.Command, args []string) error {
 }
 
 func renderSessionListNoSessions() {
-	ui.Attentionf("No sessions active")
+	ui.Infof("No active sessions")
 }
 
 func renderSessionListWithSessions(sessions []types.Exec) {
@@ -219,28 +219,43 @@ func renderSessionListWithSessions(sessions []types.Exec) {
 
 	// EITHER min length of title + 5 for padding OR the max field length + 5 for padding
 	cols := []ui.Column{
-		{Title: "Name", Width: 5 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
-			return exec.Name
-		})},
+		{
+			Title: "Name",
+			Width: 5 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
+				return exec.Name
+			}),
+		},
 		{Title: "vCPUs", Width: 5},
-		{Title: "GPU", Width: 5 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
-			return exec.Spec.GPU.Type
-		})},
+		{
+			Title: "GPU",
+			Width: 5 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
+				return exec.Spec.GPU.Type
+			}),
+		},
 		{Title: "NumGPUs", Width: 12},
 		{Title: "HDD (GB)", Width: 10},
 		// {Title: "RAM (GB)", Width: 10},
-		{Title: "Provider", Width: 5 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
-			return exec.Provider.String()
-		})},
-		{Title: "Status", Width: 5 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
-			return string(exec.Status)
-		})},
-		{Title: "Connection String", Width: 2 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
-			if exec.Network.Host == "" {
-				return "Connection String"
-			}
-			return fmt.Sprintf("%s@%s", exec.Network.User, exec.Network.Host)
-		})},
+		{
+			Title: "Provider",
+			Width: 5 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
+				return exec.Provider.String()
+			}),
+		},
+		{
+			Title: "Status",
+			Width: 5 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
+				return string(exec.Status)
+			}),
+		},
+		{
+			Title: "Connection String",
+			Width: 2 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
+				if exec.Network.Host == "" {
+					return "Connection String"
+				}
+				return fmt.Sprintf("%s@%s", exec.Network.User, exec.Network.Host)
+			}),
+		},
 	}
 
 	rows := make([]ui.Row, len(sessions))

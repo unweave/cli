@@ -22,7 +22,7 @@ func VolumeAdd(cmd *cobra.Command, args []string) error {
 		os.Exit(1)
 	}
 
-	vol, err := volume.Add(cmd.Context(), name, config.VolumeSize)
+	vol, err := volume.Create(cmd.Context(), name, config.VolumeSize)
 	if err != nil {
 		ui.Debugf("Failed to create volume: %s", err.Error())
 		ui.Errorf("Failed to create volume")
