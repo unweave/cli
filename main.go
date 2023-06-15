@@ -15,6 +15,7 @@ import (
 	"github.com/unweave/cli/config"
 	"github.com/unweave/cli/ui"
 	"github.com/unweave/cli/vars"
+	"github.com/unweave/unweave/api/types"
 )
 
 var (
@@ -335,44 +336,38 @@ func init() {
 		Use:     "volume",
 		Short:   "Manage volumes in Unweave",
 		GroupID: groupDev,
-		Aliases: []string{"volume", "vol", "v"},
-		Long: wordwrap.String("Create a new volume in Unweave.\n\n"+
-			"Usage:\n\n"+
-			"unweave volume new <volume-name> --project <project-name> --size <size-in-gb>\n\n"+
-			"If in a linked project directory, you don't need to specify the project-name.\n"+
-			"A volume name must be unique per project. \n",
-			ui.MaxOutputLineLength),
-		Args: cobra.NoArgs,
+		Aliases: []string{"vol"},
+		Args:    cobra.NoArgs,
 	}
 
-	volumeCmd.AddCommand(&cobra.Command{
-		Use:   "new <volume-name> --project <project-name>",
+	volumeNewCmd := &cobra.Command{
+		Use:   "new <name>",
 		Short: "Create a new volume in Unweave",
 		Long: wordwrap.String("Create a new volume in Unweave.\n\n"+
-			"Usage:\n\n"+
-			"unweave volume new <volume-name> --project <project-name> --size <size-in-gb>\n\n"+
-			"If in a linked project directory, you don't need to specify the project-name.\n"+
-			"A volume name must be unique per project. \n",
+			"Eg. unweave volume new <volume-name> --size <size-in-gb>\n\n"+
+			"The volume name must be unique per project. \n",
 			ui.MaxOutputLineLength),
-		Args:    cobra.MaximumNArgs(1),
+		Args:    cobra.ExactArgs(1),
 		Aliases: []string{"new", "n", "create", "c"},
-		RunE:    cmd.VolumeAdd,
-	})
+		RunE:    cmd.VolumeCreate,
+	}
+	volumeNewCmd.Flags().StringVar(&config.Provider, "provider", types.UnweaveProvider.String(), "Provider to use")
+	volumeCmd.AddCommand(volumeNewCmd)
 
 	volumeCmd.AddCommand(&cobra.Command{
 		Use:   "ls",
-		Short: "List Unweave Volumes",
+		Short: "List volumes",
 		Args:  cobra.NoArgs,
 		RunE:  cmd.VolumeList,
 	})
 
 	volumeCmd.AddCommand(&cobra.Command{
-		Use:   "update <volume-name> <size-in-gb>",
-		Short: "Update an Unweave Volume",
-		Args:  cobra.MinimumNArgs(1),
-		RunE:  cmd.VolumeUpdate,
+		Use:   "resize <name> <size-in-gb>",
+		Short: "Resize a volume",
+		Args:  cobra.RangeArgs(1, 2),
+		RunE:  cmd.VolumeResize,
 	})
-	volumeCmd.Flags().IntVar(&config.VolumeSize, "size", 0, "Size of a volume to allocate allocate in GB")
+	volumeCmd.Flags().IntVar(&config.VolumeSize, "size", 0, "Size of a volume to allocate in GB")
 
 	rootCmd.AddCommand(volumeCmd)
 }

@@ -18,12 +18,12 @@ func (s *VolumeService) Create(ctx context.Context, userID, projectID string, cr
 		return types.Volume{}, err
 	}
 
-	res := types.Volume{}
-	if err = s.client.ExecuteRest(ctx, req, res); err != nil {
+	vol := &types.Volume{}
+	if err = s.client.ExecuteRest(ctx, req, vol); err != nil {
 		return types.Volume{}, err
 	}
 
-	return res, nil
+	return *vol, nil
 }
 
 func (s *VolumeService) Delete(ctx context.Context, userID, projectID, volumeIDOrName string) error {

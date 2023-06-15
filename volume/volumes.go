@@ -27,7 +27,7 @@ func Create(ctx context.Context, name string, size int) (types.Volume, error) {
 	})
 
 	if err != nil {
-		return types.Volume{}, fmt.Errorf("failed to create volume: %s", err)
+		return types.Volume{}, fmt.Errorf("failed to create volume: %w", err)
 	}
 	return volume, nil
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/unweave/unweave/api/types"
 )
 
-func VolumeAdd(cmd *cobra.Command, args []string) error {
+func VolumeCreate(cmd *cobra.Command, args []string) error {
 	var name string
 
 	if len(args) > 0 {
@@ -25,7 +25,7 @@ func VolumeAdd(cmd *cobra.Command, args []string) error {
 	vol, err := volume.Create(cmd.Context(), name, config.VolumeSize)
 	if err != nil {
 		ui.Debugf("Failed to create volume: %s", err.Error())
-		ui.Errorf("Failed to create volume")
+		ui.Fatal("Failed to create volume", err)
 		os.Exit(1)
 	}
 
@@ -35,7 +35,7 @@ func VolumeAdd(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func VolumeUpdate(cmd *cobra.Command, args []string) error {
+func VolumeResize(cmd *cobra.Command, args []string) error {
 	var name string
 
 	if len(args) > 0 {
@@ -67,6 +67,7 @@ func VolumeList(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		ui.Debugf("Failed to list volumes: %s", err.Error())
 		ui.Errorf("Failed to list volumes")
+		os.Exit(1)
 	}
 
 	volume.RenderVolumesList(volumes)
