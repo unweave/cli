@@ -19,12 +19,10 @@ func Wait(ctx context.Context, execID string) (execch chan types.Exec, errch cha
 
 	errch = make(chan error)
 	execch = make(chan types.Exec)
-	currentStatus := types.StatusInitializing
 
 	go func() {
 		ticketCount := 0
 		ticker := time.NewTicker(1 * time.Second)
-		defer ticker.Stop()
 
 		for {
 			select {
@@ -44,8 +42,7 @@ func Wait(ctx context.Context, execID string) (execch chan types.Exec, errch cha
 				for _, s := range sessions {
 					s := s
 					if s.ID == execID {
-						if s.Status != currentStatus {
-							currentStatus = s.Status
+						if s.Status == types.StatusRunning {
 							execch <- s
 							return
 						}
