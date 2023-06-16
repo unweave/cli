@@ -35,7 +35,6 @@ func VolumeCreate(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		ui.Debugf("Failed to create volume: %s", err.Error())
 		ui.Fatal("Failed to create volume", err)
-		os.Exit(1)
 	}
 
 	ui.Successf("✅ Volume created successfully")
@@ -43,7 +42,6 @@ func VolumeCreate(cmd *cobra.Command, args []string) error {
 	volumes, err := volume.List(cmd.Context())
 	if err != nil {
 		ui.Fatal("There was a problem rendering the newly created volume", err)
-		os.Exit(1)
 	}
 	volume.RenderVolumesList(volumes, &vol)
 

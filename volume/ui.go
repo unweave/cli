@@ -2,6 +2,7 @@ package volume
 
 import (
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/unweave/cli/ui"
@@ -38,34 +39,36 @@ func RenderVolumesList(volumes []types.Volume, highlight *types.Volume) {
 		},
 	}
 
-	rows := make([]ui.Row, 0, len(volumes))
+	rows := make([]ui.Row, len(volumes))
 
 	if len(volumes) == 0 {
 		ui.Infof("No existing volumes")
 		return
 	}
 
-	if highlight != nil {
-		rows = append(rows, []string{
-			highlight.Name + highlighted,
-			fmt.Sprintf("%d GB", highlight.Size),
-			highlight.State.CreatedAt.Format(time.RFC3339),
-			highlight.Provider.DisplayName(),
-		})
-	}
+	sort.Slice(volumes, func(i, j int) bool {
+		a := volumes[i].State.CreatedAt
+		b := volumes[j].State.CreatedAt
+		return a.After(b)
+	})
 
-	for _, volume := range volumes {
-		if highlight != nil {
-			if volume.ID == highlight.ID {
-				continue
+	for idx, volume := range volumes {
+		if highlight != nil && volume.ID == highlight.ID {
+			rows[idx] = []string{
+				highlight.Name + highlighted,
+				fmt.Sprintf("%d GB", highlight.Size),
+				highlight.State.CreatedAt.Format(time.RFC3339),
+				highlight.Provider.DisplayName(),
 			}
+			continue
 		}
-		rows = append(rows, []string{
+
+		rows[idx] = []string{
 			volume.Name,
 			fmt.Sprintf("%d GB", volume.Size),
 			volume.State.CreatedAt.Format(time.RFC3339),
 			volume.Provider.DisplayName(),
-		})
+		}
 	}
 
 	ui.Table("Volumes", cols, rows)
