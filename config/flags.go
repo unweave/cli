@@ -52,3 +52,6 @@ var SSHKeyName = ""
 
 // NoCopySource is a bool to denote whether to copy the source code to the session
 var NoCopySource = true
+
+// Volumes is a list of volumes to mount to the session
+var Volumes []string
