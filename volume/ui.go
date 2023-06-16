@@ -2,23 +2,22 @@ package volume
 
 import (
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/unweave/cli/ui"
 	"github.com/unweave/unweave/api/types"
 )
 
-func RenderVolumesList(volumes []types.Volume) {
+func RenderVolumesList(volumes []types.Volume, highlight *types.Volume) {
+	const highlighted = " *"
 	cols := []ui.Column{
-		{
-			Title: "ID",
-			Width: 5 + ui.MaxFieldLength(volumes, func(volume types.Volume) string {
-				return volume.ID
-			}),
-		},
 		{
 			Title: "Name",
 			Width: 5 + ui.MaxFieldLength(volumes, func(volume types.Volume) string {
+				if highlight != nil {
+					return volume.Name + highlighted
+				}
 				return volume.Name
 			}),
 		}, {
@@ -47,9 +46,24 @@ func RenderVolumesList(volumes []types.Volume) {
 		return
 	}
 
+	sort.Slice(volumes, func(i, j int) bool {
+		a := volumes[i].State.CreatedAt
+		b := volumes[j].State.CreatedAt
+		return a.After(b)
+	})
+
 	for idx, volume := range volumes {
+		if highlight != nil && volume.ID == highlight.ID {
+			rows[idx] = []string{
+				highlight.Name + highlighted,
+				fmt.Sprintf("%d GB", highlight.Size),
+				highlight.State.CreatedAt.Format(time.RFC3339),
+				highlight.Provider.DisplayName(),
+			}
+			continue
+		}
+
 		rows[idx] = []string{
-			volume.ID,
 			volume.Name,
 			fmt.Sprintf("%d GB", volume.Size),
 			volume.State.CreatedAt.Format(time.RFC3339),

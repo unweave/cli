@@ -25,8 +25,6 @@ github.com/inconshreveable/mousetrap v1.0.1/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLf
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
 github.com/lib/pq v1.10.6 h1:jbk+ZieJ0D7EVGJYpL9QTz7/YW6UHbmdnZWYyK5cdBs=
 github.com/lib/pq v1.10.6/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=
-github.com/logic-building/functional-go v8.14.0+incompatible h1:5iHPbbCcA/qyekNifbP6fU1GbV5TgV+KYVF8bSd5mEc=
-github.com/logic-building/functional-go v8.14.0+incompatible/go.mod h1:039sQZvxoKRCcPgWkkePhiR15dNOS/J/dIFQKpwwJI8=
 github.com/lucasb-eyer/go-colorful v1.2.0 h1:1nnpGOrhyZZuNyfu1QjKiUICQ74+3FNCN69Aj6K7nkY=
 github.com/lucasb-eyer/go-colorful v1.2.0/go.mod h1:R4dSotOR9KMtayYi1e77YzuveK+i7ruzyGqttikkLy0=
 github.com/manifoldco/promptui v0.9.0 h1:3V4HzJk1TtXW1MTZMP7mdlwbBpIinw3HztaIlYthEiA=
@@ -75,8 +73,8 @@ github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
 github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
-github.com/unweave/unweave v0.0.0-20230601121956-060cee1134b0 h1:YjJBvWnIYP/wm+IiqSyo3XxCHMoWuGOSxOn5e+HDujk=
-github.com/unweave/unweave v0.0.0-20230601121956-060cee1134b0/go.mod h1:jSsvVJqqgH9Botkau2N4JI5W7z4JN9jG3pyywunr6w8=
+github.com/unweave/unweave v0.0.0-20230616134539-e2b7003142ff h1:rpRqISyUDK5DOwz+9NiABvwaGy8PxTYy8Dkt9BqhydY=
+github.com/unweave/unweave v0.0.0-20230616134539-e2b7003142ff/go.mod h1:jSsvVJqqgH9Botkau2N4JI5W7z4JN9jG3pyywunr6w8=
 golang.org/x/crypto v0.1.0 h1:MDRAIl0xIo9Io2xV565hzXHw3zVseKrJKodhohM5CjU=
 golang.org/x/crypto v0.1.0/go.mod h1:RecgLatLF4+eUMCP1PoPZQb+cVrJcOPbHkTkbkB9sbw=
 golang.org/x/sys v0.0.0-20181122145206-62eef0e2fa9b/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=

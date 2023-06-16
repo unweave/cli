@@ -124,6 +124,7 @@ func renderSessionCreated(exec *types.Exec) {
 		{Key: "HDD", Value: fmt.Sprintf("%vGB", exec.Spec.HDD.Min)},
 		{Key: "GPU Type", Value: fmt.Sprintf("%s", exec.Spec.GPU.Type)},
 		{Key: "NumGPUs", Value: fmt.Sprintf("%v", exec.Spec.GPU.Count.Min)},
+		{Key: "Volumes", Value: ui.FormatVolumes(exec.Volumes)},
 	}
 
 	ui.ResultTitle("Session Created:")

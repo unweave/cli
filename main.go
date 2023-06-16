@@ -143,6 +143,7 @@ func init() {
 	codeCmd.Flags().IntVar(&config.CPUs, "cpus", 0, "Number of VCPUs to allocate, e.g., 4")
 	codeCmd.Flags().IntVar(&config.Memory, "mem", 0, "Amount of RAM to allocate in GB, e.g., 16")
 	codeCmd.Flags().IntVar(&config.HDD, "hdd", 0, "Amount of hard-disk space to allocate in GB")
+	codeCmd.Flags().StringSliceVarP(&config.Volumes, "volume", "v", []string{}, "Mount a volume to the exec. e.g., -v <volume-name>:/data")
 	rootCmd.AddCommand(codeCmd)
 
 	cpCmd := &cobra.Command{
@@ -253,7 +254,7 @@ func init() {
 	newCmd.Flags().IntVar(&config.CPUs, "cpus", 0, "Number of VCPUs to allocate, e.g., 4")
 	newCmd.Flags().IntVar(&config.Memory, "mem", 0, "Amount of RAM to allocate in GB, e.g., 16")
 	newCmd.Flags().IntVar(&config.HDD, "hdd", 0, "Amount of hard-disk space to allocate in GB")
-	newCmd.Flags().StringSliceVarP(&config.Volumes, "volume", "v", []string{}, "Mount volumes to the exec. e.g., -v <volume-name>:/data")
+	newCmd.Flags().StringSliceVarP(&config.Volumes, "volume", "v", []string{}, "Mount a volume to the exec. e.g., -v <volume-name>:/data")
 
 	rootCmd.AddCommand(newCmd)
 
@@ -301,6 +302,7 @@ func init() {
 	// Setting RAM causes issues right now
 	sshCmd.Flags().IntVar(&config.Memory, "mem", 0, "Amount of RAM to allocate in GB, e.g., 16")
 	sshCmd.Flags().IntVar(&config.HDD, "hdd", 0, "Amount of hard-disk space to allocate in GB")
+	sshCmd.Flags().StringSliceVarP(&config.Volumes, "volume", "v", []string{}, "Mount a volume to newly created execs. e.g., -v <volume-name>:/data")
 
 	rootCmd.AddCommand(sshCmd)
 

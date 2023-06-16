@@ -2,8 +2,10 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/muesli/reflow/indent"
+	"github.com/unweave/unweave/api/types"
 )
 
 type ResultEntry struct {
@@ -30,4 +32,21 @@ func Result(entries []ResultEntry, indentation uint) {
 	}
 	str = indent.String(str, indentation)
 	Successf(str)
+}
+
+func FormatVolumes(volumes []types.ExecVolume) string {
+	if len(volumes) == 0 {
+		return "-"
+	}
+
+	var b strings.Builder
+
+	for i, v := range volumes {
+		if i > 0 {
+			b.WriteString(", ")
+		}
+		b.WriteString(fmt.Sprintf("%s:%s", v.VolumeID, v.MountPath))
+	}
+
+	return b.String()
 }
