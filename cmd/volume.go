@@ -9,7 +9,6 @@ import (
 	"github.com/unweave/cli/config"
 	"github.com/unweave/cli/ui"
 	"github.com/unweave/cli/volume"
-	"github.com/unweave/unweave/api/types"
 )
 
 func VolumeCreate(cmd *cobra.Command, args []string) error {
@@ -40,7 +39,13 @@ func VolumeCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	ui.Successf("✅ Volume created successfully")
-	volume.RenderVolumesList([]types.Volume{vol})
+
+	volumes, err := volume.List(cmd.Context())
+	if err != nil {
+		ui.Fatal("There was a problem rendering the newly created volume", err)
+		os.Exit(1)
+	}
+	volume.RenderVolumesList(volumes, &vol)
 
 	return nil
 }
@@ -85,7 +90,7 @@ func VolumeList(cmd *cobra.Command, args []string) error {
 		os.Exit(1)
 	}
 
-	volume.RenderVolumesList(volumes)
+	volume.RenderVolumesList(volumes, nil)
 
 	return nil
 }
