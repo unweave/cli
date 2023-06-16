@@ -15,6 +15,7 @@ import (
 	"github.com/unweave/cli/config"
 	"github.com/unweave/cli/ui"
 	"github.com/unweave/cli/vars"
+	"github.com/unweave/unweave/api/types"
 )
 
 var (
@@ -142,6 +143,7 @@ func init() {
 	codeCmd.Flags().IntVar(&config.CPUs, "cpus", 0, "Number of VCPUs to allocate, e.g., 4")
 	codeCmd.Flags().IntVar(&config.Memory, "mem", 0, "Amount of RAM to allocate in GB, e.g., 16")
 	codeCmd.Flags().IntVar(&config.HDD, "hdd", 0, "Amount of hard-disk space to allocate in GB")
+	codeCmd.Flags().StringSliceVarP(&config.Volumes, "volume", "v", []string{}, "Mount a volume to the exec. e.g., -v <volume-name>:/data")
 	rootCmd.AddCommand(codeCmd)
 
 	cpCmd := &cobra.Command{
@@ -252,6 +254,8 @@ func init() {
 	newCmd.Flags().IntVar(&config.CPUs, "cpus", 0, "Number of VCPUs to allocate, e.g., 4")
 	newCmd.Flags().IntVar(&config.Memory, "mem", 0, "Amount of RAM to allocate in GB, e.g., 16")
 	newCmd.Flags().IntVar(&config.HDD, "hdd", 0, "Amount of hard-disk space to allocate in GB")
+	newCmd.Flags().StringSliceVarP(&config.Volumes, "volume", "v", []string{}, "Mount a volume to the exec. e.g., -v <volume-name>:/data")
+
 	rootCmd.AddCommand(newCmd)
 
 	lsCmd := &cobra.Command{
@@ -298,6 +302,8 @@ func init() {
 	// Setting RAM causes issues right now
 	sshCmd.Flags().IntVar(&config.Memory, "mem", 0, "Amount of RAM to allocate in GB, e.g., 16")
 	sshCmd.Flags().IntVar(&config.HDD, "hdd", 0, "Amount of hard-disk space to allocate in GB")
+	sshCmd.Flags().StringSliceVarP(&config.Volumes, "volume", "v", []string{}, "Mount a volume to newly created execs. e.g., -v <volume-name>:/data")
+
 	rootCmd.AddCommand(sshCmd)
 
 	// SSH Key commands
@@ -327,6 +333,45 @@ func init() {
 		RunE:  cmd.SSHKeyList,
 	})
 	rootCmd.AddCommand(sshKeyCmd)
+
+	// Volume commands
+	volumeCmd := &cobra.Command{
+		Use:     "volume",
+		Short:   "Manage volumes in Unweave",
+		GroupID: groupDev,
+		Aliases: []string{"vol"},
+		Args:    cobra.NoArgs,
+	}
+
+	volumeNewCmd := &cobra.Command{
+		Use:   "new <name>",
+		Short: "Create a new volume in Unweave",
+		Long: wordwrap.String("Create a new volume in Unweave.\n\n"+
+			"Eg. unweave volume new <volume-name> --size <size-in-gb>\n\n"+
+			"The volume name must be unique per project. \n",
+			ui.MaxOutputLineLength),
+		Args:    cobra.ExactArgs(1),
+		Aliases: []string{"new", "n", "create", "c"},
+		RunE:    cmd.VolumeCreate,
+	}
+	volumeNewCmd.Flags().StringVar(&config.Provider, "provider", types.UnweaveProvider.String(), "Provider to use")
+	volumeCmd.AddCommand(volumeNewCmd)
+
+	volumeCmd.AddCommand(&cobra.Command{
+		Use:   "ls",
+		Short: "List volumes",
+		Args:  cobra.NoArgs,
+		RunE:  cmd.VolumeList,
+	})
+
+	volumeCmd.AddCommand(&cobra.Command{
+		Use:   "resize <name> <size-in-gb>",
+		Short: "Resize a volume",
+		Args:  cobra.RangeArgs(1, 2),
+		RunE:  cmd.VolumeResize,
+	})
+
+	rootCmd.AddCommand(volumeCmd)
 }
 
 func main() {

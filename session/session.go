@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/unweave/cli/config"
 	"github.com/unweave/cli/ui"
@@ -14,7 +15,7 @@ import (
 // Create attempts to create a session using the Exec spec provided, uses GPUs in the config if not, returns a 503 out-of-capacity error.
 // Renders newly created sessions to the UI implicitly.
 func Create(ctx context.Context, params types.ExecCreateParams) (string, error) {
-	if params.HardwareSpec.GPU.Type == "" {
+	if params.Spec.GPU.Type == "" {
 		exec, err := createSessionFromConfigGPUTypes(ctx, params)
 		renderSessionCreated(exec)
 
@@ -24,7 +25,7 @@ func Create(ctx context.Context, params types.ExecCreateParams) (string, error) 
 		return exec.ID, nil
 	}
 
-	exec, err := createSession(ctx, params, params.HardwareSpec.GPU.Type)
+	exec, err := createSession(ctx, params, params.Spec.GPU.Type)
 	if err != nil {
 		var e *types.Error
 		if errors.As(err, &e) {
@@ -45,7 +46,7 @@ func createSession(ctx context.Context, params types.ExecCreateParams, gpuType s
 	owner, projectName := config.GetProjectOwnerAndName()
 
 	useParams := params
-	useParams.HardwareSpec.GPU.Type = gpuType
+	useParams.Spec.GPU.Type = gpuType
 
 	exec, err := uwc.Exec.Create(ctx, owner, projectName, useParams)
 	if err != nil {
@@ -113,19 +114,30 @@ func renderSessionCreated(exec *types.Exec) {
 		{Key: "Name", Value: exec.Name},
 		{Key: "ID", Value: exec.ID},
 		{Key: "Provider", Value: exec.Provider.DisplayName()},
-		{Key: "Instance Type", Value: exec.NodeTypeID},
+		{Key: "Instance Type", Value: exec.ID},
 		{Key: "Region", Value: exec.Region},
 		{Key: "Status", Value: fmt.Sprintf("%s", exec.Status)},
-		{Key: "SSHKey", Value: fmt.Sprintf("%s", exec.SSHKey.Name)},
-		{Key: "CPUs", Value: fmt.Sprintf("%v", exec.Specs.CPU.Min)},
+		{Key: "SSHKeys", Value: fmt.Sprintf("%s", getSSHKeyNames(exec.Keys))},
+		{Key: "CPUs", Value: fmt.Sprintf("%v", exec.Spec.CPU.Min)},
 		// Uncomment when issues setting RAM are resolved
 		// {Key: "RAM", Value: fmt.Sprintf("%vGB", exec.Specs.RAM.Min)},
-		{Key: "HDD", Value: fmt.Sprintf("%vGB", exec.Specs.HDD.Min)},
-		{Key: "GPU Type", Value: fmt.Sprintf("%s", exec.Specs.GPU.Type)},
-		{Key: "NumGPUs", Value: fmt.Sprintf("%v", exec.Specs.GPU.Count.Min)},
+		{Key: "HDD", Value: fmt.Sprintf("%vGB", exec.Spec.HDD.Min)},
+		{Key: "GPU Type", Value: fmt.Sprintf("%s", exec.Spec.GPU.Type)},
+		{Key: "NumGPUs", Value: fmt.Sprintf("%v", exec.Spec.GPU.Count.Min)},
+		{Key: "Volumes", Value: ui.FormatVolumes(exec.Volumes)},
 	}
 
 	ui.ResultTitle("Session Created:")
 	ui.Result(results, ui.IndentWidth)
 	return
+}
+
+func getSSHKeyNames(keys []types.SSHKey) string {
+	keyNames := make([]string, 0, len(keys))
+
+	for _, key := range keys {
+		keyNames = append(keyNames, key.Name)
+	}
+
+	return strings.Join(keyNames, ", ")
 }

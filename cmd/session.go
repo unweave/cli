@@ -17,7 +17,6 @@ import (
 	"github.com/unweave/cli/ssh"
 	"github.com/unweave/cli/ui"
 	"github.com/unweave/unweave/api/types"
-	"github.com/unweave/unweave/tools"
 )
 
 func dashIfZeroValue(v interface{}) interface{} {
@@ -121,21 +120,23 @@ func sessionCreate(ctx context.Context, execConfig types.ExecConfig, gitConfig t
 	if err != nil {
 		return "", err
 	}
-
-	sshKeyName := &name
-	sshPublicKey := tools.Stringy(string(pub))
+	volumes, err := config.GetVolumeAttachParams()
+	if err != nil {
+		return "", err
+	}
 
 	params := types.ExecCreateParams{
 		Provider:     types.Provider(provider),
-		HardwareSpec: spec,
+		Spec:         spec,
+		SSHKeyName:   name,
+		SSHPublicKey: string(pub),
 		Region:       region,
-		SSHKeyName:   sshKeyName,
-		SSHPublicKey: sshPublicKey,
 		Image:        image,
 		Command:      execConfig.Command,
 		CommitID:     gitConfig.CommitID,
 		GitURL:       gitConfig.GitURL,
 		Source:       execConfig.Src,
+		Volumes:      volumes,
 	}
 
 	sessionID, err := session.Create(ctx, params)
@@ -213,7 +214,7 @@ func SessionList(cmd *cobra.Command, args []string) error {
 }
 
 func renderSessionListNoSessions() {
-	ui.Attentionf("No sessions active")
+	ui.Infof("No active sessions")
 }
 
 func renderSessionListWithSessions(sessions []types.Exec) {
@@ -223,65 +224,81 @@ func renderSessionListWithSessions(sessions []types.Exec) {
 
 	// EITHER min length of title + 5 for padding OR the max field length + 5 for padding
 	cols := []ui.Column{
-		{Title: "Name", Width: 5 + MaxFieldLength(sessions, func(exec types.Exec) string {
-			return exec.Name
-		})},
+		{
+			Title: "Name",
+			Width: 5 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
+				return exec.Name
+			}),
+		},
 		{Title: "vCPUs", Width: 5},
-		{Title: "GPU", Width: 5 + MaxFieldLength(sessions, func(exec types.Exec) string {
-			return exec.Specs.GPU.Type
-		})},
+		{
+			Title: "GPU",
+			Width: 5 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
+				return exec.Spec.GPU.Type
+			}),
+		},
 		{Title: "NumGPUs", Width: 12},
 		{Title: "HDD (GB)", Width: 10},
 		// {Title: "RAM (GB)", Width: 10},
-		{Title: "Provider", Width: 5 + MaxFieldLength(sessions, func(exec types.Exec) string {
-			return exec.Provider.String()
-		})},
-		{Title: "Status", Width: 5 + MaxFieldLength(sessions, func(exec types.Exec) string {
-			return string(exec.Status)
-		})},
-		{Title: "Connection String", Width: 2 + MaxFieldLength(sessions, func(exec types.Exec) string {
-			if exec.Connection == nil || exec.Connection.Host == "" {
-				return "Connection String"
-			}
-			return fmt.Sprintf("%s@%s", exec.Connection.User, exec.Connection.Host)
-		})},
+		{
+			Title: "Provider",
+			Width: 5 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
+				return exec.Provider.String()
+			}),
+		},
+		{
+			Title: "Status",
+			Width: 5 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
+				return string(exec.Status)
+			}),
+		},
+		//{
+		//	Title: "Volumes",
+		//	Width: 5 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
+		//		if len(exec.Volumes) > 0 {
+		//			return "- "
+		//		}
+		//		return ui.FormatVolumes(exec.Volumes)
+		//	}),
+		//},
+		{
+			Title: "Connection String",
+			Width: 2 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
+				if exec.Network.Host == "" {
+					return "Connection String"
+				}
+				return fmt.Sprintf("%s@%s", exec.Network.User, exec.Network.Host)
+			}),
+		},
 	}
 
 	rows := make([]ui.Row, len(sessions))
 
 	for idx, s := range sessions {
 		conn := "-"
-		if s.Connection != nil && s.Connection.Host != "" {
-			conn = fmt.Sprintf("%s@%s", s.Connection.User, s.Connection.Host)
+		if s.Network.Host != "" {
+			conn = fmt.Sprintf("%s@%s", s.Network.User, s.Network.Host)
 		}
+		//volumes := "-"
+		//if len(s.Volumes) > 0 {
+		//	volumes = fmt.Sprintf(ui.FormatVolumes(s.Volumes))
+		//}
 		row := ui.Row{
 			fmt.Sprintf("%s", s.Name),
-			fmt.Sprintf("%v", s.Specs.CPU.Min),
-			fmt.Sprintf("%s", s.Specs.GPU.Type),
-			fmt.Sprintf("%v", s.Specs.GPU.Count.Min),
-			fmt.Sprintf("%v", s.Specs.HDD.Min),
+			fmt.Sprintf("%v", s.Spec.CPU.Min),
+			fmt.Sprintf("%s", s.Spec.GPU.Type),
+			fmt.Sprintf("%v", s.Spec.GPU.Count.Min),
+			fmt.Sprintf("%v", s.Spec.HDD.Min),
 			// fmt.Sprintf("%v", s.Specs.RAM.Min),
 			fmt.Sprintf("%s", s.Provider),
 			fmt.Sprintf("%s", s.Status),
+			//volumes,
 			conn,
 		}
 		rows[idx] = row
 	}
 
 	ui.Table("Sessions", cols, rows)
-}
-
-func MaxFieldLength[T any](data []T, getField func(T) string) int {
-	maxLength := 0
-
-	for _, item := range data {
-		fieldValue := getField(item)
-		if len(fieldValue) > maxLength {
-			maxLength = len(fieldValue)
-		}
-	}
-
-	return maxLength
 }
 
 func sessionTerminate(ctx context.Context, execID string) error {
@@ -395,7 +412,7 @@ func formatExecCobraOpts(execs []types.Exec, prepend ...string) ([]string, map[i
 	}
 
 	for idx, s := range execs {
-		txt := fmt.Sprintf("%s - %s - %s - (%s)", s.Name, s.Provider, s.NodeTypeID, s.Status)
+		txt := fmt.Sprintf("%s - %s - %s - (%s)", s.Name, s.Provider, s.ID, s.Status)
 		options[len(prepend)+idx] = txt
 		optionMap[len(prepend)+idx] = s.ID
 	}

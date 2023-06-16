@@ -24,6 +24,7 @@ type Client struct {
 	Provider *ProviderService
 	Exec     *ExecService
 	SSHKey   *SSHKeyService
+	Volume   *VolumeService
 
 	// Management
 	Account *AccountService
@@ -39,6 +40,7 @@ func NewClient(cfg Config) *Client {
 	c.Exec = &ExecService{client: c}
 	c.SSHKey = &SSHKeyService{client: c}
 	c.Account = &AccountService{client: c}
+	c.Volume = &VolumeService{client: c}
 
 	return c
 }
@@ -137,7 +139,7 @@ func (c *Client) ExecuteRest(ctx context.Context, req *RestRequest, resp interfa
 	if err = json.NewDecoder(&buf).Decode(&resp); err == io.EOF {
 		return nil
 	} else if err != nil {
-		return fmt.Errorf("failed to decode response body")
+		return fmt.Errorf("failed to decode response body, %w", err)
 	}
 	return nil
 }
