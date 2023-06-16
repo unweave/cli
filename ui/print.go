@@ -42,8 +42,8 @@ func Fatal(msg string, err error) {
 		}
 		uie := &Error{Error: e}
 		fmt.Println(uie.Verbose())
-		os.Exit(1)
 	}
+	os.Exit(1)
 }
 
 func Infof(format string, a ...any) {
