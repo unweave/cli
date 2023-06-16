@@ -37,7 +37,7 @@ func Delete(ctx context.Context, name string) error {
 
 	err := client.Volume.Delete(ctx, projectOwner, projectName, name)
 	if err != nil {
-		return fmt.Errorf("failed to delete volume: %s", err)
+		return fmt.Errorf("failed to delete volume: %w", err)
 	}
 	return nil
 }
@@ -54,7 +54,7 @@ func List(ctx context.Context) ([]types.Volume, error) {
 	client := config.InitUnweaveClient()
 	volumes, err := client.Volume.List(ctx, ownerID, project)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list volumes: %s", err)
+		return nil, fmt.Errorf("failed to list volumes: %w", err)
 	}
 	return volumes, nil
 }
@@ -70,7 +70,7 @@ func Update(ctx context.Context, name string, newSize int) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to update volume: %s", err)
+		return fmt.Errorf("failed to update volume: %w", err)
 	}
 	return nil
 }
