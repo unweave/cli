@@ -120,6 +120,10 @@ func sessionCreate(ctx context.Context, execConfig types.ExecConfig, gitConfig t
 	if err != nil {
 		return "", err
 	}
+	volumes, err := config.GetVolumeAttachParams()
+	if err != nil {
+		return "", err
+	}
 
 	params := types.ExecCreateParams{
 		Provider:     types.Provider(provider),
@@ -132,7 +136,7 @@ func sessionCreate(ctx context.Context, execConfig types.ExecConfig, gitConfig t
 		CommitID:     gitConfig.CommitID,
 		GitURL:       gitConfig.GitURL,
 		Source:       execConfig.Src,
-		Volumes:      config.GetVolumeAttachParams(),
+		Volumes:      volumes,
 	}
 
 	sessionID, err := session.Create(ctx, params)
