@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/spf13/cobra"
 	"github.com/unweave/cli/config"
@@ -12,18 +13,26 @@ import (
 )
 
 func VolumeCreate(cmd *cobra.Command, args []string) error {
-	var name string
+	var name = args[0]
+	var sizeStr *string
 
-	if len(args) > 0 {
-		name = args[0]
+	if len(args) > 1 {
+		sizeStr = &args[1]
 	}
-
 	if name == "" {
-		ui.Attentionf("Invalid volume name")
-		os.Exit(1)
+		ui.Fatal("Invalid volume name", nil)
 	}
 
-	vol, err := volume.Create(cmd.Context(), name, config.VolumeSize)
+	var size = config.DefaultVolumeSize
+	if sizeStr != nil {
+		sizei, err := strconv.ParseInt(*sizeStr, 10, 64)
+		if err != nil {
+			ui.Fatal("Size must be a valid integer ", nil)
+		}
+		size = int(sizei)
+	}
+
+	vol, err := volume.Create(cmd.Context(), name, size)
 	if err != nil {
 		ui.Debugf("Failed to create volume: %s", err.Error())
 		ui.Fatal("Failed to create volume", err)
@@ -82,21 +91,23 @@ func VolumeList(cmd *cobra.Command, args []string) error {
 }
 
 func VolumeResize(cmd *cobra.Command, args []string) error {
-	var name string
+	var name = args[0]
+	var sizeStr *string
 
+	if len(args) > 1 {
+		sizeStr = &args[1]
+	}
 	if name == "" {
-		ui.Errorf("Invalid volume name")
-		os.Exit(1)
+		ui.Fatal("Invalid volume name", nil)
 	}
 
-	size := config.DefaultVolumeSize
-	//if len(args) > 1 {
-	//	size, err = strconv.FormatInt(args[1], 10)
-	//}
-
-	if size <= 0 {
-		ui.Errorf("Volume size must be greater than 0")
-		os.Exit(1)
+	var size = config.DefaultVolumeSize
+	if sizeStr != nil {
+		sizei, err := strconv.ParseInt(*sizeStr, 10, 64)
+		if err != nil {
+			ui.Fatal("Size must be a valid integer", nil)
+		}
+		size = int(sizei)
 	}
 
 	err := volume.Update(cmd.Context(), name, size)

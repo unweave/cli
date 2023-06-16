@@ -124,14 +124,15 @@ func sessionCreate(ctx context.Context, execConfig types.ExecConfig, gitConfig t
 	params := types.ExecCreateParams{
 		Provider:     types.Provider(provider),
 		Spec:         spec,
-		Region:       region,
 		SSHKeyName:   name,
 		SSHPublicKey: string(pub),
+		Region:       region,
 		Image:        image,
 		Command:      execConfig.Command,
 		CommitID:     gitConfig.CommitID,
 		GitURL:       gitConfig.GitURL,
 		Source:       execConfig.Src,
+		Volumes:      config.GetVolumeAttachParams(),
 	}
 
 	sessionID, err := session.Create(ctx, params)
