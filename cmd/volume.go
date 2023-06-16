@@ -84,20 +84,22 @@ func VolumeList(cmd *cobra.Command, args []string) error {
 func VolumeResize(cmd *cobra.Command, args []string) error {
 	var name string
 
-	if len(args) > 0 {
-		name = args[0]
-	}
-
 	if name == "" {
 		ui.Errorf("Invalid volume name")
 		os.Exit(1)
 	}
-	if config.VolumeSize <= 0 {
+
+	size := config.DefaultVolumeSize
+	//if len(args) > 1 {
+	//	size, err = strconv.FormatInt(args[1], 10)
+	//}
+
+	if size <= 0 {
 		ui.Errorf("Volume size must be greater than 0")
 		os.Exit(1)
 	}
 
-	err := volume.Update(cmd.Context(), name, config.VolumeSize)
+	err := volume.Update(cmd.Context(), name, size)
 	if err != nil {
 		ui.Debugf("Failed to update the volume: %s", err.Error())
 		ui.Errorf("Failed to update the volume")

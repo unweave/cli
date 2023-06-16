@@ -368,7 +368,6 @@ func init() {
 		Args:  cobra.RangeArgs(1, 2),
 		RunE:  cmd.VolumeResize,
 	})
-	volumeCmd.Flags().IntVar(&config.VolumeSize, "size", 0, "Size of a volume to allocate in GB")
 
 	rootCmd.AddCommand(volumeCmd)
 }
