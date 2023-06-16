@@ -24,6 +24,7 @@ type Client struct {
 	Provider *ProviderService
 	Exec     *ExecService
 	SSHKey   *SSHKeyService
+	Volume   *VolumeService
 
 	// Management
 	Account *AccountService
@@ -39,6 +40,7 @@ func NewClient(cfg Config) *Client {
 	c.Exec = &ExecService{client: c}
 	c.SSHKey = &SSHKeyService{client: c}
 	c.Account = &AccountService{client: c}
+	c.Volume = &VolumeService{client: c}
 
 	return c
 }

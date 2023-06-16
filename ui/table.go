@@ -51,3 +51,17 @@ func Table(title string, cols []Column, rows []Row) {
 
 	fmt.Printf("%s\n%s%s%s%s", title, separator, header, separator, body)
 }
+
+// MaxFieldLength can be used to compute the maximum length of any given column based on the length of the greatest row
+func MaxFieldLength[T any](data []T, getField func(T) string) int {
+	maxLength := 0
+
+	for _, item := range data {
+		fieldValue := getField(item)
+		if len(fieldValue) > maxLength {
+			maxLength = len(fieldValue)
+		}
+	}
+
+	return maxLength
+}
