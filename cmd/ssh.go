@@ -162,7 +162,7 @@ func ensureHosts(e types.Exec, identityFile string) {
 		ui.Infof("Run `unweave ls` to see the status of your session and try connecting manually.")
 		os.Exit(1)
 	}
-	if len(e.Network.Ports) == 0 {
+	if e.Network.Port == 0 {
 		ui.Errorf("❌ Something unexpected happened. No port info found for session %q", e.ID)
 		ui.Infof("Run `unweave ls` to see the status of your session. If this problem persists please contact an administrator.")
 		os.Exit(1)
@@ -175,7 +175,7 @@ func ensureHosts(e types.Exec, identityFile string) {
 		ui.Debugf("Failed to remove known_hosts entry: %v", err)
 	}
 
-	if err := ssh.AddHost("uw:"+e.ID, e.Network.Host, e.Network.User, e.Network.Ports[0], identityFile); err != nil {
+	if err := ssh.AddHost("uw:"+e.ID, e.Network.Host, e.Network.User, e.Network.Port, identityFile); err != nil {
 		ui.Debugf("Failed to add host to ssh config: %v", err)
 	}
 }

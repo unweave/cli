@@ -137,6 +137,7 @@ func sessionCreate(ctx context.Context, execConfig types.ExecConfig, gitConfig t
 		GitURL:       gitConfig.GitURL,
 		Source:       execConfig.Src,
 		Volumes:      volumes,
+		InternalPort: config.InternalPort,
 	}
 
 	sessionID, err := session.Create(ctx, params)
@@ -270,6 +271,15 @@ func renderSessionListWithSessions(sessions []types.Exec) {
 				return fmt.Sprintf("%s@%s", exec.Network.User, exec.Network.Host)
 			}),
 		},
+		{
+			Title: "Http Service",
+			Width: 2 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
+				if exec.Network.HTTPService == nil {
+					return "Http Service"
+				}
+				return fmt.Sprintf("https://%s (internal port: %d)", exec.Network.HTTPService.Hostname, exec.Network.HTTPService.InternalPort)
+			}),
+		},
 	}
 
 	rows := make([]ui.Row, len(sessions))
@@ -279,10 +289,17 @@ func renderSessionListWithSessions(sessions []types.Exec) {
 		if s.Network.Host != "" {
 			conn = fmt.Sprintf("%s@%s", s.Network.User, s.Network.Host)
 		}
+
 		volumes := "-"
 		if len(s.Volumes) > 0 {
 			volumes = fmt.Sprintf(ui.FormatVolumes(s.Volumes))
 		}
+
+		hostname := "-"
+		if s.Network.HTTPService != nil {
+			hostname = fmt.Sprintf("https://%s (internal port: %d)", s.Network.HTTPService.Hostname, s.Network.HTTPService.InternalPort)
+		}
+
 		row := ui.Row{
 			fmt.Sprintf("%s", s.Name),
 			fmt.Sprintf("%v", s.Spec.CPU.Min),
@@ -294,6 +311,7 @@ func renderSessionListWithSessions(sessions []types.Exec) {
 			fmt.Sprintf("%s", s.Status),
 			volumes,
 			conn,
+			hostname,
 		}
 		rows[idx] = row
 	}
