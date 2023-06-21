@@ -34,6 +34,9 @@ var HDD int
 // NodeRegion is the region to use when creating a new session
 var NodeRegion = ""
 
+// InternalPort is the port that should be exposed as https
+var InternalPort int32
+
 // ProjectURI is the project slug with syntax `<owner>/<project` of the project to run
 // commands on. It is loaded from the saved config file and can be overridden with runtime flags.
 var ProjectURI = ""

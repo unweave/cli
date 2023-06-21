@@ -127,6 +127,12 @@ func renderSessionCreated(exec *types.Exec) {
 		{Key: "Volumes", Value: ui.FormatVolumes(exec.Volumes)},
 	}
 
+	if exec.Network.HTTPService != nil {
+		results = append(results,
+			ui.ResultEntry{Key: "InternalPort", Value: fmt.Sprintf("%d", exec.Network.HTTPService.InternalPort)},
+		)
+	}
+
 	ui.ResultTitle("Session Created:")
 	ui.Result(results, ui.IndentWidth)
 	return
