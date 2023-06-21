@@ -252,15 +252,15 @@ func renderSessionListWithSessions(sessions []types.Exec) {
 				return string(exec.Status)
 			}),
 		},
-		//{
-		//	Title: "Volumes",
-		//	Width: 5 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
-		//		if len(exec.Volumes) > 0 {
-		//			return "- "
-		//		}
-		//		return ui.FormatVolumes(exec.Volumes)
-		//	}),
-		//},
+		{
+			Title: "Volumes",
+			Width: 25 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
+				if len(exec.Volumes) > 0 {
+					return "- "
+				}
+				return ui.FormatVolumes(exec.Volumes)
+			}),
+		},
 		{
 			Title: "Connection String",
 			Width: 2 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
@@ -279,10 +279,10 @@ func renderSessionListWithSessions(sessions []types.Exec) {
 		if s.Network.Host != "" {
 			conn = fmt.Sprintf("%s@%s", s.Network.User, s.Network.Host)
 		}
-		//volumes := "-"
-		//if len(s.Volumes) > 0 {
-		//	volumes = fmt.Sprintf(ui.FormatVolumes(s.Volumes))
-		//}
+		volumes := "-"
+		if len(s.Volumes) > 0 {
+			volumes = fmt.Sprintf(ui.FormatVolumes(s.Volumes))
+		}
 		row := ui.Row{
 			fmt.Sprintf("%s", s.Name),
 			fmt.Sprintf("%v", s.Spec.CPU.Min),
@@ -292,7 +292,7 @@ func renderSessionListWithSessions(sessions []types.Exec) {
 			// fmt.Sprintf("%v", s.Specs.RAM.Min),
 			fmt.Sprintf("%s", s.Provider),
 			fmt.Sprintf("%s", s.Status),
-			//volumes,
+			volumes,
 			conn,
 		}
 		rows[idx] = row
