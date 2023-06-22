@@ -22,30 +22,20 @@ import (
 
 // SSH handles the Cobra command for SSH
 func SSH(cmd *cobra.Command, args []string) error {
-	var sshArgs []string
-	var execRef string // Can be execID or name
+	return runSSHConnectionCommand(cmd, args, &sshCommandFlow{})
+}
 
-	if len(args) == 1 {
-		execRef = args[0]
-	}
+type sshConnectionCommandFlow interface {
+	parseArgs(cmd *cobra.Command, args []string) (execRef string, sshConnectionOptions []string, command []string)
+	getExec(cmd *cobra.Command, execRef string) (chan types.Exec, bool, chan error)
+	onTerminate(ctx context.Context, execID string) error
+}
 
-	// If the number of args is great than one, we always expect the first arg to be
-	// the separator flag "--". If the number of args is one, we expect it to be the
-	// execID or name
-	if len(args) > 1 {
-		execRef = args[0]
-		sshArgs = args[1:]
-
-		if sshArgs[0] != "--" {
-			const errMsg = "❌ Invalid arguments. If you want to pass arguments to the ssh command, " +
-				"use the -- flag. See `unweave ssh --help` for more information"
-			ui.Errorf(errMsg)
-			os.Exit(1)
-		}
-	}
+func runSSHConnectionCommand(cmd *cobra.Command, args []string, flow sshConnectionCommandFlow) error {
+	execRef, sshArgs, command := flow.parseArgs(cmd, args)
 
 	prvKey := config.SSHPrivateKeyPath
-	execCh, isNew, errCh := getOrCreateExec(cmd, execRef)
+	execCh, isNew, errCh := flow.getExec(cmd, execRef)
 	ctx := cmd.Context()
 
 	for {
@@ -70,17 +60,15 @@ func SSH(cmd *cobra.Command, args []string) error {
 					os.Exit(1)
 				}
 
-				if err := ssh.Connect(ctx, e.Network, prvKey, sshArgs); err != nil {
+				if err := ssh.Connect(ctx, e.Network, prvKey, sshArgs, command); err != nil {
 					ui.Errorf("%s", err)
 					os.Exit(1)
 				}
 
-				if terminate := ui.Confirm("SSH session terminated. Do you want to terminate the session?", "n"); terminate {
-					if err := sessionTerminate(ctx, e.ID); err != nil {
-						return err
-					}
-					ui.Infof("Session %q terminated.", e.ID)
+				if err := flow.onTerminate(ctx, e.ID); err != nil {
+					return err
 				}
+
 				return nil
 			}
 
@@ -97,6 +85,48 @@ func SSH(cmd *cobra.Command, args []string) error {
 			return nil
 		}
 	}
+}
+
+type sshCommandFlow struct{}
+
+func (s *sshCommandFlow) parseArgs(cmd *cobra.Command, args []string) (execRef string, sshConnectionOptions []string, command []string) {
+	var sshArgs []string
+
+	if len(args) == 1 {
+		execRef = args[0]
+	}
+
+	// If the number of args is great than one, we always expect the first arg to be
+	// the separator flag "--". If the number of args is one, we expect it to be the
+	// execID or name
+	if len(args) > 1 {
+		execRef = args[0]
+		sshArgs = args[1:]
+
+		if sshArgs[0] != "--" {
+			const errMsg = "❌ Invalid arguments. If you want to pass arguments to the ssh command, " +
+				"use the -- flag. See `unweave ssh --help` for more information"
+			ui.Errorf(errMsg)
+			os.Exit(1)
+		}
+	}
+
+	return execRef, sshArgs, nil
+}
+
+func (s *sshCommandFlow) getExec(cmd *cobra.Command, execRef string) (chan types.Exec, bool, chan error) {
+	return getOrCreateExec(cmd, execRef)
+}
+
+func (s *sshCommandFlow) onTerminate(ctx context.Context, execID string) error {
+	if terminate := ui.Confirm("SSH session terminated. Do you want to terminate the session?", "n"); terminate {
+		if err := sessionTerminate(ctx, execID); err != nil {
+			return err
+		}
+		ui.Infof("Session %q terminated.", execID)
+	}
+
+	return nil
 }
 
 // getOrCreateExec handles the flow to spawn a new Exec or get an existing one, returns whether to expect a new Exec
@@ -124,7 +154,7 @@ func getOrCreateExec(cmd *cobra.Command, execRef string) (chan types.Exec, bool,
 	} else {
 		var createNewExec bool
 		if execRef == "" {
-			execRef, createNewExec, err = sessionSelectSSHExecRef(cmd, execRef, false)
+			execRef, createNewExec, err = sessionSelectSSHExecRef(ctx, execRef, false)
 			if err != nil {
 				errCh <- err
 				return nil, false, errCh

@@ -179,13 +179,16 @@ func init() {
 			fmt.Println(config.Config.String())
 		},
 	})
-	rootCmd.AddCommand(&cobra.Command{
-		Use:     "exec",
-		Short:   "Execute a command serverlessly",
+	execCmd := &cobra.Command{
 		GroupID: groupDev,
-		Hidden:  true,
+		Short:   "Execute a command serverlessly",
+		Use:     "exec [flags] [session-name|id] -- [<command>]...",
 		RunE:    withValidProjectURI(cmd.Exec),
-	})
+	}
+	execCmd.Flags().StringSliceVar(&config.SSHConnectionOptions, "connection-option", []string{}, "SSH connection config to include e.g StrictHostKeyChecking=yes")
+	execCmd.Flags().BoolVarP(&config.ExecAttach, "interactive", "i", false, "Stay attached in an interactive terminal session to the exec after starting the command")
+
+	rootCmd.AddCommand(execCmd)
 
 	linkCmd := &cobra.Command{
 		Use:     "link [project-id]",
