@@ -307,6 +307,7 @@ func init() {
 	sshCmd.Flags().IntVar(&config.HDD, "hdd", 0, "Amount of hard-disk space to allocate in GB")
 	sshCmd.Flags().StringSliceVarP(&config.Volumes, "volume", "v", []string{}, "Mount a volume to newly created execs. e.g., -v <volume-name>:/data")
 	sshCmd.Flags().Int32VarP(&config.InternalPort, "port", "p", 0, "Port on the exec to expose as an https interface e.g. -p 8080")
+	sshCmd.Flags().StringSliceVar(&config.SSHConnectionOptions, "connection-option", []string{}, "SSH connection config to include e.g StrictHostKeyChecking=yes")
 
 	rootCmd.AddCommand(sshCmd)
 

@@ -53,6 +53,9 @@ var SSHPublicKeyPath = ""
 // SSHKeyName is the name of the SSH Key already configured in Unweave to use for a new or existing Exec.
 var SSHKeyName = ""
 
+// SSHConnectionOptions is the arguments you want to include when opening an SSH session.
+var SSHConnectionOptions []string
+
 // NoCopySource is a bool to denote whether to copy the source code to the session
 var NoCopySource = true
 

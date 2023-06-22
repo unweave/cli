@@ -22,26 +22,38 @@ import (
 
 // SSH handles the Cobra command for SSH
 func SSH(cmd *cobra.Command, args []string) error {
-	var sshArgs []string
-	var execRef string // Can be execID or name
+	var (
+		sshConnectionOptions = config.SSHConnectionOptions
+		sshArgs              []string
+		execArgs             []string
+		execRef              string // Can be execID or name
+	)
 
-	if len(args) == 1 {
-		execRef = args[0]
+	doubleDashIdx := cmd.ArgsLenAtDash()
+
+	if doubleDashIdx >= 0 {
+		execArgs = args[:doubleDashIdx]
+		sshArgs = args[doubleDashIdx:]
+	} else {
+		execArgs = args
 	}
 
-	// If the number of args is great than one, we always expect the first arg to be
-	// the separator flag "--". If the number of args is one, we expect it to be the
-	// execID or name
-	if len(args) > 1 {
-		execRef = args[0]
-		sshArgs = args[1:]
+	if doubleDashIdx != -1 && len(sshArgs) == 0 {
+		const errMsg = "❌ Invalid arguments. You must pass a command to run when using -- flag. " +
+			"See `unweave ssh --help` for more information"
+		ui.Errorf(errMsg)
+		os.Exit(1)
+	}
 
-		if sshArgs[0] != "--" {
-			const errMsg = "❌ Invalid arguments. If you want to pass arguments to the ssh command, " +
-				"use the -- flag. See `unweave ssh --help` for more information"
-			ui.Errorf(errMsg)
-			os.Exit(1)
-		}
+	if len(execArgs) > 1 {
+		const errMsg = "❌ Invalid arguments. If you want to pass arguments to the ssh command, " +
+			"use the -- flag. See `unweave ssh --help` for more information"
+		ui.Errorf(errMsg)
+		os.Exit(1)
+	}
+
+	if len(execArgs) == 1 {
+		execRef = execArgs[0]
 	}
 
 	prvKey := config.SSHPrivateKeyPath
@@ -70,7 +82,7 @@ func SSH(cmd *cobra.Command, args []string) error {
 					os.Exit(1)
 				}
 
-				if err := ssh.Connect(ctx, e.Network, prvKey, sshArgs); err != nil {
+				if err := ssh.Connect(ctx, e.Network, prvKey, sshConnectionOptions, strings.Join(sshArgs, " ")); err != nil {
 					ui.Errorf("%s", err)
 					os.Exit(1)
 				}

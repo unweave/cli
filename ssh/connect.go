@@ -12,11 +12,11 @@ import (
 	"github.com/unweave/unweave/api/types"
 )
 
-func Connect(ctx context.Context, connectionInfo types.ExecNetwork, prvKeyPath string, args []string) error {
+func Connect(ctx context.Context, connectionInfo types.ExecNetwork, prvKeyPath string, connectionOptions []string, command string) error {
 	overrideUserKnownHostsFile := false
 	overrideStrictHostKeyChecking := false
 
-	for _, arg := range args {
+	for _, arg := range connectionOptions {
 		if strings.Contains(arg, "UserKnownHostsFile") {
 			overrideUserKnownHostsFile = true
 		}
@@ -26,19 +26,25 @@ func Connect(ctx context.Context, connectionInfo types.ExecNetwork, prvKeyPath s
 	}
 
 	if prvKeyPath != "" {
-		args = append(args, "-i", prvKeyPath)
+		connectionOptions = append(connectionOptions, "-i", prvKeyPath)
 	}
 
 	if !overrideUserKnownHostsFile {
-		args = append(args, "-o", "UserKnownHostsFile=/dev/null")
+		connectionOptions = append(connectionOptions, "-o", "UserKnownHostsFile=/dev/null")
 	}
 	if !overrideStrictHostKeyChecking {
-		args = append(args, "-o", "StrictHostKeyChecking=no")
+		connectionOptions = append(connectionOptions, "-o", "StrictHostKeyChecking=no")
+	}
+
+	sshArgs := append(connectionOptions, fmt.Sprintf("%s@%s", connectionInfo.User, connectionInfo.Host))
+
+	if command != "" {
+		sshArgs = append(sshArgs, command)
 	}
 
 	sshCommand := exec.Command(
 		"ssh",
-		append(args, fmt.Sprintf("%s@%s", connectionInfo.User, connectionInfo.Host))...,
+		sshArgs...,
 	)
 
 	ui.Debugf("Running SSH command: %s", strings.Join(sshCommand.Args, " "))
