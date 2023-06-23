@@ -25,17 +25,36 @@ func SSH(cmd *cobra.Command, args []string) error {
 	return runSSHConnectionCommand(cmd, args, &sshCommandFlow{})
 }
 
+type execCmdArgs struct {
+	execRef              string
+	sshConnectionOptions []string
+
+	// userCommand is the string command
+	// parts given by the user. This should
+	// be recorded as what the user ran.
+	userCommand []string
+
+	// executeCommand is the string command
+	// parts that will be executed on the exec
+	// this should be used in the SSH connection.
+	execCommand []string
+
+	// attached denotes if the command will
+	// run in attached mode, or detach.
+	attached bool
+}
+
 type sshConnectionCommandFlow interface {
-	parseArgs(cmd *cobra.Command, args []string) (execRef string, sshConnectionOptions []string, command []string)
-	getExec(cmd *cobra.Command, execRef string) (chan types.Exec, bool, chan error)
+	parseArgs(cmd *cobra.Command, args []string) execCmdArgs
+	getExec(cmd *cobra.Command, command execCmdArgs) (chan types.Exec, bool, chan error)
 	onTerminate(ctx context.Context, execID string) error
 }
 
 func runSSHConnectionCommand(cmd *cobra.Command, args []string, flow sshConnectionCommandFlow) error {
-	execRef, sshArgs, command := flow.parseArgs(cmd, args)
+	commandArgs := flow.parseArgs(cmd, args)
 
 	prvKey := config.SSHPrivateKeyPath
-	execCh, isNew, errCh := flow.getExec(cmd, execRef)
+	execCh, isNew, errCh := flow.getExec(cmd, commandArgs)
 	ctx := cmd.Context()
 
 	for {
@@ -60,7 +79,7 @@ func runSSHConnectionCommand(cmd *cobra.Command, args []string, flow sshConnecti
 					os.Exit(1)
 				}
 
-				if err := ssh.Connect(ctx, e.Network, prvKey, sshArgs, command); err != nil {
+				if err := ssh.Connect(ctx, e.Network, prvKey, commandArgs.sshConnectionOptions, commandArgs.execCommand); err != nil {
 					ui.Errorf("%s", err)
 					os.Exit(1)
 				}
@@ -89,21 +108,21 @@ func runSSHConnectionCommand(cmd *cobra.Command, args []string, flow sshConnecti
 
 type sshCommandFlow struct{}
 
-func (s *sshCommandFlow) parseArgs(cmd *cobra.Command, args []string) (execRef string, sshConnectionOptions []string, command []string) {
-	var sshArgs []string
+func (s *sshCommandFlow) parseArgs(cmd *cobra.Command, args []string) execCmdArgs {
+	command := execCmdArgs{}
 
 	if len(args) == 1 {
-		execRef = args[0]
+		command.execRef = args[0]
 	}
 
 	// If the number of args is great than one, we always expect the first arg to be
 	// the separator flag "--". If the number of args is one, we expect it to be the
 	// execID or name
 	if len(args) > 1 {
-		execRef = args[0]
-		sshArgs = args[1:]
+		command.execRef = args[0]
+		command.sshConnectionOptions = args[1:]
 
-		if sshArgs[0] != "--" {
+		if command.sshConnectionOptions[0] != "--" {
 			const errMsg = "❌ Invalid arguments. If you want to pass arguments to the ssh command, " +
 				"use the -- flag. See `unweave ssh --help` for more information"
 			ui.Errorf(errMsg)
@@ -111,11 +130,11 @@ func (s *sshCommandFlow) parseArgs(cmd *cobra.Command, args []string) (execRef s
 		}
 	}
 
-	return execRef, sshArgs, nil
+	return command
 }
 
-func (s *sshCommandFlow) getExec(cmd *cobra.Command, execRef string) (chan types.Exec, bool, chan error) {
-	return getOrCreateExec(cmd, execRef)
+func (s *sshCommandFlow) getExec(cmd *cobra.Command, command execCmdArgs) (chan types.Exec, bool, chan error) {
+	return getOrCreateExec(cmd, command.execRef)
 }
 
 func (s *sshCommandFlow) onTerminate(ctx context.Context, execID string) error {

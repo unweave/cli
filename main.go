@@ -182,11 +182,12 @@ func init() {
 	execCmd := &cobra.Command{
 		GroupID: groupDev,
 		Short:   "Execute a command serverlessly",
-		Use:     "exec [flags] [session-name|id] -- [<command>]...",
+		Use:     "exec [flags] -- [<command>]...",
 		RunE:    withValidProjectURI(cmd.Exec),
 	}
 	execCmd.Flags().StringSliceVar(&config.SSHConnectionOptions, "connection-option", []string{}, "SSH connection config to include e.g StrictHostKeyChecking=yes")
 	execCmd.Flags().BoolVarP(&config.ExecAttach, "interactive", "i", false, "Stay attached in an interactive terminal session to the exec after starting the command")
+	execCmd.Flags().Int32VarP(&config.InternalPort, "port", "p", 0, "Port on the exec to expose as an https interface e.g. -p 8080")
 
 	rootCmd.AddCommand(execCmd)
 

@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/unweave/cli/config"
-	"github.com/unweave/cli/session"
 	"github.com/unweave/cli/ui"
 	"github.com/unweave/unweave/api/types"
 )
@@ -18,10 +18,14 @@ func Exec(cmd *cobra.Command, args []string) error {
 
 type execCommandFlow struct{}
 
-func (e *execCommandFlow) parseArgs(cmd *cobra.Command, args []string) (execRef string, sshConnectionOptions []string, command []string) {
-	var execArgs []string
+func (e *execCommandFlow) parseArgs(cmd *cobra.Command, args []string) execCmdArgs {
+	execArgs := execCmdArgs{
+		execRef:              "",
+		sshConnectionOptions: config.SSHConnectionOptions,
+	}
 
 	doubleDashIdx := cmd.ArgsLenAtDash()
+	argsBeforeDoubleDash := []string{}
 
 	if doubleDashIdx == -1 {
 		const errMsg = "❌ Invalid arguments. You must pass the -- flag. " +
@@ -31,39 +35,37 @@ func (e *execCommandFlow) parseArgs(cmd *cobra.Command, args []string) (execRef 
 	}
 
 	if doubleDashIdx >= 0 {
-		execArgs = args[:doubleDashIdx]
-		command = args[doubleDashIdx:]
-	} else {
-		execArgs = args
+		argsBeforeDoubleDash = args[:doubleDashIdx]
+		execArgs.userCommand = args[doubleDashIdx:]
 	}
 
-	if len(command) == 0 {
+	if len(execArgs.userCommand) == 0 {
 		const errMsg = "❌ Invalid arguments. You must pass a command after the -- flag. " +
 			"See `unweave exec --help` for more information"
 		ui.Errorf(errMsg)
 		os.Exit(1)
 	}
 
-	if len(execArgs) > 1 {
-		const errMsg = "❌ Invalid arguments. You may only pass one session-name or id to the exec command " +
-			"before the -- flag. See `unweave exec --help` for more information"
+	if len(argsBeforeDoubleDash) > 0 {
+		const errMsg = "❌ Invalid arguments. You may not pass argment before the -- flag. " +
+			"See `unweave exec --help` for more information"
 		ui.Errorf(errMsg)
 		os.Exit(1)
 	}
 
-	if len(execArgs) == 1 {
-		execRef = execArgs[0]
-	}
+	execArgs.execCommand = execArgs.userCommand
 
 	if !config.ExecAttach {
-		command = append([]string{"nohup"}, command...)
-		command = append(command, ">", "exec.log", "2>&1", "&", "echo", "$!", ">", "./pid.nohup", "&&", "sleep", "1")
+		escaped := strings.ReplaceAll(strings.Join(execArgs.userCommand, " "), "\"", "\\\"")
+
+		execArgs.execCommand = []string{"nohup", "bash", "-c", "\"", escaped, "\""}
+		execArgs.execCommand = append(execArgs.execCommand, ">", "exec.log", "2>&1", "&", "echo", "$!", ">", "./pid.nohup", "&&", "sleep", "1")
 	}
 
-	return execRef, sshConnectionOptions, command
+	return execArgs
 }
 
-func (e *execCommandFlow) getExec(cmd *cobra.Command, execRef string) (chan types.Exec, bool, chan error) {
+func (e *execCommandFlow) getExec(cmd *cobra.Command, execCmd execCmdArgs) (chan types.Exec, bool, chan error) {
 	ctx := cmd.Context()
 
 	sendError := func(err error) chan error {
@@ -72,17 +74,16 @@ func (e *execCommandFlow) getExec(cmd *cobra.Command, execRef string) (chan type
 		return errCh
 	}
 
-	exec, err := getExecByNameOrID(ctx, execRef)
+	ui.Infof("Initializing session...")
+
+	execCh, errCh, err := execCreateAndWatch(ctx, types.ExecConfig{Command: execCmd.userCommand}, types.GitConfig{})
 	if err != nil {
 		return nil, false, sendError(err)
 	}
 
-	execCh, errCh, err := session.Wait(ctx, exec.ID)
-	if err != nil {
-		return nil, false, sendError(err)
-	}
+	const alwaysNewExec = true
 
-	return execCh, false, errCh
+	return execCh, alwaysNewExec, errCh
 }
 
 func (e *execCommandFlow) onTerminate(ctx context.Context, execID string) error {
