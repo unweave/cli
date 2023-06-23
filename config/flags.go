@@ -28,6 +28,9 @@ var GPUType string
 // CPUs is the number of VCPUs to allocate.
 var CPUs int
 
+// CPUType is the type of CPU to use.
+var CPUType string
+
 // Memory is the amount of RAM to allocate in GB.
 var Memory int
 

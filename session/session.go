@@ -15,40 +15,46 @@ import (
 // Create attempts to create a session using the Exec spec provided, uses GPUs in the config if not, returns a 503 out-of-capacity error.
 // Renders newly created sessions to the UI implicitly.
 func Create(ctx context.Context, params types.ExecCreateParams) (string, error) {
-	if params.Spec.GPU.Type == "" {
-		exec, err := createSessionFromConfigGPUTypes(ctx, params)
-		renderSessionCreated(exec)
+	var (
+		exec *types.Exec
+		err  error
 
-		if err != nil {
-			return "", err
+		hasGpuType = params.Spec.GPU.Type != ""
+		hasCpuType = params.Spec.CPU.Type != ""
+	)
+
+	switch {
+	case hasGpuType && hasCpuType:
+		// error, not possible to fulfil
+		return "", &types.Error{
+			Message:    "Cannot set gpu type and cpu type",
+			Suggestion: "Set just one of gpu type and cpu type",
+			Err:        errors.New("both gpu and cpu types set"),
 		}
-		return exec.ID, nil
-	}
 
-	exec, err := createSession(ctx, params, params.Spec.GPU.Type)
+	case !hasGpuType && !hasCpuType:
+		exec, err = createSessionFromConfigGPUTypes(ctx, params)
+
+	case hasGpuType:
+		exec, err = createSession(ctx, params)
+
+	case hasCpuType:
+		exec, err = createSession(ctx, params)
+	}
 	if err != nil {
-		var e *types.Error
-		if errors.As(err, &e) {
-			if err != nil {
-				return "", err
-			}
-		} else {
-			return "", err
-		}
+		return "", err
 	}
+
 	renderSessionCreated(exec)
 
-	return exec.ID, err
+	return exec.ID, nil
 }
 
-func createSession(ctx context.Context, params types.ExecCreateParams, gpuType string) (*types.Exec, error) {
+func createSession(ctx context.Context, params types.ExecCreateParams) (*types.Exec, error) {
 	uwc := config.InitUnweaveClient()
 	owner, projectName := config.GetProjectOwnerAndName()
 
-	useParams := params
-	useParams.Spec.GPU.Type = gpuType
-
-	exec, err := uwc.Exec.Create(ctx, owner, projectName, useParams)
+	exec, err := uwc.Exec.Create(ctx, owner, projectName, params)
 	if err != nil {
 		return nil, err
 	}
@@ -61,8 +67,10 @@ func createSessionFromConfigGPUTypes(ctx context.Context, params types.ExecCreat
 
 	var exec *types.Exec
 	var err error
+
 	for _, gpuType := range gpuTypesFromConfig {
-		exec, err = createSession(ctx, params, gpuType)
+		params.Spec.GPU.Type = gpuType
+		exec, err = createSession(ctx, params)
 		if err != nil {
 			if isOutOfCapacityError(err) {
 				continue
@@ -110,6 +118,11 @@ func renderSessionCreated(exec *types.Exec) {
 		return
 	}
 
+	nodeType := exec.Spec.GPU.Type
+	if nodeType == "" {
+		nodeType = exec.Spec.CPU.Type
+	}
+
 	results := []ui.ResultEntry{
 		{Key: "Name", Value: exec.Name},
 		{Key: "ID", Value: exec.ID},
@@ -122,7 +135,7 @@ func renderSessionCreated(exec *types.Exec) {
 		// Uncomment when issues setting RAM are resolved
 		// {Key: "RAM", Value: fmt.Sprintf("%vGB", exec.Specs.RAM.Min)},
 		{Key: "HDD", Value: fmt.Sprintf("%vGB", exec.Spec.HDD.Min)},
-		{Key: "GPU Type", Value: fmt.Sprintf("%s", exec.Spec.GPU.Type)},
+		{Key: "Node type", Value: nodeType},
 		{Key: "NumGPUs", Value: fmt.Sprintf("%v", exec.Spec.GPU.Count.Min)},
 		{Key: "Volumes", Value: ui.FormatVolumes(exec.Volumes)},
 	}

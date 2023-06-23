@@ -192,6 +192,7 @@ func init() {
 	execCmd.Flags().IntVar(&config.GPUMemory, "gpu-mem", 0, "Memory of GPU if applicable for a gpuType, e.g., 12")
 	execCmd.Flags().StringVar(&config.GPUType, "gpu-type", "", "Type of GPU to use, e.g., rtx_5000")
 	execCmd.Flags().IntVar(&config.CPUs, "cpus", 0, "Number of VCPUs to allocate, e.g., 4")
+	execCmd.Flags().StringVar(&config.CPUType, "cpu-type", "", "Type of CPU to use, e.g., xeon_v4")
 	execCmd.Flags().IntVar(&config.Memory, "mem", 0, "Amount of RAM to allocate in GB, e.g., 16")
 	execCmd.Flags().IntVar(&config.HDD, "hdd", 0, "Amount of hard-disk space to allocate in GB")
 	execCmd.Flags().StringSliceVarP(&config.Volumes, "volume", "v", []string{}, "Mount a volume to the exec. e.g., -v <volume-name>:/data")
@@ -279,6 +280,7 @@ func init() {
 	newCmd.Flags().IntVar(&config.GPUMemory, "gpu-mem", 0, "Memory of GPU if applicable for a gpuType, e.g., 12")
 	newCmd.Flags().StringVar(&config.GPUType, "gpu-type", "", "Type of GPU to use, e.g., rtx_5000")
 	newCmd.Flags().IntVar(&config.CPUs, "cpus", 0, "Number of VCPUs to allocate, e.g., 4")
+	newCmd.Flags().StringVar(&config.CPUType, "cpu-type", "", "Type of CPU to use, e.g., xeon_v4")
 	newCmd.Flags().IntVar(&config.Memory, "mem", 0, "Amount of RAM to allocate in GB, e.g., 16")
 	newCmd.Flags().IntVar(&config.HDD, "hdd", 0, "Amount of hard-disk space to allocate in GB")
 	newCmd.Flags().StringSliceVarP(&config.Volumes, "volume", "v", []string{}, "Mount a volume to the exec. e.g., -v <volume-name>:/data")
@@ -327,6 +329,7 @@ func init() {
 	sshCmd.Flags().IntVar(&config.GPUMemory, "gpu-mem", 0, "Memory of GPU if applicable for a gpuType, e.g., 12")
 	sshCmd.Flags().StringVar(&config.GPUType, "gpu-type", "", "Type of GPU to use, e.g., rtx_5000")
 	sshCmd.Flags().IntVar(&config.CPUs, "cpus", 0, "Number of VCPUs to allocate, e.g., 4")
+	sshCmd.Flags().StringVar(&config.CPUType, "cpu-type", "", "Type of CPU to use, e.g., xeon_v4")
 	// Setting RAM causes issues right now
 	sshCmd.Flags().IntVar(&config.Memory, "mem", 0, "Amount of RAM to allocate in GB, e.g., 16")
 	sshCmd.Flags().IntVar(&config.HDD, "hdd", 0, "Amount of hard-disk space to allocate in GB")

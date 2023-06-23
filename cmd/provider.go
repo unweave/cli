@@ -13,6 +13,7 @@ import (
 
 func nodeTypesToTable(nodeTypes []types.NodeType) ([]ui.Column, []ui.Row) {
 	cols := []ui.Column{
+		{Title: "Type", Width: 7},
 		{Title: "Name", Width: 25},
 		{Title: "ID", Width: 21},
 		{Title: "Price", Width: 10},
@@ -27,6 +28,7 @@ func nodeTypesToTable(nodeTypes []types.NodeType) ([]ui.Column, []ui.Row) {
 			regions = strings.Join(nodeType.Regions, ", ")
 		}
 		row := ui.Row{
+			nodeType.Type,
 			fmt.Sprintf("%s", dashIfZeroValue(tools.StringInv(nodeType.Name))),
 			fmt.Sprintf("%s", dashIfZeroValue(nodeType.ID)),
 			fmt.Sprintf("$%2.2f", float32(tools.IntInv(nodeType.Price))/100),
