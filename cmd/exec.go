@@ -1,12 +1,9 @@
 package cmd
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -15,148 +12,83 @@ import (
 	"github.com/unweave/unweave/api/types"
 )
 
-func gitIsStatusClean() (bool, error) {
-	var stdout, stderr bytes.Buffer
-	cmd := exec.Command("git", "status", "--porcelain")
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		return false, fmt.Errorf("failed to get git status: %s %s", stderr.String(), stdout.String())
-	}
-	return strings.TrimSpace(stdout.String()) == "", nil
-}
-
-func getGitRemoteURL() (string, error) {
-	var stdout, stderr bytes.Buffer
-	cmd := exec.Command("git", "config", "--get", "remote.origin.url")
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("failed to get git remote URL: %s", stderr.String())
-	}
-	url := strings.TrimSuffix(strings.TrimSpace(stdout.String()), ".git")
-	return url, nil
-}
-
-func gitAdd() error {
-	var stdout, stderr bytes.Buffer
-	cmd := exec.Command("git", "add", ".")
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to add: %s %s", stderr.String(), stdout.String())
-	}
-	return nil
-}
-
-func gitCommit() (string, error) {
-	var stdout, stderr bytes.Buffer
-
-	clean, err := gitIsStatusClean()
-	if err != nil {
-		return "", err
-	}
-
-	if !clean {
-		cmd := exec.Command("git", "commit", "-m", "uw:auto-commit") // TODO: add commit message
-		cmd.Stdout = &stdout
-		cmd.Stderr = &stderr
-
-		if err := cmd.Run(); err != nil {
-			return "", fmt.Errorf("failed to commit: %s %s", stderr.String(), stdout.String())
-		}
-	}
-
-	// Get Commit ID
-	cmd := exec.Command("git", "rev-parse", "HEAD")
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("failed to get commit ID: %s %s", stderr.String(), stdout.String())
-	}
-	return strings.TrimSpace(stdout.String()), nil
-}
-
-func gitPush() error {
-	var stdout, stderr bytes.Buffer
-	cmd := exec.Command("git", "push")
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to push: %s %s", stderr.String(), stdout.String())
-	}
-	return nil
-}
-
 func Exec(cmd *cobra.Command, args []string) error {
-	cmd.SilenceUsage = true
+	return runSSHConnectionCommand(cmd, args, &execCommandFlow{})
+}
 
-	dir, err := config.GetActiveProjectPath()
-	if err != nil {
-		ui.Errorf("Couldn't get active project path. Make sure you're in a project " +
-			"directory or supply a path: \n" + err.Error())
+type execCommandFlow struct{}
+
+func (e *execCommandFlow) parseArgs(cmd *cobra.Command, args []string) execCmdArgs {
+	execArgs := execCmdArgs{
+		execRef:              "",
+		sshConnectionOptions: config.SSHConnectionOptions,
+	}
+
+	doubleDashIdx := cmd.ArgsLenAtDash()
+	argsBeforeDoubleDash := []string{}
+
+	if doubleDashIdx == -1 {
+		const errMsg = "❌ Invalid arguments. You must pass the -- flag. " +
+			"See `unweave exec --help` for more information"
+		ui.Errorf(errMsg)
 		os.Exit(1)
 	}
 
-	if s, err := os.Stat(dir); err != nil || !s.IsDir() {
-		ui.Errorf("Couldn't find directory %q", dir)
+	if doubleDashIdx >= 0 {
+		argsBeforeDoubleDash = args[:doubleDashIdx]
+		execArgs.userCommand = args[doubleDashIdx:]
+	}
+
+	if len(execArgs.userCommand) == 0 {
+		const errMsg = "❌ Invalid arguments. You must pass a command after the -- flag. " +
+			"See `unweave exec --help` for more information"
+		ui.Errorf(errMsg)
 		os.Exit(1)
 	}
 
-	ui.Infof("Gathering context from %q", dir)
-	buf := &bytes.Buffer{}
-	if err := gatherContext(dir, buf, "zip"); err != nil {
-		return err
+	if len(argsBeforeDoubleDash) > 0 {
+		const errMsg = "❌ Invalid arguments. You may not pass argment before the -- flag. " +
+			"See `unweave exec --help` for more information"
+		ui.Errorf(errMsg)
+		os.Exit(1)
 	}
 
-	// check config to see if the user has auto-commit enabled
-	// if auto-commit is set to ask, ask the user if they want to commit
-	// if yes, get git remote url, commit and push
+	execArgs.execCommand = execArgs.userCommand
 
-	gitRemote, err := getGitRemoteURL()
+	if !config.ExecAttach {
+		escaped := strings.ReplaceAll(strings.Join(execArgs.userCommand, " "), "\"", "\\\"")
+
+		execArgs.execCommand = []string{"nohup", "bash", "-c", "\"", escaped, "\""}
+		execArgs.execCommand = append(execArgs.execCommand, ">", "exec.log", "2>&1", "&", "echo", "$!", ">", "./pid.nohup", "&&", "sleep", "1")
+	}
+
+	return execArgs
+}
+
+func (e *execCommandFlow) getExec(cmd *cobra.Command, execCmd execCmdArgs) (chan types.Exec, bool, chan error) {
+	ctx := cmd.Context()
+
+	sendError := func(err error) chan error {
+		errCh := make(chan error, 1)
+		errCh <- err
+		return errCh
+	}
+
+	ui.Infof("Initializing session...")
+
+	execCh, errCh, err := execCreateAndWatch(ctx, types.ExecConfig{Command: execCmd.userCommand}, types.GitConfig{})
 	if err != nil {
-		return err
-	}
-	if err = gitAdd(); err != nil {
-		return err
+		return nil, false, sendError(err)
 	}
 
-	commitID, err := gitCommit()
-	if err != nil {
-		return err
-	}
-	if err = gitPush(); err != nil {
-		return err
-	}
-	commitURL := fmt.Sprintf("%s/commit/%s", gitRemote, commitID)
-	ui.Infof("Commit URL: %s", commitURL)
+	const alwaysNewExec = true
 
-	execConfig := types.ExecConfig{
-		Image:   "",
-		Command: args,
-		Keys:    nil,
-		Volumes: nil,
-		Src: &types.SourceContext{
-			MountPath: "/home/ubuntu",
-			Context:   io.NopCloser(buf),
-		},
-	}
+	return execCh, alwaysNewExec, errCh
+}
 
-	gitConfig := types.GitConfig{
-		CommitID: &commitID,
-		GitURL:   &gitRemote,
-	}
+func (e *execCommandFlow) onTerminate(ctx context.Context, execID string) error {
+	ui.Infof("Session %q exited. Use 'unweave terminate' to stop the session.", execID)
 
-	_, err = sessionCreate(cmd.Context(), execConfig, gitConfig)
-	if err != nil {
-		return err
-	}
-
-	// TODO: subscribe to logs
 	return nil
 }
 

@@ -388,10 +388,10 @@ func SessionTerminate(cmd *cobra.Command, args []string) error {
 
 // sessionSelectSSHExecRef selects an exec id from all sessions in the Unweave environment or whether to create a new
 // provides an option to create a new Exec an error or exits if unrecoverable
-func sessionSelectSSHExecRef(cmd *cobra.Command, execRef string, allowNew bool) (execID string, isNewSession bool, err error) {
+func sessionSelectSSHExecRef(ctx context.Context, execRef string, allowNew bool) (execID string, isNewSession bool, err error) {
 	const newSessionOpt = "✨  Create a new session"
 
-	execs, err := getExecs(cmd.Context())
+	execs, err := getExecs(ctx)
 	if err != nil {
 		if e, ok := err.(*types.Error); ok {
 			uie := &ui.Error{Error: e}
@@ -410,7 +410,7 @@ func sessionSelectSSHExecRef(cmd *cobra.Command, execRef string, allowNew bool) 
 		cobraOpts, selectionIdByIdx = formatExecCobraOpts(execs, newSessionOpt)
 	}
 
-	execRef, err = renderCobraSelection(cmd.Context(), cobraOpts, selectionIdByIdx, "Select a session to connect to")
+	execRef, err = renderCobraSelection(ctx, cobraOpts, selectionIdByIdx, "Select a session to connect to")
 	if err != nil {
 		return "", false, err
 	}

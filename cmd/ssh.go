@@ -22,30 +22,39 @@ import (
 
 // SSH handles the Cobra command for SSH
 func SSH(cmd *cobra.Command, args []string) error {
-	var sshArgs []string
-	var execRef string // Can be execID or name
+	return runSSHConnectionCommand(cmd, args, &sshCommandFlow{})
+}
 
-	if len(args) == 1 {
-		execRef = args[0]
-	}
+type execCmdArgs struct {
+	execRef              string
+	sshConnectionOptions []string
 
-	// If the number of args is great than one, we always expect the first arg to be
-	// the separator flag "--". If the number of args is one, we expect it to be the
-	// execID or name
-	if len(args) > 1 {
-		execRef = args[0]
-		sshArgs = args[1:]
+	// userCommand is the string command
+	// parts given by the user. This should
+	// be recorded as what the user ran.
+	userCommand []string
 
-		if sshArgs[0] != "--" {
-			const errMsg = "❌ Invalid arguments. If you want to pass arguments to the ssh command, " +
-				"use the -- flag. See `unweave ssh --help` for more information"
-			ui.Errorf(errMsg)
-			os.Exit(1)
-		}
-	}
+	// executeCommand is the string command
+	// parts that will be executed on the exec
+	// this should be used in the SSH connection.
+	execCommand []string
+
+	// attached denotes if the command will
+	// run in attached mode, or detach.
+	attached bool
+}
+
+type sshConnectionCommandFlow interface {
+	parseArgs(cmd *cobra.Command, args []string) execCmdArgs
+	getExec(cmd *cobra.Command, command execCmdArgs) (chan types.Exec, bool, chan error)
+	onTerminate(ctx context.Context, execID string) error
+}
+
+func runSSHConnectionCommand(cmd *cobra.Command, args []string, flow sshConnectionCommandFlow) error {
+	commandArgs := flow.parseArgs(cmd, args)
 
 	prvKey := config.SSHPrivateKeyPath
-	execCh, isNew, errCh := getOrCreateExec(cmd, execRef)
+	execCh, isNew, errCh := flow.getExec(cmd, commandArgs)
 	ctx := cmd.Context()
 
 	for {
@@ -70,17 +79,15 @@ func SSH(cmd *cobra.Command, args []string) error {
 					os.Exit(1)
 				}
 
-				if err := ssh.Connect(ctx, e.Network, prvKey, sshArgs); err != nil {
+				if err := ssh.Connect(ctx, e.Network, prvKey, commandArgs.sshConnectionOptions, commandArgs.execCommand); err != nil {
 					ui.Errorf("%s", err)
 					os.Exit(1)
 				}
 
-				if terminate := ui.Confirm("SSH session terminated. Do you want to terminate the session?", "n"); terminate {
-					if err := sessionTerminate(ctx, e.ID); err != nil {
-						return err
-					}
-					ui.Infof("Session %q terminated.", e.ID)
+				if err := flow.onTerminate(ctx, e.ID); err != nil {
+					return err
 				}
+
 				return nil
 			}
 
@@ -97,6 +104,48 @@ func SSH(cmd *cobra.Command, args []string) error {
 			return nil
 		}
 	}
+}
+
+type sshCommandFlow struct{}
+
+func (s *sshCommandFlow) parseArgs(cmd *cobra.Command, args []string) execCmdArgs {
+	command := execCmdArgs{}
+
+	if len(args) == 1 {
+		command.execRef = args[0]
+	}
+
+	// If the number of args is great than one, we always expect the first arg to be
+	// the separator flag "--". If the number of args is one, we expect it to be the
+	// execID or name
+	if len(args) > 1 {
+		command.execRef = args[0]
+		command.sshConnectionOptions = args[1:]
+
+		if command.sshConnectionOptions[0] != "--" {
+			const errMsg = "❌ Invalid arguments. If you want to pass arguments to the ssh command, " +
+				"use the -- flag. See `unweave ssh --help` for more information"
+			ui.Errorf(errMsg)
+			os.Exit(1)
+		}
+	}
+
+	return command
+}
+
+func (s *sshCommandFlow) getExec(cmd *cobra.Command, command execCmdArgs) (chan types.Exec, bool, chan error) {
+	return getOrCreateExec(cmd, command.execRef)
+}
+
+func (s *sshCommandFlow) onTerminate(ctx context.Context, execID string) error {
+	if terminate := ui.Confirm("SSH session terminated. Do you want to terminate the session?", "n"); terminate {
+		if err := sessionTerminate(ctx, execID); err != nil {
+			return err
+		}
+		ui.Infof("Session %q terminated.", execID)
+	}
+
+	return nil
 }
 
 // getOrCreateExec handles the flow to spawn a new Exec or get an existing one, returns whether to expect a new Exec
@@ -124,7 +173,7 @@ func getOrCreateExec(cmd *cobra.Command, execRef string) (chan types.Exec, bool,
 	} else {
 		var createNewExec bool
 		if execRef == "" {
-			execRef, createNewExec, err = sessionSelectSSHExecRef(cmd, execRef, false)
+			execRef, createNewExec, err = sessionSelectSSHExecRef(ctx, execRef, false)
 			if err != nil {
 				errCh <- err
 				return nil, false, errCh

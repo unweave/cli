@@ -12,7 +12,7 @@ import (
 	"github.com/unweave/unweave/api/types"
 )
 
-func Connect(ctx context.Context, connectionInfo types.ExecNetwork, prvKeyPath string, args []string) error {
+func Connect(ctx context.Context, connectionInfo types.ExecNetwork, prvKeyPath string, args []string, command []string) error {
 	overrideUserKnownHostsFile := false
 	overrideStrictHostKeyChecking := false
 
@@ -36,9 +36,15 @@ func Connect(ctx context.Context, connectionInfo types.ExecNetwork, prvKeyPath s
 		args = append(args, "-o", "StrictHostKeyChecking=no")
 	}
 
+	sshArgs := append(args, fmt.Sprintf("%s@%s", connectionInfo.User, connectionInfo.Host))
+
+	if len(command) != 0 {
+		sshArgs = append(sshArgs, command...)
+	}
+
 	sshCommand := exec.Command(
 		"ssh",
-		append(args, fmt.Sprintf("%s@%s", connectionInfo.User, connectionInfo.Host))...,
+		sshArgs...,
 	)
 
 	ui.Debugf("Running SSH command: %s", strings.Join(sshCommand.Args, " "))
