@@ -64,3 +64,8 @@ var NoCopySource = true
 
 // Volumes is a list of volumes to mount to the session
 var Volumes []string
+
+// FollowLogs denotes if the logs command should stay attached
+// and print logs as they come in. Default false, which means
+// print only the logs received so far.
+var FollowLogs = false

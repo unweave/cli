@@ -59,7 +59,7 @@ func (e *execCommandFlow) parseArgs(cmd *cobra.Command, args []string) execCmdAr
 		escaped := strings.ReplaceAll(strings.Join(execArgs.userCommand, " "), "\"", "\\\"")
 
 		execArgs.execCommand = []string{"nohup", "bash", "-c", "\"", escaped, "\""}
-		execArgs.execCommand = append(execArgs.execCommand, ">", "exec.log", "2>&1", "&", "echo", "$!", ">", "./pid.nohup", "&&", "sleep", "1")
+		execArgs.execCommand = append(execArgs.execCommand, ">", execLogFile, "2>&1", "&", "echo", "$!", ">", "./pid.nohup", "&&", "sleep", "1")
 	}
 
 	return execArgs

@@ -201,6 +201,17 @@ func init() {
 
 	rootCmd.AddCommand(execCmd)
 
+	logsCmd := &cobra.Command{
+		GroupID: groupDev,
+		Short:   "Print logs from an exec",
+		Use:     "logs [flags] [session-id|name]",
+		RunE:    withValidProjectURI(cmd.Logs),
+	}
+	logsCmd.Flags().StringSliceVar(&config.SSHConnectionOptions, "connection-option", []string{}, "SSH connection config to include e.g StrictHostKeyChecking=yes")
+	logsCmd.Flags().BoolVarP(&config.FollowLogs, "follow", "f", false, "Stream logs as they are created")
+
+	rootCmd.AddCommand(logsCmd)
+
 	linkCmd := &cobra.Command{
 		Use:     "link [project-id]",
 		Aliases: []string{"init"}, // this is temp
