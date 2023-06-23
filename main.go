@@ -185,9 +185,19 @@ func init() {
 		Use:     "exec [flags] -- [<command>]...",
 		RunE:    withValidProjectURI(cmd.Exec),
 	}
-	execCmd.Flags().StringSliceVar(&config.SSHConnectionOptions, "connection-option", []string{}, "SSH connection config to include e.g StrictHostKeyChecking=yes")
-	execCmd.Flags().BoolVarP(&config.ExecAttach, "interactive", "i", false, "Stay attached in an interactive terminal session to the exec after starting the command")
+	execCmd.Flags().StringVarP(&config.BuildID, "image", "i", "", "Build ID of the container image to use")
+	execCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
+	execCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
+	execCmd.Flags().IntVar(&config.GPUs, "gpus", 0, "Number of GPUs to allocate for a gpuType, e.g., 2")
+	execCmd.Flags().IntVar(&config.GPUMemory, "gpu-mem", 0, "Memory of GPU if applicable for a gpuType, e.g., 12")
+	execCmd.Flags().StringVar(&config.GPUType, "gpu-type", "", "Type of GPU to use, e.g., rtx_5000")
+	execCmd.Flags().IntVar(&config.CPUs, "cpus", 0, "Number of VCPUs to allocate, e.g., 4")
+	execCmd.Flags().IntVar(&config.Memory, "mem", 0, "Amount of RAM to allocate in GB, e.g., 16")
+	execCmd.Flags().IntVar(&config.HDD, "hdd", 0, "Amount of hard-disk space to allocate in GB")
+	execCmd.Flags().StringSliceVarP(&config.Volumes, "volume", "v", []string{}, "Mount a volume to the exec. e.g., -v <volume-name>:/data")
 	execCmd.Flags().Int32VarP(&config.InternalPort, "port", "p", 0, "Port on the exec to expose as an https interface e.g. -p 8080")
+	execCmd.Flags().BoolVar(&config.ExecAttach, "interactive", false, "Stay attached in an interactive terminal session to the exec after starting the command")
+	execCmd.Flags().StringSliceVar(&config.SSHConnectionOptions, "connection-option", []string{}, "SSH connection config to include e.g StrictHostKeyChecking=yes")
 
 	rootCmd.AddCommand(execCmd)
 
