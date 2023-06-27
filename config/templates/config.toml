@@ -15,7 +15,7 @@ default_provider = 'unweave'
 # If the your list is `node_type = ["a100", "v100"]`, the `a100` node type will be used by
 # defualt. If `a100` is not available, `v100` will be used, until the end of the list. If
 # none of the node types are available, Unweave will return an error.
-node_types = ["rtx_4000", "a40"]
+node_types = ["intel"]
 
 {{- range .Providers}}
 

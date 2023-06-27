@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 
+	"github.com/unweave/cli/client"
 	"github.com/unweave/cli/config"
 	"github.com/unweave/cli/ui"
 	"github.com/unweave/unweave/api/types"
@@ -15,40 +15,58 @@ import (
 // Create attempts to create a session using the Exec spec provided, uses GPUs in the config if not, returns a 503 out-of-capacity error.
 // Renders newly created sessions to the UI implicitly.
 func Create(ctx context.Context, params types.ExecCreateParams) (string, error) {
-	if params.Spec.GPU.Type == "" {
-		exec, err := createSessionFromConfigGPUTypes(ctx, params)
-		renderSessionCreated(exec)
+	factory := newSessionFactory()
 
-		if err != nil {
-			return "", err
-		}
-		return exec.ID, nil
-	}
-
-	exec, err := createSession(ctx, params, params.Spec.GPU.Type)
+	exec, err := factory.createSession(ctx, params)
 	if err != nil {
-		var e *types.Error
-		if errors.As(err, &e) {
-			if err != nil {
-				return "", err
-			}
-		} else {
-			return "", err
-		}
+		return "", fmt.Errorf("error creating session: %w", err)
 	}
+
 	renderSessionCreated(exec)
 
-	return exec.ID, err
+	return exec.ID, nil
 }
 
-func createSession(ctx context.Context, params types.ExecCreateParams, gpuType string) (*types.Exec, error) {
+type sessionFactory struct {
+	uwc         *client.Client
+	projectName string
+	owner       string
+}
+
+func newSessionFactory() sessionFactory {
 	uwc := config.InitUnweaveClient()
 	owner, projectName := config.GetProjectOwnerAndName()
 
-	useParams := params
-	useParams.Spec.GPU.Type = gpuType
+	return sessionFactory{uwc: uwc, projectName: projectName, owner: owner}
+}
 
-	exec, err := uwc.Exec.Create(ctx, owner, projectName, useParams)
+func (s sessionFactory) createSession(ctx context.Context, params types.ExecCreateParams) (*types.Exec, error) {
+	var (
+		exec *types.Exec
+		err  error
+
+		hasGpuType = params.Spec.GPU.Type != ""
+		hasCpuType = params.Spec.CPU.Type != ""
+	)
+
+	switch {
+	case hasGpuType && hasCpuType:
+		// error, not possible to fulfil
+		return nil, &types.Error{
+			Message:    "Cannot set gpu type and cpu type",
+			Suggestion: "Set just one of gpu type and cpu type",
+			Err:        errors.New("both gpu and cpu types set"),
+		}
+
+	case !hasGpuType && !hasCpuType:
+		exec, err = s.createSessionFromConfigNodeTypes(ctx, params)
+
+	case hasGpuType:
+		exec, err = s.createExecSession(ctx, params)
+
+	case hasCpuType:
+		exec, err = s.createExecSession(ctx, params)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -56,13 +74,43 @@ func createSession(ctx context.Context, params types.ExecCreateParams, gpuType s
 	return exec, nil
 }
 
-func createSessionFromConfigGPUTypes(ctx context.Context, params types.ExecCreateParams) (*types.Exec, error) {
-	gpuTypesFromConfig := gpuTypesFromConfig()
+func (s sessionFactory) createExecSession(ctx context.Context, params types.ExecCreateParams) (*types.Exec, error) {
+	exec, err := s.uwc.Exec.Create(ctx, s.owner, s.projectName, params)
+	if err != nil {
+		return nil, err
+	}
 
-	var exec *types.Exec
-	var err error
-	for _, gpuType := range gpuTypesFromConfig {
-		exec, err = createSession(ctx, params, gpuType)
+	return exec, nil
+}
+
+func (s sessionFactory) createSessionFromConfigNodeTypes(ctx context.Context, params types.ExecCreateParams) (*types.Exec, error) {
+	nodeTypesFromConfig := nodeTypesFromConfig()
+
+	const includeOnlyAvailable = true
+
+	nodeTypes, err := s.uwc.Provider.ListNodeTypes(ctx, params.Provider, includeOnlyAvailable)
+	if err != nil {
+		return nil, &types.Error{
+			Message:    "Cannot find gpu and cpu node types",
+			Suggestion: "",
+			Err:        errors.New("failed to list node types"),
+		}
+	}
+
+	gpuNodeType := make(map[string]bool)
+
+	for _, n := range nodeTypes {
+		gpuNodeType[n.ID] = n.Type == "GPU"
+	}
+
+	for _, nodeType := range nodeTypesFromConfig {
+		if gpuNodeType[nodeType] {
+			params.Spec.GPU.Type = nodeType
+		} else {
+			params.Spec.CPU.Type = nodeType
+		}
+
+		exec, err := s.createExecSession(ctx, params)
 		if err != nil {
 			if isOutOfCapacityError(err) {
 				continue
@@ -73,7 +121,11 @@ func createSessionFromConfigGPUTypes(ctx context.Context, params types.ExecCreat
 		return exec, nil
 	}
 
-	return nil, err
+	return nil, &types.Error{
+		Message:    "No default node type provided",
+		Suggestion: "Update node_types in .unweave/config.toml or pass --gpu-type flag",
+		Err:        errors.New("no default node types"),
+	}
 }
 
 func isOutOfCapacityError(err error) bool {
@@ -84,30 +136,31 @@ func isOutOfCapacityError(err error) bool {
 	return false
 }
 
-// gpuTypesFromConfig returns the GPU types in config.toml or a set of defaults, never nil
-func gpuTypesFromConfig() []string {
-	var gpuTypeIDs []string
+// nodeTypesFromConfig returns the GPU types in config.toml or a set of defaults, never nil
+func nodeTypesFromConfig() []string {
+	var nodeTypeIDs []string
 	provider := config.Config.Project.DefaultProvider
 	if config.Provider != "" {
 		provider = config.Provider
 	}
 	if p, ok := config.Config.Project.Providers[provider]; ok {
-		gpuTypeIDs = p.NodeTypes
+		nodeTypeIDs = p.NodeTypes
 	}
-	if len(gpuTypeIDs) == 0 {
-		gpuTypeIDs = config.DefaultGPUTypes
-	}
-	if len(gpuTypeIDs) == 0 {
-		ui.HandleError(fmt.Errorf("❌ Please specify default GPU types in .unweave/config.toml and try again"))
-		os.Exit(1)
+	if len(nodeTypeIDs) == 0 {
+		nodeTypeIDs = config.DefaultNodeTypes
 	}
 
-	return gpuTypeIDs
+	return nodeTypeIDs
 }
 
 func renderSessionCreated(exec *types.Exec) {
 	if exec == nil {
 		return
+	}
+
+	nodeType := exec.Spec.GPU.Type
+	if nodeType == "" {
+		nodeType = exec.Spec.CPU.Type
 	}
 
 	results := []ui.ResultEntry{
@@ -122,7 +175,7 @@ func renderSessionCreated(exec *types.Exec) {
 		// Uncomment when issues setting RAM are resolved
 		// {Key: "RAM", Value: fmt.Sprintf("%vGB", exec.Specs.RAM.Min)},
 		{Key: "HDD", Value: fmt.Sprintf("%vGB", exec.Spec.HDD.Min)},
-		{Key: "GPU Type", Value: fmt.Sprintf("%s", exec.Spec.GPU.Type)},
+		{Key: "Node type", Value: nodeType},
 		{Key: "NumGPUs", Value: fmt.Sprintf("%v", exec.Spec.GPU.Count.Min)},
 		{Key: "Volumes", Value: ui.FormatVolumes(exec.Volumes)},
 	}

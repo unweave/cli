@@ -233,9 +233,13 @@ func renderSessionListWithSessions(sessions []types.Exec) {
 		},
 		{Title: "vCPUs", Width: 5},
 		{
-			Title: "GPU",
-			Width: 5 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
-				return exec.Spec.GPU.Type
+			Title: "Node type", Width: 5 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
+				nodeType := exec.Spec.GPU.Type
+				if nodeType == "" {
+					nodeType = exec.Spec.CPU.Type
+				}
+
+				return nodeType
 			}),
 		},
 		{Title: "NumGPUs", Width: 12},
@@ -300,10 +304,15 @@ func renderSessionListWithSessions(sessions []types.Exec) {
 			hostname = fmt.Sprintf("https://%s (internal port: %d)", s.Network.HTTPService.Hostname, s.Network.HTTPService.InternalPort)
 		}
 
+		nodeType := s.Spec.GPU.Type
+		if nodeType == "" {
+			nodeType = s.Spec.CPU.Type
+		}
+
 		row := ui.Row{
 			fmt.Sprintf("%s", s.Name),
 			fmt.Sprintf("%v", s.Spec.CPU.Min),
-			fmt.Sprintf("%s", s.Spec.GPU.Type),
+			nodeType,
 			fmt.Sprintf("%v", s.Spec.GPU.Count.Min),
 			fmt.Sprintf("%v", s.Spec.HDD.Min),
 			// fmt.Sprintf("%v", s.Specs.RAM.Min),
@@ -451,9 +460,11 @@ func parseHardwareSpec() (types.HardwareSpec, error) {
 				Max: config.GPUMemory,
 			},
 		},
-		CPU: types.HardwareRequestRange{
-			Min: config.CPUs,
-			Max: config.CPUs,
+		CPU: types.CPU{
+			HardwareRequestRange: types.HardwareRequestRange{
+				Min: config.CPUs,
+				Max: config.CPUs,
+			},
 		},
 		RAM: types.HardwareRequestRange{
 			Min: config.Memory,
