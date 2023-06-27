@@ -6,4 +6,4 @@ const (
 	UnweaveSSHKeysDir    = ".unweave_global/.ssh"
 )
 
-var DefaultGPUTypes = []string{""}
+var DefaultNodeTypes = []string{}

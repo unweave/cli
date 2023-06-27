@@ -461,7 +461,6 @@ func parseHardwareSpec() (types.HardwareSpec, error) {
 			},
 		},
 		CPU: types.CPU{
-			Type: config.CPUType,
 			HardwareRequestRange: types.HardwareRequestRange{
 				Min: config.CPUs,
 				Max: config.CPUs,
