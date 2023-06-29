@@ -167,7 +167,6 @@ func renderSessionCreated(exec *types.Exec) {
 		{Key: "Name", Value: exec.Name},
 		{Key: "ID", Value: exec.ID},
 		{Key: "Provider", Value: exec.Provider.DisplayName()},
-		{Key: "Instance Type", Value: exec.ID},
 		{Key: "Region", Value: exec.Region},
 		{Key: "Status", Value: fmt.Sprintf("%s", exec.Status)},
 		{Key: "SSHKeys", Value: fmt.Sprintf("%s", getSSHKeyNames(exec.Keys))},

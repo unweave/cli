@@ -330,6 +330,7 @@ func tarRemoteDirectory(sshTarget, privateKeyPath string) (remoteArchiveLoc stri
 
 	sshCommand := exec.Command(
 		"ssh",
+		"-tt",
 		"-o", "StrictHostKeyChecking=no",
 		"-o", "UserKnownHostsFile=/dev/null",
 		"-i", privateKeyPath,
@@ -411,12 +412,13 @@ func copySourceSCP(from, to string, privKeyPath string) error {
 func copySourceUnTar(srcPath, dstPath string, connectionInfo types.ExecNetwork, prvKeyPath string) error {
 	sshCommand := exec.Command(
 		"ssh",
+		"-tt",
 		"-o", "StrictHostKeyChecking=no",
 		"-o", "UserKnownHostsFile=/dev/null",
 		"-i", prvKeyPath,
 		fmt.Sprintf("%s@%s", connectionInfo.User, connectionInfo.Host),
 		// ensure dstPath exist and root logs into that path
-		fmt.Sprintf("mkdir -p %s && echo 'cd %s' > /root/.bashrc &&", dstPath, dstPath),
+		fmt.Sprintf("mkdir -p %s && echo 'cd %s' > ~/.bashrc &&", dstPath, dstPath),
 		fmt.Sprintf("tar -xzf %s -C %s && rm -rf %s", srcPath, dstPath, srcPath),
 	)
 
@@ -435,7 +437,9 @@ func copySourceUnTar(srcPath, dstPath string, connectionInfo types.ExecNetwork, 
 					return fmt.Errorf("failed to copy source: %w", err)
 				}
 			}
-			ui.Infof("Failed to extract source directory on remote host: %s", stderr.String())
+			ui.Infof("Failed to extract source directory on remote host")
+			ui.Infof(stderr.String())
+			ui.Infof(stdout.String())
 			return err
 		}
 		return fmt.Errorf("failed to unzip on remote host: %v", err)

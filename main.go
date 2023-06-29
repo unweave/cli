@@ -376,7 +376,7 @@ func init() {
 		Use:   "new <name>",
 		Short: "Create a new volume in Unweave",
 		Long: wordwrap.String("Create a new volume in Unweave.\n\n"+
-			"Eg. unweave volume new <volume-name> --size <size-in-gb>\n\n"+
+			"Eg. unweave volume new <volume-name> <size-in-gb>\n\n"+
 			"The volume name must be unique per project. \n",
 			ui.MaxOutputLineLength),
 		Args:    cobra.ExactArgs(1),
@@ -385,6 +385,15 @@ func init() {
 	}
 	volumeNewCmd.Flags().StringVar(&config.Provider, "provider", types.UnweaveProvider.String(), "Provider to use")
 	volumeCmd.AddCommand(volumeNewCmd)
+
+	volumeDeleteCmd := &cobra.Command{
+		Use:     "delete <name>",
+		Short:   "Delete a volume in Unweave",
+		Args:    cobra.ExactArgs(1),
+		Aliases: []string{"delete", "rm"},
+		RunE:    cmd.VolumeDelete,
+	}
+	volumeCmd.AddCommand(volumeDeleteCmd)
 
 	volumeCmd.AddCommand(&cobra.Command{
 		Use:   "ls",
