@@ -12,6 +12,16 @@ import (
 	"github.com/unweave/unweave/api/types"
 )
 
+//counterfeiter:generate . Execer
+
+type Execer interface {
+	Create(ctx context.Context, owner, project string, params types.ExecCreateParams) (*types.Exec, error)
+	Exec(ctx context.Context, cmd []string, image string, sessionID *string) (*types.Exec, error)
+	List(ctx context.Context, owner, project string, listTerminated bool) ([]types.Exec, error)
+	Get(ctx context.Context, owner, project, sessionID string) (*types.Exec, error)
+	Terminate(ctx context.Context, owner, project, sessionID string) error
+}
+
 type ExecService struct {
 	client *Client
 }

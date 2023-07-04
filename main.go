@@ -143,6 +143,7 @@ func init() {
 	codeCmd.Flags().IntVar(&config.CPUs, "cpus", 0, "Number of VCPUs to allocate, e.g., 4")
 	codeCmd.Flags().IntVar(&config.Memory, "mem", 0, "Amount of RAM to allocate in GB, e.g., 16")
 	codeCmd.Flags().IntVar(&config.HDD, "hdd", 0, "Amount of hard-disk space to allocate in GB")
+	codeCmd.Flags().StringVar(&config.SpecName, "spec", "default", "Spec from config to use")
 	codeCmd.Flags().StringSliceVarP(&config.Volumes, "volume", "v", []string{}, "Mount a volume to the exec. e.g., -v <volume-name>:/data")
 	codeCmd.Flags().Int32VarP(&config.InternalPort, "port", "p", 0, "Port on the exec to expose as an https interface e.g. -p 8080")
 
@@ -194,6 +195,7 @@ func init() {
 	execCmd.Flags().IntVar(&config.CPUs, "cpus", 0, "Number of VCPUs to allocate, e.g., 4")
 	execCmd.Flags().IntVar(&config.Memory, "mem", 0, "Amount of RAM to allocate in GB, e.g., 16")
 	execCmd.Flags().IntVar(&config.HDD, "hdd", 0, "Amount of hard-disk space to allocate in GB")
+	execCmd.Flags().StringVar(&config.SpecName, "spec", "default", "Spec from config to use")
 	execCmd.Flags().StringSliceVarP(&config.Volumes, "volume", "v", []string{}, "Mount a volume to the exec. e.g., -v <volume-name>:/data")
 	execCmd.Flags().Int32VarP(&config.InternalPort, "port", "p", 0, "Port on the exec to expose as an https interface e.g. -p 8080")
 	execCmd.Flags().BoolVar(&config.ExecAttach, "interactive", false, "Stay attached in an interactive terminal session to the exec after starting the command")
@@ -241,12 +243,12 @@ func init() {
 
 	// Provider commands
 	lsNodeType := &cobra.Command{
-		Use:   "ls-node-types <provider>",
-		Short: "List node types available on a provider",
+		Use:   "ls-gpu-types <provider>",
+		Short: "List gpu types available on a provider",
 		Args:  cobra.ExactArgs(1),
-		RunE:  cmd.ProviderListNodeTypes,
+		RunE:  cmd.ProviderListGPUTypes,
 	}
-	lsNodeType.Flags().BoolVarP(&config.All, "all", "a", false, "Including out of capacity node types")
+	lsNodeType.Flags().BoolVarP(&config.All, "all", "a", false, "Including out of capacity gpu types")
 	rootCmd.AddCommand(lsNodeType)
 
 	rootCmd.AddCommand(&cobra.Command{
@@ -281,6 +283,7 @@ func init() {
 	newCmd.Flags().IntVar(&config.CPUs, "cpus", 0, "Number of VCPUs to allocate, e.g., 4")
 	newCmd.Flags().IntVar(&config.Memory, "mem", 0, "Amount of RAM to allocate in GB, e.g., 16")
 	newCmd.Flags().IntVar(&config.HDD, "hdd", 0, "Amount of hard-disk space to allocate in GB")
+	newCmd.Flags().StringVar(&config.SpecName, "spec", "default", "Spec from config to use")
 	newCmd.Flags().StringSliceVarP(&config.Volumes, "volume", "v", []string{}, "Mount a volume to the exec. e.g., -v <volume-name>:/data")
 	newCmd.Flags().Int32VarP(&config.InternalPort, "port", "p", 0, "Port on the exec to expose as an https interface e.g. -p 8080")
 
@@ -330,6 +333,7 @@ func init() {
 	// Setting RAM causes issues right now
 	sshCmd.Flags().IntVar(&config.Memory, "mem", 0, "Amount of RAM to allocate in GB, e.g., 16")
 	sshCmd.Flags().IntVar(&config.HDD, "hdd", 0, "Amount of hard-disk space to allocate in GB")
+	sshCmd.Flags().StringVar(&config.SpecName, "spec", "default", "Spec from config to use")
 	sshCmd.Flags().StringSliceVarP(&config.Volumes, "volume", "v", []string{}, "Mount a volume to newly created execs. e.g., -v <volume-name>:/data")
 	sshCmd.Flags().Int32VarP(&config.InternalPort, "port", "p", 0, "Port on the exec to expose as an https interface e.g. -p 8080")
 

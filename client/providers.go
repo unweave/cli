@@ -7,6 +7,12 @@ import (
 	"github.com/unweave/unweave/api/types"
 )
 
+//counterfeiter:generate . Provider
+
+type Provider interface {
+	ListNodeTypes(ctx context.Context, provider types.Provider, filterAvailable bool) ([]types.NodeType, error)
+}
+
 type ProviderService struct {
 	client *Client
 }

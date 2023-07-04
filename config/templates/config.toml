@@ -6,22 +6,34 @@ project_uri = "{{.ProjectURI}}"
 default_provider = 'unweave'
 
 # Configure preferences for the Unweave providers you have configured with your project.
-# Currently supported providers: `unweave`, `lambdalabs`.
+# Currently supported providers: `unweave`, `lambdalabs`, `aws`
 [provider.unweave]
-# List of provider specific node types in order of preference. The first node type in the
-# list will be used by default.
-#
-# Eg.
-# If the your list is `node_type = ["a100", "v100"]`, the `a100` node type will be used by
-# defualt. If `a100` is not available, `v100` will be used, until the end of the list. If
-# none of the node types are available, Unweave will return an error.
-node_types = ["intel"]
 
 {{- range .Providers}}
 
 [provider.{{.Name}}]
-node_types = []
 {{- end }}
+
+# Configure resources for execs. 
+# Example config:
+# [[specs]]
+# name   = "my-spec"
+# [specs.cpu]
+# type   = "x86_64" # only x86_64 is supported
+# count  = 2
+# memory = 4
+# [specs.gpu]
+# type   = "..." # see unweave ls-gpu-types <provider>
+# count  = 1
+# memory = 8
+# [specs.hdd]
+# size   = 10
+# 
+# This is the minimal required config:
+[[specs]]
+name = "default"
+[specs.cpu]
+type = "x86_64"
 
 [sessions]
 scp = false

@@ -14,20 +14,37 @@ type (
 		Token string `toml:"token"`
 	}
 
-	secrets struct {
+	Secrets struct {
 		ProjectToken string `env:"UNWEAVE_PROJECT_TOKEN"`
 		SSHKeyPath   string `env:"UNWEAVE_SSH_KEY_PATH"`
 		SSHKeyName   string `env:"UNWEAVE_SSH_KEY_NAME"`
 	}
 
 	provider struct {
-		NodeTypes []string `toml:"node_types"`
 	}
 
-	project struct {
+	Spec struct {
+		Name string        `toml:"name"`
+		CPU  specResources `toml:"cpu"`
+		GPU  specResources `toml:"gpu"`
+		HDD  specHDD       `toml:"hdd"`
+	}
+
+	specResources struct {
+		Type   string `toml:"type"`
+		Count  int    `toml:"count"`
+		Memory int    `toml:"memory"`
+	}
+
+	specHDD struct {
+		Size int `toml:"size"`
+	}
+
+	Project struct {
 		URI             string              `toml:"project_uri"`
-		Env             *secrets            `toml:"env"`
+		Env             *Secrets            `toml:"env"`
 		Providers       map[string]provider `toml:"provider"`
+		Specs           []Spec              `toml:"specs"`
 		DefaultProvider string              `toml:"default_provider"`
 	}
 
@@ -40,7 +57,7 @@ type (
 
 	config struct {
 		Unweave *unweave `toml:"unweave"`
-		Project *project `toml:"project"`
+		Project *Project `toml:"project"`
 	}
 )
 
@@ -56,7 +73,7 @@ func (c *unweave) Save() error {
 	return marshalAndWrite(unweaveConfigPath, c)
 }
 
-func (c *project) String() string {
+func (c *Project) String() string {
 	buf, err := toml.Marshal(c)
 	if err != nil {
 		ui.Errorf("Failed to marshal config: %s", err)
@@ -64,6 +81,6 @@ func (c *project) String() string {
 	return string(buf)
 }
 
-func (c *project) Save() error {
+func (c *Project) Save() error {
 	return marshalAndWrite(projectConfigPath, c)
 }

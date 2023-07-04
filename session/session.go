@@ -12,6 +12,8 @@ import (
 	"github.com/unweave/unweave/api/types"
 )
 
+var uwc *client.Client
+
 // Create attempts to create a session using the Exec spec provided, uses GPUs in the config if not, returns a 503 out-of-capacity error.
 // Renders newly created sessions to the UI implicitly.
 func Create(ctx context.Context, params types.ExecCreateParams) (string, error) {
@@ -34,7 +36,10 @@ type sessionFactory struct {
 }
 
 func newSessionFactory() sessionFactory {
-	uwc := config.InitUnweaveClient()
+	if uwc == nil {
+		uwc = config.InitUnweaveClient()
+	}
+
 	owner, projectName := config.GetProjectOwnerAndName()
 
 	return sessionFactory{uwc: uwc, projectName: projectName, owner: owner}
@@ -49,24 +54,17 @@ func (s sessionFactory) createSession(ctx context.Context, params types.ExecCrea
 		hasCpuType = params.Spec.CPU.Type != ""
 	)
 
-	switch {
-	case hasGpuType && hasCpuType:
-		// error, not possible to fulfil
+	if !hasGpuType && !hasCpuType {
 		return nil, &types.Error{
-			Message:    "Cannot set gpu type and cpu type",
-			Suggestion: "Set just one of gpu type and cpu type",
-			Err:        errors.New("both gpu and cpu types set"),
+			Message:    "Cannot create an exec with no CPU or GPU type",
+			Suggestion: "Set one of cpu or gpu type",
+			Provider:   params.Provider,
+			Err:        errors.New("missing both cpu and gpu type"),
 		}
-
-	case !hasGpuType && !hasCpuType:
-		exec, err = s.createSessionFromConfigNodeTypes(ctx, params)
-
-	case hasGpuType:
-		exec, err = s.createExecSession(ctx, params)
-
-	case hasCpuType:
-		exec, err = s.createExecSession(ctx, params)
+		//exec, err = s.createSessionFromConfigNodeTypes(ctx, params)
 	}
+
+	exec, err = s.createExecSession(ctx, params)
 	if err != nil {
 		return nil, err
 	}
@@ -83,74 +81,12 @@ func (s sessionFactory) createExecSession(ctx context.Context, params types.Exec
 	return exec, nil
 }
 
-func (s sessionFactory) createSessionFromConfigNodeTypes(ctx context.Context, params types.ExecCreateParams) (*types.Exec, error) {
-	nodeTypesFromConfig := nodeTypesFromConfig()
-
-	const includeOnlyAvailable = true
-
-	nodeTypes, err := s.uwc.Provider.ListNodeTypes(ctx, params.Provider, includeOnlyAvailable)
-	if err != nil {
-		return nil, &types.Error{
-			Message:    "Cannot find gpu and cpu node types",
-			Suggestion: "",
-			Err:        errors.New("failed to list node types"),
-		}
-	}
-
-	gpuNodeType := make(map[string]bool)
-
-	for _, n := range nodeTypes {
-		gpuNodeType[n.ID] = n.Type == "GPU"
-	}
-
-	for _, nodeType := range nodeTypesFromConfig {
-		if gpuNodeType[nodeType] {
-			params.Spec.GPU.Type = nodeType
-		} else {
-			params.Spec.CPU.Type = nodeType
-		}
-
-		exec, err := s.createExecSession(ctx, params)
-		if err != nil {
-			if isOutOfCapacityError(err) {
-				continue
-			}
-			return nil, err
-		}
-
-		return exec, nil
-	}
-
-	return nil, &types.Error{
-		Message:    "No default node type provided",
-		Suggestion: "Update node_types in .unweave/config.toml or pass --gpu-type flag",
-		Err:        errors.New("no default node types"),
-	}
-}
-
 func isOutOfCapacityError(err error) bool {
 	var e *types.Error
 	if errors.As(err, &e) && e.Code == 503 {
 		return true
 	}
 	return false
-}
-
-// nodeTypesFromConfig returns the GPU types in config.toml or a set of defaults, never nil
-func nodeTypesFromConfig() []string {
-	var nodeTypeIDs []string
-	provider := config.Config.Project.DefaultProvider
-	if config.Provider != "" {
-		provider = config.Provider
-	}
-	if p, ok := config.Config.Project.Providers[provider]; ok {
-		nodeTypeIDs = p.NodeTypes
-	}
-	if len(nodeTypeIDs) == 0 {
-		nodeTypeIDs = config.DefaultNodeTypes
-	}
-
-	return nodeTypeIDs
 }
 
 func renderSessionCreated(exec *types.Exec) {
