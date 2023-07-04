@@ -227,28 +227,20 @@ func renderSessionListWithSessions(sessions []types.Exec) {
 	cols := []ui.Column{
 		{
 			Title: "Name",
-			Width: 5 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
+			Width: 3 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
 				return exec.Name
 			}),
 		},
-		{Title: "vCPUs", Width: 5},
-		{
-			Title: "Node type", Width: 5 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
-				nodeType := exec.Spec.GPU.Type
-				if nodeType == "" {
-					nodeType = exec.Spec.CPU.Type
-				}
-
-				return nodeType
-			}),
-		},
-		{Title: "NumGPUs", Width: 12},
-		{Title: "HDD (GB)", Width: 10},
-		// {Title: "RAM (GB)", Width: 10},
 		{
 			Title: "Provider",
 			Width: 5 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
 				return exec.Provider.String()
+			}),
+		},
+		{
+			Title: "Instance Type",
+			Width: 7 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
+				return string(exec.Spec.GPU.Type)
 			}),
 		},
 		{
@@ -257,70 +249,21 @@ func renderSessionListWithSessions(sessions []types.Exec) {
 				return string(exec.Status)
 			}),
 		},
-		{
-			Title: "Volumes",
-			Width: 25 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
-				if len(exec.Volumes) > 0 {
-					return "- "
-				}
-				return ui.FormatVolumes(exec.Volumes)
-			}),
-		},
-		{
-			Title: "Connection String",
-			Width: 2 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
-				if exec.Network.Host == "" {
-					return "Connection String"
-				}
-				return fmt.Sprintf("%s@%s", exec.Network.User, exec.Network.Host)
-			}),
-		},
-		{
-			Title: "Http Service",
-			Width: 2 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
-				if exec.Network.HTTPService == nil {
-					return "Http Service"
-				}
-				return fmt.Sprintf("https://%s (internal port: %d)", exec.Network.HTTPService.Hostname, exec.Network.HTTPService.InternalPort)
-			}),
-		},
 	}
 
 	rows := make([]ui.Row, len(sessions))
 
 	for idx, s := range sessions {
-		conn := "-"
-		if s.Network.Host != "" {
-			conn = fmt.Sprintf("%s@%s", s.Network.User, s.Network.Host)
-		}
-
-		volumes := "-"
-		if len(s.Volumes) > 0 {
-			volumes = fmt.Sprintf(ui.FormatVolumes(s.Volumes))
-		}
-
-		hostname := "-"
-		if s.Network.HTTPService != nil {
-			hostname = fmt.Sprintf("https://%s (internal port: %d)", s.Network.HTTPService.Hostname, s.Network.HTTPService.InternalPort)
-		}
-
-		nodeType := s.Spec.GPU.Type
-		if nodeType == "" {
-			nodeType = s.Spec.CPU.Type
+		instanceType := s.Spec.GPU.Type
+		if instanceType == "" {
+			instanceType = s.Spec.CPU.Type
 		}
 
 		row := ui.Row{
 			fmt.Sprintf("%s", s.Name),
-			fmt.Sprintf("%v", s.Spec.CPU.Min),
-			nodeType,
-			fmt.Sprintf("%v", s.Spec.GPU.Count.Min),
-			fmt.Sprintf("%v", s.Spec.HDD.Min),
-			// fmt.Sprintf("%v", s.Specs.RAM.Min),
 			fmt.Sprintf("%s", s.Provider),
+			fmt.Sprintf("%s", instanceType),
 			fmt.Sprintf("%s", s.Status),
-			volumes,
-			conn,
-			hostname,
 		}
 		rows[idx] = row
 	}
