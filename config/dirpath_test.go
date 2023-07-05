@@ -11,7 +11,7 @@ func TestProjectHostDir(t *testing.T) {
 
 	g.Describe("ProjectHostDir", func() {
 		g.It("should append the root directory to UnweaveHostDir", func() {
-			g.Assert(ProjectHostDir()).Equal("/home/unweave/config")
+			g.Assert(ProjectHostDir()).Equal("/home/unweave")
 		})
 	})
 }

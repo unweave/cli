@@ -37,8 +37,8 @@ var (
 			AppURL: "https://app.unweave.io",
 			User:   &user{},
 		},
-		Project: &project{
-			Env:       &secrets{},
+		Project: &Project{
+			Env:       &Secrets{},
 			Providers: map[string]provider{},
 		},
 	}
@@ -100,22 +100,32 @@ func GetGlobalConfigPath() string {
 	return filepath.Join(home, GlobalConfigDirName)
 }
 
+func InitProjectConfigFrom(projectConfigPath, envConfigPath string) (*Secrets, *Project) {
+	envConfig := &Secrets{}
+	projectConfig := &Project{}
+
+	if err := readAndUnmarshal(projectConfigPath, &projectConfig); err != nil {
+		ui.Infof("Failed to read project config at path %q", projectConfigPath)
+	}
+	if err := readAndUnmarshal(envConfigPath, envConfig); err != nil {
+		ui.Infof("Failed to read environment config at path %q", envConfigPath)
+	}
+
+	return envConfig, projectConfig
+}
+
 func Init() {
 	// ----- ProjectConfig -----
-	envConfig := &secrets{}
-	projectConfig := &project{}
+	envConfig := &Secrets{}
+	projectConfig := &Project{}
+
 	projectDir, err := GetActiveProjectPath()
 	if err == nil {
 		projectConfigPath = filepath.Join(projectDir, projectConfigPath)
 		envConfigPath = filepath.Join(projectDir, envConfigPath)
-
-		if err = readAndUnmarshal(projectConfigPath, &projectConfig); err != nil {
-			ui.Infof("Failed to read project config at path %q", projectConfigPath)
-		}
-		if err = readAndUnmarshal(envConfigPath, envConfig); err != nil {
-			ui.Infof("Failed to read environment config at path %q", envConfigPath)
-		}
+		envConfig, projectConfig = InitProjectConfigFrom(projectConfigPath, envConfigPath)
 	}
+
 	projectConfig.Env = envConfig
 
 	// ----- Unweave Config -----

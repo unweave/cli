@@ -11,6 +11,8 @@ import (
 	"github.com/unweave/unweave/api/types"
 )
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
+
 type Config struct {
 	ApiURL string `json:"apiURL"`
 	Token  string `json:"token"`
@@ -21,8 +23,8 @@ type Client struct {
 	client *http.Client
 
 	Build    *BuildService
-	Provider *ProviderService
-	Exec     *ExecService
+	Provider Provider
+	Exec     Execer
 	SSHKey   *SSHKeyService
 	Volume   *VolumeService
 

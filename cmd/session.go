@@ -108,6 +108,7 @@ func sessionCreate(ctx context.Context, execConfig types.ExecConfig, gitConfig t
 	if err != nil {
 		return "", err
 	}
+
 	if config.NodeRegion != "" {
 		region = &config.NodeRegion
 	}
@@ -149,7 +150,7 @@ func sessionCreate(ctx context.Context, execConfig types.ExecConfig, gitConfig t
 				// into a list of available node types.
 				var nodeTypes []types.NodeType
 				if err = json.Unmarshal([]byte(e.Suggestion), &nodeTypes); err == nil {
-					cols, rows := nodeTypesToTable(nodeTypes)
+					cols, rows := gpuTypesToTable(nodeTypes)
 					uie := &ui.Error{Error: e}
 					fmt.Println(uie.Short())
 					fmt.Println()
@@ -391,31 +392,62 @@ func formatExecCobraOpts(execs []types.Exec, prepend ...string) ([]string, map[i
 }
 
 func parseHardwareSpec() (types.HardwareSpec, error) {
-	return types.HardwareSpec{
+	specName := "default"
+	if config.SpecName != "" {
+		specName = config.SpecName
+	}
+
+	spec, found := findSpec(specName, config.Config.Project.Specs)
+	if !found {
+		return types.HardwareSpec{}, &types.Error{
+			Message:    fmt.Sprintf("cannot find spec with name %q", specName),
+			Suggestion: fmt.Sprintf("ensure a spec with name %q exists in .unweave/config.toml", specName),
+		}
+	}
+
+	baseHardwaveSpec := types.HardwareSpec{
 		GPU: types.GPU{
-			Count: types.HardwareRequestRange{
-				Min: config.GPUs,
-				Max: config.GPUs,
-			},
-			Type: config.GPUType,
-			RAM: types.HardwareRequestRange{
-				Min: config.GPUMemory,
-				Max: config.GPUMemory,
-			},
+			Type:  spec.GPU.Type,
+			Count: types.HardwareRequestRange{Min: spec.GPU.Count, Max: spec.GPU.Count},
+			RAM:   types.HardwareRequestRange{Min: spec.GPU.Memory, Max: spec.GPU.Memory},
 		},
 		CPU: types.CPU{
-			HardwareRequestRange: types.HardwareRequestRange{
-				Min: config.CPUs,
-				Max: config.CPUs,
-			},
+			Type:                 spec.CPU.Type,
+			HardwareRequestRange: types.HardwareRequestRange{Min: spec.CPU.Count, Max: spec.CPU.Count},
 		},
-		RAM: types.HardwareRequestRange{
-			Min: config.Memory,
-			Max: config.Memory,
-		},
-		HDD: types.HardwareRequestRange{
-			Min: config.HDD,
-			Max: config.HDD,
-		},
-	}, nil
+		RAM: types.HardwareRequestRange{Min: spec.CPU.Memory, Max: spec.CPU.Memory},
+		HDD: types.HardwareRequestRange{Min: spec.HDD.Size, Max: spec.HDD.Size},
+	}
+
+	setNotEmptyValue(config.GPUType, &(baseHardwaveSpec.GPU.Type))
+	setNotEmptyValue(config.GPUs, &(baseHardwaveSpec.GPU.Count.Max))
+	setNotEmptyValue(config.GPUs, &(baseHardwaveSpec.GPU.Count.Min))
+	setNotEmptyValue(config.GPUMemory, &(baseHardwaveSpec.GPU.RAM.Max))
+	setNotEmptyValue(config.GPUMemory, &(baseHardwaveSpec.GPU.RAM.Min))
+	setNotEmptyValue(config.CPUs, &(baseHardwaveSpec.CPU.HardwareRequestRange.Max))
+	setNotEmptyValue(config.CPUs, &(baseHardwaveSpec.CPU.HardwareRequestRange.Min))
+	setNotEmptyValue(config.Memory, &(baseHardwaveSpec.RAM.Max))
+	setNotEmptyValue(config.Memory, &(baseHardwaveSpec.RAM.Min))
+	setNotEmptyValue(config.HDD, &(baseHardwaveSpec.HDD.Max))
+	setNotEmptyValue(config.HDD, &(baseHardwaveSpec.HDD.Min))
+
+	return baseHardwaveSpec, nil
+}
+
+func findSpec(name string, specs []config.Spec) (config.Spec, bool) {
+	for _, s := range specs {
+		if strings.EqualFold(s.Name, name) {
+			return s, true
+		}
+	}
+
+	return config.Spec{}, false
+}
+
+func setNotEmptyValue[T comparable](val T, dst *T) {
+	if val == *new(T) {
+		return
+	}
+
+	*dst = val
 }

@@ -16,6 +16,9 @@ var CreateExec = true
 // ExecAttach is used to determine if the exec command should stay attached to the exec after starting the command.
 var ExecAttach = false
 
+// SpecName is the name of the spec from config to use.
+var SpecName string
+
 // GPUs is the number of GPUs to allocate for a gpuType.
 var GPUs int
 

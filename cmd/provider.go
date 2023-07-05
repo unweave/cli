@@ -11,9 +11,8 @@ import (
 	"github.com/unweave/unweave/tools"
 )
 
-func nodeTypesToTable(nodeTypes []types.NodeType) ([]ui.Column, []ui.Row) {
+func gpuTypesToTable(nodeTypes []types.NodeType) ([]ui.Column, []ui.Row) {
 	cols := []ui.Column{
-		{Title: "Type", Width: 7},
 		{Title: "Name", Width: 25},
 		{Title: "ID", Width: 21},
 		{Title: "Price", Width: 10},
@@ -23,12 +22,16 @@ func nodeTypesToTable(nodeTypes []types.NodeType) ([]ui.Column, []ui.Row) {
 	var rows []ui.Row
 
 	for _, nodeType := range nodeTypes {
+		if nodeType.Type != "GPU" {
+			continue
+		}
+
 		regions := "-"
 		if len(nodeType.Regions) > 0 {
 			regions = strings.Join(nodeType.Regions, ", ")
 		}
+
 		row := ui.Row{
-			nodeType.Type,
 			fmt.Sprintf("%s", dashIfZeroValue(tools.StringInv(nodeType.Name))),
 			fmt.Sprintf("%s", dashIfZeroValue(nodeType.ID)),
 			fmt.Sprintf("$%2.2f", float32(tools.IntInv(nodeType.Price))/100),
@@ -39,7 +42,7 @@ func nodeTypesToTable(nodeTypes []types.NodeType) ([]ui.Column, []ui.Row) {
 	return cols, rows
 }
 
-func ProviderListNodeTypes(cmd *cobra.Command, args []string) error {
+func ProviderListGPUTypes(cmd *cobra.Command, args []string) error {
 	cmd.SilenceUsage = true
 
 	provider := types.Provider(args[0])
@@ -51,7 +54,7 @@ func ProviderListNodeTypes(cmd *cobra.Command, args []string) error {
 		return ui.HandleError(err)
 	}
 
-	cols, rows := nodeTypesToTable(res)
-	ui.Table("Available Instances", cols, rows)
+	cols, rows := gpuTypesToTable(res)
+	ui.Table("Available GPU Types", cols, rows)
 	return nil
 }
