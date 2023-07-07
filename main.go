@@ -405,6 +405,92 @@ func init() {
 	})
 
 	rootCmd.AddCommand(volumeCmd)
+
+	endpointCommand := &cobra.Command{
+		Use:     "endpoint",
+		Short:   "Manage endpoints in Unweave",
+		GroupID: groupDev,
+		Aliases: []string{"end"},
+		Args:    cobra.NoArgs,
+	}
+
+	endpointNewCmd := &cobra.Command{
+		Use:   "new <exec-id>",
+		Short: "Create a new endpoint in Unweave",
+		Long: wordwrap.String("Create a new endpoint in Unweave.\n\n"+
+			"Eg. unweave endpoint new <exec-id>\n\n",
+			ui.MaxOutputLineLength),
+		Args:    cobra.ExactArgs(1),
+		Aliases: []string{"new", "n", "create", "c"},
+		RunE:    cmd.EndpointCreate,
+	}
+	endpointCommand.AddCommand(endpointNewCmd)
+
+	endpointListCmd := &cobra.Command{
+		Use:   "list",
+		Short: "List endpoints in Unweave",
+		Long: wordwrap.String("List endpoints in Unweave.\n\n"+
+			"Eg. unweave endpoint list\n\n",
+			ui.MaxOutputLineLength),
+		Aliases: []string{"ls"},
+		RunE:    cmd.EndpointList,
+	}
+	endpointCommand.AddCommand(endpointListCmd)
+
+	endpointEvalCheckCmd := &cobra.Command{
+		Use:   "check",
+		Short: "Check endpoints in Unweave",
+		Long: wordwrap.String("Check endpoints in Unweave.\n\n"+
+			"Eg. unweave endpoint check <endpoint-id>\n\n",
+			ui.MaxOutputLineLength),
+		Args: cobra.ExactArgs(1),
+		RunE: cmd.EndpointEvalCheck,
+	}
+	endpointCommand.AddCommand(endpointEvalCheckCmd)
+
+	endpointEvalAttachCmd := &cobra.Command{
+		Use:   "eval-attach",
+		Short: "Attach evals to endpoints in Unweave",
+		Long: wordwrap.String("Attach evals to endpoints in Unweave.\n\n"+
+			"Eg. unweave endpoint eval-attach <endpoint-id> <eval-id>\n\n",
+			ui.MaxOutputLineLength),
+		Args: cobra.ExactArgs(2),
+		RunE: cmd.EndpointEvalAttach,
+	}
+	endpointCommand.AddCommand(endpointEvalAttachCmd)
+	rootCmd.AddCommand(endpointCommand)
+
+	evalCommand := &cobra.Command{
+		Use:     "eval",
+		Short:   "Manage evals in Unweave",
+		GroupID: groupDev,
+		Aliases: []string{"end"},
+		Args:    cobra.NoArgs,
+	}
+
+	evalNewCmd := &cobra.Command{
+		Use:   "new <exec-id>",
+		Short: "Create a new eval in Unweave",
+		Long: wordwrap.String("Create a new eval in Unweave.\n\n"+
+			"Eg. unweave eval new <exec-id>\n\n",
+			ui.MaxOutputLineLength),
+		Args:    cobra.ExactArgs(1),
+		Aliases: []string{"new", "n", "create", "c"},
+		RunE:    cmd.EvalCreate,
+	}
+	evalCommand.AddCommand(evalNewCmd)
+
+	evalListCmd := &cobra.Command{
+		Use:   "list",
+		Short: "List evals in Unweave",
+		Long: wordwrap.String("List evals in Unweave.\n\n"+
+			"Eg. unweave eval list\n\n",
+			ui.MaxOutputLineLength),
+		Aliases: []string{"ls"},
+		RunE:    cmd.EvalList,
+	}
+	evalCommand.AddCommand(evalListCmd)
+	rootCmd.AddCommand(evalCommand)
 }
 
 func main() {
