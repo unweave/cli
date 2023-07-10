@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/unweave/cli/ui"
 	"github.com/unweave/unweave/api/types"
 )
 
@@ -66,9 +67,28 @@ func (s *EndpointService) RunEvalCheck(ctx context.Context, userID, projectID, e
 		return err
 	}
 
-	if err = s.client.ExecuteRest(ctx, req, nil); err != nil {
+	response := types.EndpointCheckRun{}
+	if err = s.client.ExecuteRest(ctx, req, &response); err != nil {
 		return err
 	}
 
+	ui.Infof("check id: %s", response.CheckID)
+
 	return nil
+}
+
+func (s *EndpointService) EndpointCheckStatus(ctx context.Context, userID, projectID, checkID string) (types.EndpointCheck, error) {
+	uri := fmt.Sprintf("projects/%s/%s/checks/%s", userID, projectID, checkID)
+
+	req, err := s.client.NewAuthorizedRestRequest(Get, uri, nil, nil)
+	if err != nil {
+		return types.EndpointCheck{}, err
+	}
+
+	status := types.EndpointCheck{}
+	if err = s.client.ExecuteRest(ctx, req, &status); err != nil {
+		return types.EndpointCheck{}, err
+	}
+
+	return status, nil
 }

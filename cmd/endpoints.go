@@ -76,3 +76,25 @@ func EndpointEvalCheck(cmd *cobra.Command, args []string) error {
 
 	return nil
 }
+
+func EndpointCheckStatus(cmd *cobra.Command, args []string) error {
+	ctx := cmd.Context()
+	checkID := args[0]
+
+	owner, projectName := config.GetProjectOwnerAndName()
+
+	uwc := config.InitUnweaveClient()
+
+	status, err := uwc.Endpoints.EndpointCheckStatus(ctx, owner, projectName, checkID)
+	if err != nil {
+		return err
+	}
+
+	for _, step := range status.Steps {
+		ui.Infof("input: %s", step.Input)
+		ui.Infof("output: %s", step.Output)
+		ui.Infof("assertion: %s\n", step.Assertion)
+	}
+
+	return nil
+}

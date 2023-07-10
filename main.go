@@ -438,7 +438,7 @@ func init() {
 	endpointCommand.AddCommand(endpointListCmd)
 
 	endpointEvalCheckCmd := &cobra.Command{
-		Use:   "check",
+		Use:   "check <endpoint-id>",
 		Short: "Check endpoints in Unweave",
 		Long: wordwrap.String("Check endpoints in Unweave.\n\n"+
 			"Eg. unweave endpoint check <endpoint-id>\n\n",
@@ -448,11 +448,22 @@ func init() {
 	}
 	endpointCommand.AddCommand(endpointEvalCheckCmd)
 
+	endpointEvalCheckStatusCmd := &cobra.Command{
+		Use:   "check-status <check-id>",
+		Short: "Status of endpoint checks in Unweave",
+		Long: wordwrap.String("Status of endpoint checks Unweave.\n\n"+
+			"Eg. unweave endpoint check-status <check-id>\n\n",
+			ui.MaxOutputLineLength),
+		Args: cobra.ExactArgs(1),
+		RunE: cmd.EndpointCheckStatus,
+	}
+	endpointCommand.AddCommand(endpointEvalCheckStatusCmd)
+
 	endpointEvalAttachCmd := &cobra.Command{
-		Use:   "eval-attach",
+		Use:   "attach-eval <endpoint-id> <eval-id>",
 		Short: "Attach evals to endpoints in Unweave",
 		Long: wordwrap.String("Attach evals to endpoints in Unweave.\n\n"+
-			"Eg. unweave endpoint eval-attach <endpoint-id> <eval-id>\n\n",
+			"Eg. unweave endpoint attach-eval <endpoint-id> <eval-id>\n\n",
 			ui.MaxOutputLineLength),
 		Args: cobra.ExactArgs(2),
 		RunE: cmd.EndpointEvalAttach,
@@ -464,7 +475,7 @@ func init() {
 		Use:     "eval",
 		Short:   "Manage evals in Unweave",
 		GroupID: groupDev,
-		Aliases: []string{"end"},
+		Aliases: []string{"eval"},
 		Args:    cobra.NoArgs,
 	}
 
