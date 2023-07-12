@@ -22,11 +22,13 @@ type Client struct {
 	cfg    *Config
 	client *http.Client
 
-	Build    *BuildService
-	Provider Provider
-	Exec     Execer
-	SSHKey   *SSHKeyService
-	Volume   *VolumeService
+	Build     *BuildService
+	Provider  Provider
+	Exec      Execer
+	SSHKey    *SSHKeyService
+	Volume    *VolumeService
+	Endpoints *EndpointService
+	Evals     *EvalService
 
 	// Management
 	Account *AccountService
@@ -43,6 +45,8 @@ func NewClient(cfg Config) *Client {
 	c.SSHKey = &SSHKeyService{client: c}
 	c.Account = &AccountService{client: c}
 	c.Volume = &VolumeService{client: c}
+	c.Endpoints = &EndpointService{client: c}
+	c.Evals = &EvalService{client: c}
 
 	return c
 }
