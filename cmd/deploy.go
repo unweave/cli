@@ -22,13 +22,6 @@ type deployCommandFlow struct {
 }
 
 func (d *deployCommandFlow) parseArgs(cmd *cobra.Command, args []string) execCmdArgs {
-	if len(args) == 0 {
-		const errMsg = "❌ Invalid arguments. You must pass a file path to deploy.\n" +
-			"See `unweave deploy --help` for more information"
-		ui.Errorf(errMsg)
-		os.Exit(1)
-	}
-
 	if len(args) > 1 {
 		const errMsg = "❌ Invalid arguments. You can only pass a single file path to deploy.\n" +
 			"See `unweave deploy --help` for more information"
@@ -43,35 +36,39 @@ func (d *deployCommandFlow) parseArgs(cmd *cobra.Command, args []string) execCmd
 		os.Exit(1)
 	}
 
-	p := args[0]
-
-	path, err := filepath.Abs(args[0])
-	if err != nil {
-		const errMsg = "❌ Invalid arguments. Problem with filepath: %q.\n%s\n" +
-			"See `unweave deploy --help` for more information"
-		ui.Errorf(errMsg, p, err)
-		os.Exit(1)
-	}
-
-	_, err = os.Stat(path)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			const errMsg = "❌ Invalid arguments. Filepath does not exist: %q.\n" +
-				"See `unweave deploy --help` for more information"
-			ui.Errorf(errMsg, path)
-			os.Exit(1)
-
-		}
-
-		const errMsg = "❌ Invalid arguments. Problem with filepath: %q.\n%s\n" +
-			"See `unweave deploy --help` for more information"
-		ui.Errorf(errMsg, path, err)
-		os.Exit(1)
-	}
-
 	execArgs := execCmdArgs{
 		sshConnectionOptions: config.SSHConnectionOptions,
-		copyDir:              path,
+		skipCopy:             len(args) == 0,
+	}
+
+	if !execArgs.skipCopy {
+		p := args[0]
+
+		path, err := filepath.Abs(args[0])
+		if err != nil {
+			const errMsg = "❌ Invalid arguments. Problem with filepath: %q.\n%s\n" +
+				"See `unweave deploy --help` for more information"
+			ui.Errorf(errMsg, p, err)
+			os.Exit(1)
+		}
+
+		_, err = os.Stat(path)
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				const errMsg = "❌ Invalid arguments. Filepath does not exist: %q.\n" +
+					"See `unweave deploy --help` for more information"
+				ui.Errorf(errMsg, path)
+				os.Exit(1)
+
+			}
+
+			const errMsg = "❌ Invalid arguments. Problem with filepath: %q.\n%s\n" +
+				"See `unweave deploy --help` for more information"
+			ui.Errorf(errMsg, path, err)
+			os.Exit(1)
+		}
+
+		execArgs.copyDir = path
 	}
 
 	execArgs.userCommand = strings.Split(config.Command, " ")

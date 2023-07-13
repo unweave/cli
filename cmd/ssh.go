@@ -46,6 +46,10 @@ type execCmdArgs struct {
 	// the project directory that should be
 	// copied to the exec.
 	copyDir string
+
+	// skipCopy indicates that no directories
+	// should be copied to the remote on startup
+	skipCopy bool
 }
 
 type sshConnectionCommandFlow interface {
@@ -77,8 +81,10 @@ func runSSHConnectionCommand(cmd *cobra.Command, args []string, flow sshConnecti
 				}
 
 				ensureHosts(e, prvKey)
-				err = handleCopySourceDir(isNew, e, prvKey, commandArgs.copyDir)
-				if err != nil {
+
+				shouldCopySource := !config.NoCopySource && !commandArgs.skipCopy
+
+				if err = handleCopySourceDir(shouldCopySource, isNew, e, prvKey, commandArgs.copyDir); err != nil {
 					ui.HandleError(err)
 					os.Exit(1)
 				}
@@ -233,10 +239,10 @@ func ensureHosts(e types.Exec, identityFile string) {
 	}
 }
 
-func handleCopySourceDir(isNew bool, e types.Exec, privKey, copyPath string) error {
+func handleCopySourceDir(shouldCopy, isNew bool, e types.Exec, privKey, copyPath string) error {
 	// TODO: Wait until port is open before cleaning up the source code
 
-	if !config.NoCopySource && isNew {
+	if shouldCopy && isNew {
 		var err error
 
 		if copyPath == "" {
