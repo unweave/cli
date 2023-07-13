@@ -11,13 +11,17 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/unweave/cli/config"
 	"github.com/unweave/cli/ui"
+	"github.com/unweave/unweave/api/types"
 )
 
 func Deploy(cmd *cobra.Command, args []string) error {
-	return runSSHConnectionCommand(cmd, args, &deployCommandFlow{})
+	name := strings.ReplaceAll(config.EndpointName, "_", "-")
+
+	return runSSHConnectionCommand(cmd, args, &deployCommandFlow{endpointName: name})
 }
 
 type deployCommandFlow struct {
+	endpointName string
 	execCommandFlow
 }
 
@@ -81,17 +85,52 @@ func (d *deployCommandFlow) parseArgs(cmd *cobra.Command, args []string) execCmd
 
 func (d *deployCommandFlow) onSshCommandFinish(ctx context.Context, execID string) error {
 	uwc := config.InitUnweaveClient()
-
 	owner, project := config.GetProjectOwnerAndName()
 
-	endpoint, err := uwc.Endpoints.Create(ctx, owner, project, execID)
+	endpoints, err := uwc.Endpoints.List(ctx, owner, project)
 	if err != nil {
-		return fmt.Errorf("deploy: %w", err)
+		return fmt.Errorf("list endpoints: %w", err)
 	}
 
-	ui.Infof("✅ Created endpint %q for exec", endpoint.ID)
+	end, ok := findEndpoint(d.endpointName, endpoints)
+
+	if !ok {
+		ui.Debugf("endpoint not found, creating new, name: %q", d.endpointName)
+
+		endpoint, err := uwc.Endpoints.Create(ctx, owner, project, execID, d.endpointName)
+		if err != nil {
+			return fmt.Errorf("deploy: %w", err)
+		}
+
+		ui.Infof("✅ Created endpint %q for exec", endpoint.ID)
+		ui.Infof("🔗 Access endpoint at:")
+		ui.Infof("    https://%s", endpoint.HTTPEndpoint)
+
+		return nil
+	}
+
+	ui.Debugf("endpoint found, creating version, name: %q, id: %q", d.endpointName, end.ID)
+
+	version, err := uwc.Endpoints.CreateVersion(ctx, owner, project, end.ID, execID)
+	if err != nil {
+		return fmt.Errorf("create version: %w", err)
+	}
+
+	ui.Infof("✅ Created endpint version %q for exec", version.ID)
 	ui.Infof("🔗 Access endpoint at:")
-	ui.Infof("  https://%s", endpoint.HTTPEndpoint)
+	ui.Infof("    https://%s", end.HTTPEndpoint)
+	ui.Infof("🔗 Access version at:")
+	ui.Infof("    https://%s", version.HTTPEndpoint)
 
 	return nil
+}
+
+func findEndpoint(name string, ends []types.Endpoint) (types.Endpoint, bool) {
+	for _, end := range ends {
+		if strings.EqualFold(name, end.Name) || strings.EqualFold(name, end.ID) {
+			return end, true
+		}
+	}
+
+	return types.Endpoint{}, false
 }

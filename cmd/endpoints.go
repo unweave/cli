@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"strings"
+
 	"github.com/spf13/cobra"
 	"github.com/unweave/cli/config"
 	"github.com/unweave/cli/ui"
@@ -14,7 +16,9 @@ func EndpointCreate(cmd *cobra.Command, args []string) error {
 
 	uwc := config.InitUnweaveClient()
 
-	endpoint, err := uwc.Endpoints.Create(ctx, owner, projectName, execID)
+	name := strings.ReplaceAll(config.EndpointName, "_", "-")
+
+	endpoint, err := uwc.Endpoints.Create(ctx, owner, projectName, execID, name)
 	if err != nil {
 		return err
 	}
