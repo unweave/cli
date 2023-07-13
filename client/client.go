@@ -36,8 +36,10 @@ type Client struct {
 
 func NewClient(cfg Config) *Client {
 	c := &Client{
-		cfg:    &cfg,
-		client: &http.Client{},
+		cfg: &cfg,
+		client: &http.Client{
+			Transport: newLoggedTransport(http.DefaultTransport),
+		},
 	}
 	c.Build = &BuildService{client: c}
 	c.Provider = &ProviderService{client: c}
