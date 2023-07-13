@@ -44,7 +44,7 @@ var (
 	}
 )
 
-func GetProjectOwnerAndName() (string, string) {
+func GetProjectOwnerAndName() (owner string, name string) {
 	uri := Config.Project.URI
 	parts := strings.Split(uri, "/")
 
@@ -53,8 +53,8 @@ func GetProjectOwnerAndName() (string, string) {
 		os.Exit(1)
 	}
 
-	owner := strings.Split(uri, "/")[0]
-	name := strings.Split(uri, "/")[1]
+	owner = strings.Split(uri, "/")[0]
+	name = strings.Split(uri, "/")[1]
 	return owner, name
 }
 

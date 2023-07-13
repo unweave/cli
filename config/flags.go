@@ -19,6 +19,9 @@ var ExecAttach = false
 // SpecName is the name of the spec from config to use.
 var SpecName string
 
+// Command is the user supplied command that should be run in the exec.
+var Command string
+
 // GPUs is the number of GPUs to allocate for a gpuType.
 var GPUs int
 
