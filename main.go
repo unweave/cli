@@ -502,6 +502,30 @@ func init() {
 	}
 	evalCommand.AddCommand(evalListCmd)
 	rootCmd.AddCommand(evalCommand)
+
+	deployCmd := &cobra.Command{
+		Use:   "deploy [flags] [filepath]",
+		Short: "Deploy the project",
+		Long: wordwrap.String("Deploy the project in Unweave.\n\n"+
+			"e.g. unweave deploy .\n\n",
+			ui.MaxOutputLineLength),
+		RunE: cmd.Deploy,
+	}
+	deployCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
+	deployCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
+	deployCmd.Flags().IntVar(&config.GPUs, "gpus", 0, "Number of GPUs to allocate for a gpuType, e.g., 2")
+	deployCmd.Flags().IntVar(&config.GPUMemory, "gpu-mem", 0, "Memory of GPU if applicable for a gpuType, e.g., 12")
+	deployCmd.Flags().StringVar(&config.GPUType, "gpu-type", "", "Type of GPU to use, e.g., rtx_5000")
+	deployCmd.Flags().IntVar(&config.CPUs, "cpus", 0, "Number of VCPUs to allocate, e.g., 4")
+	deployCmd.Flags().IntVar(&config.Memory, "mem", 0, "Amount of RAM to allocate in GB, e.g., 16")
+	deployCmd.Flags().IntVar(&config.HDD, "hdd", 0, "Amount of hard-disk space to allocate in GB")
+	deployCmd.Flags().StringVar(&config.SpecName, "spec", "default", "Spec from config to use")
+	deployCmd.Flags().StringVar(&config.Command, "cmd", "", "Command to run in the deploy [required]")
+	deployCmd.Flags().StringSliceVarP(&config.Volumes, "volume", "v", []string{}, "Mount a volume to the exec. e.g., -v <volume-name>:/data")
+	deployCmd.Flags().Int32VarP(&config.InternalPort, "port", "p", 8080, "Port on the exec to expose as an https interface e.g. -p 8080")
+	deployCmd.Flags().StringSliceVar(&config.SSHConnectionOptions, "connection-option", []string{}, "SSH connection config to include e.g StrictHostKeyChecking=yes")
+
+	rootCmd.AddCommand(deployCmd)
 }
 
 func main() {

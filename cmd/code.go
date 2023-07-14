@@ -37,8 +37,8 @@ func Code(cmd *cobra.Command, args []string) error {
 				}
 
 				ensureHosts(e, prvKey)
-				err = handleCopySourceDir(isNew, e, prvKey)
-				if err != nil {
+
+				if err := handleCopySourceDir(!config.NoCopySource, isNew, e, prvKey, ""); err != nil {
 					ui.HandleError(err)
 					os.Exit(1)
 				}

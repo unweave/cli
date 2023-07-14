@@ -42,12 +42,20 @@ type execCmdArgs struct {
 	// attached denotes if the command will
 	// run in attached mode, or detach.
 	attached bool
+
+	// the project directory that should be
+	// copied to the exec.
+	copyDir string
+
+	// skipCopy indicates that no directories
+	// should be copied to the remote on startup
+	skipCopy bool
 }
 
 type sshConnectionCommandFlow interface {
 	parseArgs(cmd *cobra.Command, args []string) execCmdArgs
 	getExec(cmd *cobra.Command, command execCmdArgs) (chan types.Exec, bool, chan error)
-	onTerminate(ctx context.Context, execID string) error
+	onSshCommandFinish(ctx context.Context, execID string) error
 }
 
 func runSSHConnectionCommand(cmd *cobra.Command, args []string, flow sshConnectionCommandFlow) error {
@@ -73,8 +81,10 @@ func runSSHConnectionCommand(cmd *cobra.Command, args []string, flow sshConnecti
 				}
 
 				ensureHosts(e, prvKey)
-				err = handleCopySourceDir(isNew, e, prvKey)
-				if err != nil {
+
+				shouldCopySource := !config.NoCopySource && !commandArgs.skipCopy
+
+				if err = handleCopySourceDir(shouldCopySource, isNew, e, prvKey, commandArgs.copyDir); err != nil {
 					ui.HandleError(err)
 					os.Exit(1)
 				}
@@ -84,7 +94,7 @@ func runSSHConnectionCommand(cmd *cobra.Command, args []string, flow sshConnecti
 					os.Exit(1)
 				}
 
-				if err := flow.onTerminate(ctx, e.ID); err != nil {
+				if err := flow.onSshCommandFinish(ctx, e.ID); err != nil {
 					return err
 				}
 
@@ -137,7 +147,7 @@ func (s *sshCommandFlow) getExec(cmd *cobra.Command, command execCmdArgs) (chan 
 	return getOrCreateExec(cmd, command.execRef)
 }
 
-func (s *sshCommandFlow) onTerminate(ctx context.Context, execID string) error {
+func (s *sshCommandFlow) onSshCommandFinish(ctx context.Context, execID string) error {
 	if terminate := ui.Confirm("SSH session terminated. Do you want to terminate the session?", "n"); terminate {
 		if err := sessionTerminate(ctx, execID); err != nil {
 			return err
@@ -229,21 +239,28 @@ func ensureHosts(e types.Exec, identityFile string) {
 	}
 }
 
-func handleCopySourceDir(isNew bool, e types.Exec, privKey string) error {
+func handleCopySourceDir(shouldCopy, isNew bool, e types.Exec, privKey, copyPath string) error {
 	// TODO: Wait until port is open before cleaning up the source code
 
-	if !config.NoCopySource && isNew {
-		dir, err := config.GetActiveProjectPath()
-		if err != nil {
-			ui.Errorf("Failed to get active project path. Skipping copying source directory")
-			return fmt.Errorf("failed to get active project path: %v", err)
+	if shouldCopy && isNew {
+		var err error
+
+		if copyPath == "" {
+			copyPath, err = config.GetActiveProjectPath()
+			if err != nil {
+				ui.Errorf("Failed to get active project path. Skipping copying source directory")
+				return fmt.Errorf("failed to get active project path: %v", err)
+			}
 		}
-		if err := copyDirFromLocalAndUnzip(e.ID, dir, config.ProjectHostDir(), e.Network, privKey); err != nil {
+
+		if err := copyDirFromLocalAndUnzip(e.ID, copyPath, config.ProjectHostDir(), e.Network, privKey); err != nil {
 			return err
 		}
+
 	} else {
 		ui.Infof("Skipping copying source directory")
 	}
+
 	return nil
 }
 

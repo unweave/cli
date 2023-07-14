@@ -56,10 +56,7 @@ func (e *execCommandFlow) parseArgs(cmd *cobra.Command, args []string) execCmdAr
 	execArgs.execCommand = execArgs.userCommand
 
 	if !config.ExecAttach {
-		escaped := strings.ReplaceAll(strings.Join(execArgs.userCommand, " "), "\"", "\\\"")
-
-		execArgs.execCommand = []string{"nohup", "bash", "-c", "\"", escaped, "\""}
-		execArgs.execCommand = append(execArgs.execCommand, ">", execLogFile, "2>&1", "&", "echo", "$!", ">", "./pid.nohup", "&&", "sleep", "1")
+		execArgs.execCommand = wrapCommandNoHupLogging(execArgs.userCommand)
 	}
 
 	return execArgs
@@ -86,7 +83,7 @@ func (e *execCommandFlow) getExec(cmd *cobra.Command, execCmd execCmdArgs) (chan
 	return execCh, alwaysNewExec, errCh
 }
 
-func (e *execCommandFlow) onTerminate(ctx context.Context, execID string) error {
+func (e *execCommandFlow) onSshCommandFinish(ctx context.Context, execID string) error {
 	ui.Infof("Session %q exited. Use 'unweave terminate' to stop the session.", execID)
 
 	return nil
@@ -118,4 +115,13 @@ func getExecByNameOrID(ctx context.Context, ref string) (*types.Exec, error) {
 	}
 
 	return nil, fmt.Errorf("session %s does not exist", ref)
+}
+
+func wrapCommandNoHupLogging(userCommand []string) []string {
+	escaped := strings.ReplaceAll(strings.Join(userCommand, " "), "\"", "\\\"")
+
+	out := []string{"nohup", "bash", "-c", "\"", escaped, "\""}
+	out = append(out, ">", execLogFile, "2>&1", "&", "echo", "$!", ">", "./pid.nohup", "&&", "sleep", "1")
+
+	return out
 }
