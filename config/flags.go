@@ -22,6 +22,10 @@ var SpecName string
 // Command is the user supplied command that should be run in the exec.
 var Command string
 
+// EndpointName is the name of the endpoint we operate on when calling deploy
+// or create if it doesn't exist.
+var EndpointName string
+
 // GPUs is the number of GPUs to allocate for a gpuType.
 var GPUs int
 

@@ -523,6 +523,7 @@ func init() {
 	deployCmd.Flags().StringVar(&config.Command, "cmd", "", "Command to run in the deploy [required]")
 	deployCmd.Flags().StringSliceVarP(&config.Volumes, "volume", "v", []string{}, "Mount a volume to the exec. e.g., -v <volume-name>:/data")
 	deployCmd.Flags().Int32VarP(&config.InternalPort, "port", "p", 8080, "Port on the exec to expose as an https interface e.g. -p 8080")
+	deployCmd.Flags().StringVar(&config.EndpointName, "endpoint", "", "name of the endpoint to deploy")
 	deployCmd.Flags().StringSliceVar(&config.SSHConnectionOptions, "connection-option", []string{}, "SSH connection config to include e.g StrictHostKeyChecking=yes")
 
 	rootCmd.AddCommand(deployCmd)

@@ -12,7 +12,7 @@ type EndpointService struct {
 	client *Client
 }
 
-func (s *EndpointService) List(ctx context.Context, userID, projectID string) ([]types.Endpoint, error) {
+func (s *EndpointService) List(ctx context.Context, userID, projectID string) ([]types.EndpointListItem, error) {
 	uri := fmt.Sprintf("projects/%s/%s/endpoints", userID, projectID)
 	req, err := s.client.NewAuthorizedRestRequest(Get, uri, nil, nil)
 	if err != nil {
@@ -27,8 +27,11 @@ func (s *EndpointService) List(ctx context.Context, userID, projectID string) ([
 	return endpoints.Endpoints, nil
 }
 
-func (s *EndpointService) Create(ctx context.Context, userID, projectID, execID string) (types.Endpoint, error) {
-	request := types.EndpointCreate{ExecID: execID}
+func (s *EndpointService) Create(ctx context.Context, userID, projectID, execID, name string) (types.Endpoint, error) {
+	request := types.EndpointCreate{
+		ExecID: execID,
+		Name:   name,
+	}
 
 	uri := fmt.Sprintf("projects/%s/%s/endpoints", userID, projectID)
 	req, err := s.client.NewAuthorizedRestRequest(Post, uri, nil, request)
@@ -91,4 +94,25 @@ func (s *EndpointService) EndpointCheckStatus(ctx context.Context, userID, proje
 	}
 
 	return status, nil
+}
+
+func (s *EndpointService) CreateVersion(ctx context.Context, userID, projectID, endpointID, execID string) (types.EndpointVersion, error) {
+	uri := fmt.Sprintf("projects/%s/%s/endpoints/%s/version", userID, projectID, endpointID)
+
+	body := types.EndpointVersionCreate{
+		ExecID:  execID,
+		Promote: true,
+	}
+
+	req, err := s.client.NewAuthorizedRestRequest(Post, uri, nil, body)
+	if err != nil {
+		return types.EndpointVersion{}, err
+	}
+
+	response := types.EndpointVersion{}
+	if err = s.client.ExecuteRest(ctx, req, &response); err != nil {
+		return types.EndpointVersion{}, err
+	}
+
+	return response, nil
 }
