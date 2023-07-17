@@ -12,7 +12,7 @@ type EndpointService struct {
 	client *Client
 }
 
-func (s *EndpointService) List(ctx context.Context, userID, projectID string) ([]types.Endpoint, error) {
+func (s *EndpointService) List(ctx context.Context, userID, projectID string) ([]types.EndpointListItem, error) {
 	uri := fmt.Sprintf("projects/%s/%s/endpoints", userID, projectID)
 	req, err := s.client.NewAuthorizedRestRequest(Get, uri, nil, nil)
 	if err != nil {

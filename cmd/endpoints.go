@@ -41,8 +41,7 @@ func EndpointList(cmd *cobra.Command, args []string) error {
 
 	for _, endpoint := range endpoints {
 		ui.Infof("id: %s", endpoint.ID)
-		ui.Infof("exec id: %s", endpoint.ExecID)
-		ui.Infof("http: %s\n", endpoint.HTTPEndpoint)
+		ui.Infof("http: %s\n", endpoint.HTTPAddress)
 	}
 
 	return nil

@@ -102,35 +102,31 @@ func (d *deployCommandFlow) onSshCommandFinish(ctx context.Context, execID strin
 			return fmt.Errorf("deploy: %w", err)
 		}
 
-		ui.Infof("✅ Created endpint %q for exec", endpoint.ID)
-		ui.Infof("🔗 Access endpoint at:")
-		ui.Infof("    https://%s", endpoint.HTTPEndpoint)
+		ui.Infof("✅ Endpoint created: %q", endpoint.ID)
+		ui.Infof("https://%s", endpoint.HTTPAddress)
 
-		return nil
+		end.ID = endpoint.ID
 	}
 
-	ui.Debugf("endpoint found, creating version, name: %q, id: %q", d.endpointName, end.ID)
+	ui.Debugf("creating version, name: %q, id: %q", d.endpointName, end.ID)
 
 	version, err := uwc.Endpoints.CreateVersion(ctx, owner, project, end.ID, execID)
 	if err != nil {
 		return fmt.Errorf("create version: %w", err)
 	}
 
-	ui.Infof("✅ Created endpint version %q for exec", version.ID)
-	ui.Infof("🔗 Access endpoint at:")
-	ui.Infof("    https://%s", end.HTTPEndpoint)
-	ui.Infof("🔗 Access version at:")
-	ui.Infof("    https://%s", version.HTTPEndpoint)
+	ui.Infof("✅ Version created %q", version.ID)
+	ui.Infof("https://%s", version.HTTPAddress)
 
 	return nil
 }
 
-func findEndpoint(name string, ends []types.Endpoint) (types.Endpoint, bool) {
+func findEndpoint(name string, ends []types.EndpointListItem) (types.EndpointListItem, bool) {
 	for _, end := range ends {
 		if strings.EqualFold(name, end.Name) || strings.EqualFold(name, end.ID) {
 			return end, true
 		}
 	}
 
-	return types.Endpoint{}, false
+	return types.EndpointListItem{}, false
 }
