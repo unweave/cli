@@ -12,7 +12,7 @@ require (
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.4
-	github.com/unweave/unweave v0.0.0-20230711121053-d1775efdbc45
+	github.com/unweave/unweave v0.0.0-20230717135240-3f802a8dbf9d
 )
 
 require (
@@ -41,5 +41,3 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/unweave/unweave => ../infra/unweave
