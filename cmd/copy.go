@@ -156,7 +156,7 @@ func formatPaths(exec *types.Exec, args []string) ([]string, error) {
 	return formattedArgs, nil
 }
 
-// splitSessFromDirpath takes a qualified cp argument e.g. sess:<execId>/path and returns /path
+// splitSessFromDirpath takes a qualified cp argument e.g. sess:<execID>/path and returns /path
 func splitSessFromDirpath(arg string) string {
 	parts := strings.SplitN(arg, "/", 2)
 	return fmt.Sprintf("/%s", filepath.Clean(parts[1]))

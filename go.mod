@@ -12,7 +12,7 @@ require (
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.4
-	github.com/unweave/unweave v0.0.0-20230717135240-3f802a8dbf9d
+	github.com/unweave/unweave v0.0.0-20230718141905-74a5b51dd31e
 )
 
 require (

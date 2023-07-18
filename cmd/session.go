@@ -314,8 +314,8 @@ func SessionTerminate(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		opts, execIdByOpts := formatExecCobraOpts(execs)
-		execID, _ = renderCobraSelection(cmd.Context(), opts, execIdByOpts, "Select session to terminate")
+		opts, execIDByOpts := formatExecCobraOpts(execs)
+		execID, _ = renderCobraSelection(cmd.Context(), opts, execIDByOpts, "Select session to terminate")
 
 		if len(execs) == 0 {
 			ui.Attentionf("No active sessions found")
