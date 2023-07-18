@@ -44,6 +44,10 @@ var (
 	}
 )
 
+func GetActiveAccountID() string {
+	return Config.Unweave.User.ID
+}
+
 func GetProjectOwnerAndName() (owner string, name string) {
 	uri := Config.Project.URI
 	parts := strings.Split(uri, "/")
