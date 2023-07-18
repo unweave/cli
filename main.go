@@ -102,6 +102,7 @@ func init() {
 
 	flags.StringVarP(&config.SSHKeyName, "key", "k", "", "Name of the SSH key to use")
 	flags.StringVar(&config.SSHPublicKeyPath, "pub", "", "Path to the SSH public key to use")
+	flags.BoolVar(&config.OutputJSON, "json", false, "Output JSON instead of human-readable text")
 
 	rootCmd.AddCommand(&cobra.Command{
 		Use:     "build [path]",

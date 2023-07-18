@@ -206,23 +206,27 @@ func SessionList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if len(sessions) > 0 {
-		renderSessionListWithSessions(sessions)
-	} else {
-		renderSessionListNoSessions()
-	}
+	renderSessionListWithSessions(sessions)
 
 	return nil
-}
-
-func renderSessionListNoSessions() {
-	ui.Infof("No active sessions")
 }
 
 func renderSessionListWithSessions(sessions []types.Exec) {
 	sort.Slice(sessions, func(i, j int) bool {
 		return sessions[i].Name < sessions[j].Name
 	})
+
+	if config.OutputJSON {
+		if sessions == nil {
+			sessions = []types.Exec{}
+		}
+		ui.JSON(sessions)
+		return
+	}
+
+	if len(sessions) == 0 {
+		ui.Infof("No active sessions")
+	}
 
 	// EITHER min length of title + 5 for padding OR the max field length + 5 for padding
 	cols := []ui.Column{
