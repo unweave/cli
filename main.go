@@ -379,13 +379,13 @@ func init() {
 	}
 
 	volumeNewCmd := &cobra.Command{
-		Use:   "new <name>",
+		Use:   "new <name> [size (GB]]",
 		Short: "Create a new volume in Unweave",
 		Long: wordwrap.String("Create a new volume in Unweave.\n\n"+
-			"Eg. unweave volume new <volume-name> --size <size-in-gb>\n\n"+
+			"Eg. unweave volume new my-vol 100\n\n"+
 			"The volume name must be unique per project. \n",
 			ui.MaxOutputLineLength),
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.RangeArgs(1, 2),
 		Aliases: []string{"new", "n", "create", "c"},
 		RunE:    cmd.VolumeCreate,
 	}
