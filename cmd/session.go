@@ -245,7 +245,7 @@ func renderSessionListWithSessions(sessions []types.Exec) {
 		{
 			Title: "Instance Type",
 			Width: 7 + ui.MaxFieldLength(sessions, func(exec types.Exec) string {
-				return string(exec.Spec.GPU.Type)
+				return exec.Spec.GPU.Type
 			}),
 		},
 		{

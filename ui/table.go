@@ -31,6 +31,11 @@ func Table(title string, cols []Column, rows []Row) {
 			}
 			cols[idx].Width += 2 // add some padding
 		}
+		// Set minimum column width to the column title
+		if len(col.Title) > cols[idx].Width {
+			cols[idx].Width = len(col.Title) + 2
+		}
+
 		totalWidth += cols[idx].Width
 		header += fmt.Sprintf(" %-*s", -cols[idx].Width, cols[idx].Title)
 	}
