@@ -201,6 +201,7 @@ func init() {
 	execCmd.Flags().Int32VarP(&config.InternalPort, "port", "p", 0, "Port on the exec to expose as an https interface e.g. -p 8080")
 	execCmd.Flags().BoolVar(&config.ExecAttach, "interactive", false, "Stay attached in an interactive terminal session to the exec after starting the command")
 	execCmd.Flags().StringSliceVar(&config.SSHConnectionOptions, "connection-option", []string{}, "SSH connection config to include e.g StrictHostKeyChecking=yes")
+	execCmd.Flags().BoolVar(&config.NoCopySource, "no-copy", false, "Do not copy source code to the session")
 
 	rootCmd.AddCommand(execCmd)
 
