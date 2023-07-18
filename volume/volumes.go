@@ -16,7 +16,11 @@ func Create(ctx context.Context, name string, size int) (types.Volume, error) {
 
 	client := config.InitUnweaveClient()
 	projectOwner, projectName := config.GetProjectOwnerAndName()
-	projectProvider := config.Provider
+	projectProvider := config.Config.Project.DefaultProvider
+
+	if config.Provider != "" {
+		projectProvider = config.Provider
+	}
 
 	volume, err := client.Volume.Create(ctx, projectOwner, projectName, types.VolumeCreateRequest{
 		Size:     size,
