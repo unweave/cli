@@ -79,3 +79,6 @@ var Volumes []string
 // and print logs as they come in. Default false, which means
 // print only the logs received so far.
 var FollowLogs = false
+
+// OutputJSON denotes if the output should be in JSON format
+var OutputJSON = false

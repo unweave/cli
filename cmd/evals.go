@@ -19,7 +19,11 @@ func EvalCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ui.Infof("eval: %s", eval.ID)
+	if config.OutputJSON {
+		ui.JSON(eval)
+	} else {
+		ui.Infof("eval: %s", eval.ID)
+	}
 	return nil
 }
 
@@ -33,6 +37,11 @@ func EvalList(cmd *cobra.Command, args []string) error {
 	evals, err := uwc.Evals.List(ctx, owner, projectName)
 	if err != nil {
 		return err
+	}
+
+	if config.OutputJSON {
+		ui.JSON(evals)
+		return nil
 	}
 
 	for _, eval := range evals {

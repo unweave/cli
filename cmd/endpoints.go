@@ -23,7 +23,12 @@ func EndpointCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ui.Infof("endpoint: %s", endpoint.ID)
+	if config.OutputJSON {
+		ui.JSON(endpoint)
+	} else {
+		ui.Infof("endpoint: %s", endpoint.ID)
+	}
+
 	return nil
 }
 
@@ -37,6 +42,11 @@ func EndpointList(cmd *cobra.Command, args []string) error {
 	endpoints, err := uwc.Endpoints.List(ctx, owner, projectName)
 	if err != nil {
 		return err
+	}
+
+	if config.OutputJSON {
+		ui.JSON(endpoints)
+		return nil
 	}
 
 	for _, endpoint := range endpoints {
