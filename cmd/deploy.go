@@ -118,6 +118,11 @@ func (d *deployCommandFlow) onSshCommandFinish(ctx context.Context, execID strin
 	ui.Infof("✅ Version created %q", version.ID)
 	ui.Infof("https://%s", version.HTTPAddress)
 
+	ui.JSON(map[string]any{
+		"endpoint": end,
+		"version":  version,
+	})
+
 	return nil
 }
 
