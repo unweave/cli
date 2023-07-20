@@ -513,6 +513,7 @@ func init() {
 			ui.MaxOutputLineLength),
 		RunE: cmd.Deploy,
 	}
+	deployCmd.Flags().StringVarP(&config.BuildID, "image", "i", "", "Build ID of the container image to use")
 	deployCmd.Flags().StringVar(&config.Provider, "provider", "", "Provider to use")
 	deployCmd.Flags().StringVar(&config.NodeRegion, "region", "", "Region to use, eg. `us_west_2`")
 	deployCmd.Flags().IntVar(&config.GPUs, "gpus", 0, "Number of GPUs to allocate for a gpuType, e.g., 2")
