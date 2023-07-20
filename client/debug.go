@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/unweave/cli/ui"
 	"github.com/unweave/cli/vars"
 )
 
@@ -14,16 +15,16 @@ type loggedRoundTripper struct {
 
 func (c *loggedRoundTripper) RoundTrip(request *http.Request) (*http.Response, error) {
 	if vars.Debug {
-		fmt.Printf("=> %s %s\n", request.Method, request.URL.String())
+		fmt.Fprintf(ui.Output, "=> %s %s\n", request.Method, request.URL.String())
 	}
 	startTime := time.Now()
 	response, err := c.rt.RoundTrip(request)
 	duration := time.Since(startTime)
 	if vars.Debug {
 		if err != nil {
-			fmt.Printf("<= (%s) ERROR! %s\n", duration.String(), err.Error())
+			fmt.Fprintf(ui.Output, "<= (%s) ERROR! %s\n", duration.String(), err.Error())
 		} else {
-			fmt.Printf("<= (%s) %s\n", duration.String(), response.Status)
+			fmt.Fprintf(ui.Output, "<= (%s) %s\n", duration.String(), response.Status)
 		}
 	}
 	return response, err

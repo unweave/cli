@@ -75,6 +75,7 @@ func (s *EndpointService) RunEvalCheck(ctx context.Context, userID, projectID, e
 		return err
 	}
 
+	ui.JSON(response)
 	ui.Infof("check id: %s", response.CheckID)
 
 	return nil

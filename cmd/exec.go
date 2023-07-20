@@ -86,6 +86,8 @@ func (e *execCommandFlow) getExec(cmd *cobra.Command, execCmd execCmdArgs) (chan
 func (e *execCommandFlow) onSshCommandFinish(ctx context.Context, execID string) error {
 	ui.Infof("Session %q exited. Use 'unweave terminate' to stop the session.", execID)
 
+	ui.JSON(map[string]any{"id": execID})
+
 	return nil
 }
 

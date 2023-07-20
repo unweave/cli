@@ -18,14 +18,17 @@ var (
 	warningColor   = lipgloss.NewStyle().Foreground(lipgloss.Color("#F5C237"))
 )
 
+var Output = os.Stdout
+var OutputJSON = false
+
 func Attentionf(format string, a ...any) {
 	s := fmt.Sprintf(format, a...)
-	fmt.Println(attentionColor.Render(wordwrap.String(s, MaxOutputLineLength)))
+	fmt.Fprintln(Output, attentionColor.Render(wordwrap.String(s, MaxOutputLineLength)))
 }
 
 func Errorf(format string, a ...any) {
 	s := fmt.Sprintf(format, a...)
-	fmt.Println(errorColor.Render(wordwrap.String(s, MaxOutputLineLength)))
+	fmt.Fprintln(Output, errorColor.Render(wordwrap.String(s, MaxOutputLineLength)))
 }
 
 // Fatal prints an error message. It checks is the error is a types.Error and prints
@@ -33,32 +36,32 @@ func Errorf(format string, a ...any) {
 //
 // You should use this function instead of Errorf (which is being deprecated).
 func Fatal(msg string, err error) {
-	fmt.Println(errorColor.Render(wordwrap.String(msg, MaxOutputLineLength)))
+	fmt.Fprintln(Output, errorColor.Render(wordwrap.String(msg, MaxOutputLineLength)))
 	var e *types.Error
 	if errors.As(err, &e) {
 		if e.Code == 401 {
-			fmt.Println("Unauthorized. Please login with `unweave login`")
+			fmt.Fprintln(Output, "Unauthorized. Please login with `unweave login`")
 			os.Exit(1)
 		}
 		uie := &Error{Error: e}
-		fmt.Println(uie.Verbose())
+		fmt.Fprintln(Output, uie.Verbose())
 	}
 	os.Exit(1)
 }
 
 func Infof(format string, a ...any) {
 	s := fmt.Sprintf(format, a...)
-	fmt.Println(wordwrap.String(s, MaxOutputLineLength))
+	fmt.Fprintln(Output, wordwrap.String(s, MaxOutputLineLength))
 }
 
 func Successf(format string, a ...any) {
 	s := fmt.Sprintf(format, a...)
-	fmt.Println(successColor.Render(wordwrap.String(s, MaxOutputLineLength)))
+	fmt.Fprintln(Output, successColor.Render(wordwrap.String(s, MaxOutputLineLength)))
 }
 
 func Debugf(format string, a ...any) {
 	s := fmt.Sprintf(format, a...)
 	if vars.Debug {
-		fmt.Println(wordwrap.String(s, MaxOutputLineLength))
+		fmt.Fprintln(Output, wordwrap.String(s, MaxOutputLineLength))
 	}
 }

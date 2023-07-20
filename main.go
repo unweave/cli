@@ -30,6 +30,12 @@ var (
 		Args:          cobra.MinimumNArgs(0),
 		SilenceUsage:  false,
 		SilenceErrors: false,
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			if config.OutputJSON {
+				ui.Output = os.Stderr
+				ui.OutputJSON = true
+			}
+		},
 	}
 )
 
