@@ -60,8 +60,8 @@ func Successf(format string, a ...any) {
 }
 
 func Debugf(format string, a ...any) {
-	s := fmt.Sprintf(format, a...)
 	if vars.Debug {
-		fmt.Fprintln(Output, wordwrap.String(s, MaxOutputLineLength))
+		s := fmt.Sprintf(format, a...)
+		fmt.Fprintln(Output, s)
 	}
 }

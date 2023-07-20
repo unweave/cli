@@ -53,11 +53,11 @@ func Copy(cmd *cobra.Command, args []string) error {
 	case shouldCopyRemoteDirToLocal(args[0]):
 		err = copyDirFromRemoteAndUnzip(scpArgs[0], scpArgs[1], privateKey)
 	default:
-		err = copySourceSCP(scpArgs[0], scpArgs[1], privateKey)
+		err = fmt.Errorf("unrecognised copy type: %v, %v", args, scpArgs)
 	}
 
 	if err != nil {
-		fmt.Println(err.Error())
+		ui.Debugf("Error: %s", err.Error())
 		ui.Infof("❌ Unsuccessful copy %s => %s", scpArgs[0], scpArgs[1])
 		return nil
 	}

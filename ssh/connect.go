@@ -3,16 +3,23 @@ package ssh
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/exec"
 	"strings"
-	"syscall"
 
-	"github.com/unweave/cli/ui"
 	"github.com/unweave/unweave/api/types"
 )
 
 func Connect(ctx context.Context, connectionInfo types.ExecNetwork, prvKeyPath string, args []string, command []string) error {
+	proxiedssh, err := NewProxied(
+		connectionInfo.User,
+		"localhost:2233",
+		fmt.Sprintf("%s:%d", connectionInfo.Host, 50505),
+		"localhost:22",
+		prvKeyPath,
+	)
+	if err != nil {
+		return fmt.Errorf("create proxied ssh: %w", err)
+	}
+
 	overrideUserKnownHostsFile := false
 	overrideStrictHostKeyChecking := false
 
@@ -36,35 +43,9 @@ func Connect(ctx context.Context, connectionInfo types.ExecNetwork, prvKeyPath s
 		args = append(args, "-o", "StrictHostKeyChecking=no")
 	}
 
-	sshArgs := append(args, fmt.Sprintf("%s@%s", connectionInfo.User, connectionInfo.Host))
-
-	if len(command) != 0 {
-		sshArgs = append(sshArgs, command...)
+	if err := proxiedssh.RunCommand(args, command); err != nil {
+		return fmt.Errorf("run proxied ssh command: %w", err)
 	}
 
-	sshCommand := exec.Command(
-		"ssh",
-		sshArgs...,
-	)
-
-	ui.Debugf("Running SSH command: %s", strings.Join(sshCommand.Args, " "))
-
-	sshCommand.Stdin = os.Stdin
-	sshCommand.Stdout = os.Stdout
-	sshCommand.Stderr = os.Stderr
-
-	if err := sshCommand.Run(); err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
-			// Exited with non-zero exit code
-			if status, ok := exitError.Sys().(syscall.WaitStatus); ok {
-				if status.ExitStatus() == 255 {
-					ui.Infof("The remote host closed the connection.")
-					return nil
-				}
-			}
-			return err
-		}
-		return fmt.Errorf("SSH command failed: %v", err)
-	}
 	return nil
 }

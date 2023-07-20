@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -9,8 +8,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"syscall"
-	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/unweave/cli/config"
@@ -279,13 +276,22 @@ func copyDirFromLocalAndUnzip(execID, rootDir, dstPath string, connectionInfo ty
 
 	ui.Infof("🔄 Copying source to %q", dstPath)
 
-	// target to copy to i.e. /home/user/Desktop/ user@your.server.example.com:/path/to/foo
-	remoteTarget := fmt.Sprintf("%s@%s:%s", connectionInfo.User, connectionInfo.Host, tmpDstPath)
-	if err := copySourceSCP(tmpFile.Name(), remoteTarget, privKeyPath); err != nil {
+	proxiedssh, err := ssh.NewProxied(
+		connectionInfo.User,
+		"localhost:2233",
+		fmt.Sprintf("%s:50505", connectionInfo.Host),
+		"localhost:22",
+		privKeyPath,
+	)
+	if err != nil {
+		return fmt.Errorf("created proxied ssh: %w", err)
+	}
+
+	if err := proxiedssh.UploadSCP(tmpFile.Name(), tmpDstPath); err != nil {
 		return fmt.Errorf("failed to copy source: %w", err)
 	}
 
-	if err := copySourceUnTar(tmpDstPath, dstPath, connectionInfo, privKeyPath); err != nil {
+	if err := proxiedssh.CopySourceUnTar(tmpDstPath, dstPath); err != nil {
 		return fmt.Errorf("failed to extract source: %w", err)
 	}
 
@@ -294,10 +300,35 @@ func copyDirFromLocalAndUnzip(execID, rootDir, dstPath string, connectionInfo ty
 	return nil
 }
 
+func splitTarget(target string) (user, host, dir string) {
+	// target in format user@host:/dir
+	p := strings.Split(target, "@")
+	user = p[0]
+
+	p = strings.Split(p[1], ":")
+	host = p[0]
+	dir = p[1]
+
+	return user, host, dir
+}
+
 func copyDirFromRemoteAndUnzip(sshTarget, localDirectory, privateKey string) error {
 	ui.Infof("🧳 Gathering context from %q", sshTarget)
 
-	remotePath, err := tarRemoteDirectory(sshTarget, privateKey)
+	user, host, dir := splitTarget(sshTarget)
+
+	proxiedssh, err := ssh.NewProxied(
+		user,
+		"localhost:2233",
+		fmt.Sprintf("%s:50505", host),
+		"localhost:22",
+		privateKey,
+	)
+	if err != nil {
+		return fmt.Errorf("create proxied ssh: %w", err)
+	}
+
+	remotePath, err := proxiedssh.TarRemoteDirectory(dir)
 	if err != nil {
 		return fmt.Errorf("Failed to zip the remote directory. Expected both a remote target and directory in %s", sshTarget)
 	}
@@ -313,7 +344,7 @@ func copyDirFromRemoteAndUnzip(sshTarget, localDirectory, privateKey string) err
 	archiveLocalTargetDir := config.GetGlobalConfigPath()
 	archiveLocalTarget := filepath.Join(archiveLocalTargetDir, remoteFilename)
 
-	err = copySourceSCP(sshTargetDirectory, config.GetGlobalConfigPath(), privateKey)
+	err = proxiedssh.DownloadSCP(remotePath, config.GetGlobalConfigPath())
 	if err != nil {
 		return fmt.Errorf("Failed to copy the archive of your remote path to the host. "+
 			"Please check if %s exists on the remote and ensure Unweave has the necessary permissions to access %s",
@@ -334,50 +365,6 @@ func copyDirFromRemoteAndUnzip(sshTarget, localDirectory, privateKey string) err
 	return nil
 }
 
-// tarRemoteDirectory takes an ssh target, and zips up the contents of that target to a returned in the remote /tmp
-func tarRemoteDirectory(sshTarget, privateKeyPath string) (remoteArchiveLoc string, err error) {
-	sshTargetAndDir := strings.Split(sshTarget, ":")
-	if len(sshTargetAndDir) != 2 {
-		return "", fmt.Errorf("Failed to zip remote directory, expected both a remote target and directory in %s", sshTarget)
-	}
-
-	timestamp := time.Now().Unix()
-	remoteArchiveLoc = fmt.Sprintf("/tmp/uw-context-%d.tar.gz", timestamp)
-	tarCmd := fmt.Sprintf("tar -czf %s -C %s .", remoteArchiveLoc, sshTargetAndDir[1])
-
-	sshCommand := exec.Command(
-		"ssh",
-		"-o", "StrictHostKeyChecking=no",
-		"-o", "UserKnownHostsFile=/dev/null",
-		"-i", privateKeyPath,
-		sshTargetAndDir[0],
-		tarCmd,
-	)
-
-	stdout := &bytes.Buffer{}
-	stderr := &bytes.Buffer{}
-
-	sshCommand.Stdout = stdout
-	sshCommand.Stderr = stderr
-
-	if err := sshCommand.Run(); err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
-			// Exited with non-zero exit code
-			if status, ok := exitError.Sys().(syscall.WaitStatus); ok {
-				if status.ExitStatus() == 255 {
-					ui.Infof("The remote host closed the connection.")
-					return "", fmt.Errorf("failed to copy source: %w", err)
-				}
-			}
-			ui.Infof("Failed to extract source directory on remote host: %s", stderr.String())
-			return "", err
-		}
-		return "", fmt.Errorf("failed to unzip on remote host: %v", err)
-	}
-
-	return remoteArchiveLoc, nil
-}
-
 func createTempContextFile(execID string) (*os.File, error) {
 	name := fmt.Sprintf("uw-context-%s.tar.gz", execID)
 	tmpFile, err := os.CreateTemp(os.TempDir(), name)
@@ -385,80 +372,6 @@ func createTempContextFile(execID string) (*os.File, error) {
 		return nil, err
 	}
 	return tmpFile, nil
-}
-
-func copySourceSCP(from, to string, privKeyPath string) error {
-	scpCommandArgs := []string{
-		"-r",
-		"-o", "StrictHostKeyChecking=no",
-		"-o", "UserKnownHostsFile=/dev/null",
-	}
-	if privKeyPath != "" {
-		scpCommandArgs = append(scpCommandArgs, "-i", privKeyPath)
-	}
-
-	scpCommandArgs = append(scpCommandArgs, []string{from, to}...)
-
-	scpCommand := exec.Command("scp", scpCommandArgs...)
-
-	stdout := &bytes.Buffer{}
-	stderr := &bytes.Buffer{}
-
-	scpCommand.Stdout = stdout
-	scpCommand.Stderr = stderr
-
-	if err := scpCommand.Run(); err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
-			// Exited with non-zero exit code
-			if status, ok := exitError.Sys().(syscall.WaitStatus); ok {
-				if status.ExitStatus() == 255 {
-					ui.Infof("The remote host closed the connection.")
-					return fmt.Errorf("failed to copy source: %w", err)
-				}
-			}
-			ui.Infof("Failed to copy source directory to remote host: %s", stderr.String())
-			return err
-		}
-		return fmt.Errorf("scp command failed: %v", err)
-	}
-
-	return nil
-}
-
-func copySourceUnTar(srcPath, dstPath string, connectionInfo types.ExecNetwork, prvKeyPath string) error {
-	sshCommand := exec.Command(
-		"ssh",
-		"-o", "StrictHostKeyChecking=no",
-		"-o", "UserKnownHostsFile=/dev/null",
-		"-i", prvKeyPath,
-		fmt.Sprintf("%s@%s", connectionInfo.User, connectionInfo.Host),
-		// ensure dstPath exist and root logs into that path
-		fmt.Sprintf("mkdir -p %s && echo 'cd %s' > /root/.bashrc &&", dstPath, dstPath),
-		fmt.Sprintf("tar -xzf %s -C %s && rm -rf %s", srcPath, dstPath, srcPath),
-	)
-
-	stdout := &bytes.Buffer{}
-	stderr := &bytes.Buffer{}
-
-	sshCommand.Stdout = stdout
-	sshCommand.Stderr = stderr
-
-	if err := sshCommand.Run(); err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
-			// Exited with non-zero exit code
-			if status, ok := exitError.Sys().(syscall.WaitStatus); ok {
-				if status.ExitStatus() == 255 {
-					ui.Infof("The remote host closed the connection.")
-					return fmt.Errorf("failed to copy source: %w", err)
-				}
-			}
-			ui.Infof("Failed to extract source directory on remote host: %s", stderr.String())
-			return err
-		}
-		return fmt.Errorf("failed to unzip on remote host: %v", err)
-	}
-
-	return nil
 }
 
 // getDefaultKey tries to find the private key for this Exec, or relies on
