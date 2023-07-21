@@ -10,7 +10,7 @@ import (
 	"github.com/unweave/cli/ui"
 )
 
-const execLogFile = "/logs/exec.log"
+const execLogFile = "/tmp/exec.log"
 
 func Logs(cmd *cobra.Command, args []string) error {
 
