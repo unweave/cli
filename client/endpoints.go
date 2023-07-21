@@ -28,7 +28,7 @@ func (s *EndpointService) List(ctx context.Context, userID, projectID string) ([
 }
 
 func (s *EndpointService) Create(ctx context.Context, userID, projectID, execID, name string) (types.Endpoint, error) {
-	request := types.EndpointCreate{
+	request := types.EndpointCreateParams{
 		ExecID: execID,
 		Name:   name,
 	}
@@ -100,7 +100,7 @@ func (s *EndpointService) EndpointCheckStatus(ctx context.Context, userID, proje
 func (s *EndpointService) CreateVersion(ctx context.Context, userID, projectID, endpointID, execID string) (types.EndpointVersion, error) {
 	uri := fmt.Sprintf("projects/%s/%s/endpoints/%s/version", userID, projectID, endpointID)
 
-	body := types.EndpointVersionCreate{
+	body := types.EndpointVersionCreateParams{
 		ExecID:  execID,
 		Promote: true,
 	}
