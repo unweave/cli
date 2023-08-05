@@ -50,6 +50,21 @@ func (a *AccountService) PairingTokenExchange(ctx context.Context, code string) 
 	return res.Token, &res.Account, nil
 }
 
+func (a *AccountService) ProjectCreate(ctx context.Context, ownerRef string, params types.ProjectCreateRequestParams) (types.Project, error) {
+	uri := fmt.Sprintf("projects/%s", ownerRef)
+	req, err := a.client.NewAuthorizedRestRequest(Post, uri, nil, params)
+	if err != nil {
+		return types.Project{}, err
+	}
+
+	res := &types.ProjectCreateResponse{}
+	if err = a.client.ExecuteRest(ctx, req, res); err != nil {
+		return types.Project{}, err
+	}
+
+	return res.Project, nil
+}
+
 func (a *AccountService) ProjectGet(ctx context.Context, owner, name string) (types.Project, error) {
 	uri := fmt.Sprintf("projects/%s/%s", owner, name)
 	req, err := a.client.NewAuthorizedRestRequest(Get, uri, nil, nil)

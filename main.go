@@ -211,6 +211,16 @@ func init() {
 
 	rootCmd.AddCommand(execCmd)
 
+	// Init command for projects
+	initCmd := &cobra.Command{
+		GroupID: groupManagement,
+		Short:   "ProjectCreate a new Unweave project",
+		Use:     "init <project-name>",
+		Args:    cobra.ExactArgs(1),
+		RunE:    cmd.ProjectCreate,
+	}
+	rootCmd.AddCommand(initCmd)
+
 	logsCmd := &cobra.Command{
 		GroupID: groupDev,
 		Short:   "Print logs from an exec",
@@ -247,6 +257,27 @@ func init() {
 		Short:  "Logout of Unweave",
 		RunE:   cmd.Logout,
 		Hidden: true,
+	})
+
+	lsCmd := &cobra.Command{
+		Use:     "ls",
+		Short:   "List active Unweave sessions",
+		Long:    "List active Unweave sessions. To list all sessions, use the --all flag.",
+		Args:    cobra.NoArgs,
+		Aliases: []string{"list"},
+		GroupID: groupDev,
+		RunE:    withValidProjectURI(cmd.SessionList),
+	}
+	lsCmd.Flags().BoolVarP(&config.All, "all", "a", false, "List all sessions")
+	rootCmd.AddCommand(lsCmd)
+
+	rootCmd.AddCommand(&cobra.Command{
+		Use:     "terminate [session-id]",
+		Short:   "Terminate an Unweave session",
+		Args:    cobra.RangeArgs(0, 1),
+		Aliases: []string{"delete", "del"},
+		GroupID: groupDev,
+		RunE:    withValidProjectURI(cmd.SessionTerminate),
 	})
 
 	// Provider commands
@@ -296,27 +327,6 @@ func init() {
 	newCmd.Flags().Int32VarP(&config.InternalPort, "port", "p", 0, "Port on the exec to expose as an https interface e.g. -p 8080")
 
 	rootCmd.AddCommand(newCmd)
-
-	lsCmd := &cobra.Command{
-		Use:     "ls",
-		Short:   "List active Unweave sessions",
-		Long:    "List active Unweave sessions. To list all sessions, use the --all flag.",
-		Args:    cobra.NoArgs,
-		Aliases: []string{"list"},
-		GroupID: groupDev,
-		RunE:    withValidProjectURI(cmd.SessionList),
-	}
-	lsCmd.Flags().BoolVarP(&config.All, "all", "a", false, "List all sessions")
-	rootCmd.AddCommand(lsCmd)
-
-	rootCmd.AddCommand(&cobra.Command{
-		Use:     "terminate [session-id]",
-		Short:   "Terminate an Unweave session",
-		Args:    cobra.RangeArgs(0, 1),
-		Aliases: []string{"delete", "del"},
-		GroupID: groupDev,
-		RunE:    withValidProjectURI(cmd.SessionTerminate),
-	})
 
 	sshCmd := &cobra.Command{
 		Use:   "ssh [session-name|id]",
